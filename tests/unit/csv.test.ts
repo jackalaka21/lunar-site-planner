@@ -64,20 +64,22 @@ describe("CSV export and PSR overlay", () => {
     expect(csv.split("\n").length).toBe(series.n + 2);
   });
 
-  it("PSR overlay file is <= 1 MB and all polygon vertices have lat <= -80", () => {
+  it("PSR overlay file is <= 1 MB and all polygon vertices lie south of 80 S (pixel-edge tolerance)", () => {
     const psrPath = join(process.cwd(), "public/data/v1/overlays/psr.json");
     const stat = statSync(psrPath);
     expect(stat.size).toBeLessThanOrEqual(1_000_000);
     const doc = JSON.parse(readFileSync(psrPath, "utf8")) as {
-      sourceUrl: string;
-      polygons: Array<{ id: string; ring: Array<[number, number]> }>;
+      metadata: { source_url: string; threshold: string; minAreaKm2: number; simplifyM: number };
+      features: Array<{ properties: { areaKm2: number }; geometry: { coordinates: Array<Array<[number, number]>> } }>;
     };
-    expect(doc.sourceUrl).toContain("pgda.gsfc.nasa.gov");
-    expect(doc.polygons.length).toBeGreaterThanOrEqual(10);
-    for (const poly of doc.polygons) {
-      expect(poly.ring.length).toBeGreaterThanOrEqual(8);
-      for (const [lat] of poly.ring) {
-        expect(lat).toBeLessThanOrEqual(-80);
+    expect(doc.metadata.source_url).toContain("pgda.gsfc.nasa.gov");
+    expect(doc.metadata.threshold).toBeTruthy();
+    expect(doc.features.length).toBeGreaterThanOrEqual(10);
+    for (const f of doc.features) {
+      expect(f.properties.areaKm2).toBeGreaterThanOrEqual(doc.metadata.minAreaKm2);
+      for (const ring of f.geometry.coordinates) {
+        expect(ring.length).toBeGreaterThanOrEqual(4);
+        for (const [, lat] of ring) expect(lat).toBeLessThanOrEqual(-79.99);
       }
     }
   });

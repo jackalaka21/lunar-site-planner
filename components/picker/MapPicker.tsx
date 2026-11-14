@@ -159,7 +159,7 @@ export function MapPicker({ scenarioKey, mode }: MapPickerProps) {
   }, [south, showHeatmap, activeCoords, heatmapPoints, settings.durationDays]);
 
   const psrPolygons = useMemo(
-    () => (south && showPsr && psrData ? projectPsrPolygons(psrData.polygons, VIEW_W) : []),
+    () => (south && showPsr && psrData ? projectPsrPolygons(psrData.features, VIEW_W) : []),
     [south, showPsr, psrData],
   );
 
@@ -293,7 +293,7 @@ export function MapPicker({ scenarioKey, mode }: MapPickerProps) {
             onClick={() => setShowHeatmap((v) => !v)}
           />
           <Button
-            label="Shadowed craters (PSR)"
+            label="Permanent shadow (PSR)"
             size="lg"
             variant={showPsr ? "secondary" : "ghost"}
             aria-pressed={showPsr}
@@ -327,9 +327,10 @@ export function MapPicker({ scenarioKey, mode }: MapPickerProps) {
         {south && showPsr ? (
           <g data-testid="psr-layer" style={{ pointerEvents: "none" }}>
             {psrPolygons.map((poly) => (
-              <polygon
+              <path
                 key={poly.id}
-                points={poly.points}
+                d={poly.d}
+                fillRule="evenodd"
                 data-testid={`psr-polygon-${poly.id}`}
                 style={{
                   fill: DEEPEST,
@@ -339,8 +340,8 @@ export function MapPicker({ scenarioKey, mode }: MapPickerProps) {
                   strokeDasharray: "2 2",
                 }}
               >
-                <title>{`${poly.name} PSR`}</title>
-              </polygon>
+                <title>{poly.name}</title>
+              </path>
             ))}
           </g>
         ) : null}
@@ -434,7 +435,9 @@ export function MapPicker({ scenarioKey, mode }: MapPickerProps) {
       </svg>
       <Text type="supporting" size="xsm" id="map-help">
         {south
-          ? "North is up and 0° E at the top. Click or drag a pin for a custom point, or click a dot for a catalogue site."
+          ? `North is up and 0° E at the top. Click or drag a pin for a custom point, or click a dot for a catalogue site.${
+              showPsr ? " Zero average sunlight over the 18.6-yr illumination model, NASA PGDA 120 m (Mazarico et al. 2011). Regions under 1 km² omitted." : ""
+            }`
           : "Click or drag a pin for a custom point, or click a dot for a catalogue site."}
       </Text>
     </Stack>

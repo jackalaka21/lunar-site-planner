@@ -90,7 +90,7 @@ export const GLOSSARY = {
   },
   psr: {
     term: "PSR",
-    text: "Permanently shadowed region: ground that never sees the Sun and stays extremely cold.",
+    text: "Permanently shadowed region: ground that receives no direct sunlight in the long-term illumination model.",
   },
   subSolarLatitude: {
     term: "Sub-solar latitude",

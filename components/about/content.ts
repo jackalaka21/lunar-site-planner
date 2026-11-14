@@ -38,7 +38,7 @@ export const NASA_DATASETS: Dataset[] = [
     name: "PGDA Lunar Polar Illumination maps, as shown in LROC Quickmap",
     source: "PGDA product 69",
     href: "https://pgda.gsfc.nasa.gov/products/69",
-    role: "Illumination cross-check and Permanently Shadowed Region (PSR) overlay: PSRs are the regions with zero average sunlight in this 120 m map (visible-sun fraction <= 1e-6 south of 80° S), polygonised, with regions under 1 km² dropped and outlines simplified at 120 m.",
+    role: "Illumination cross-check and Permanently Shadowed Region (PSR) overlay: PSRs are the regions with zero average sunlight in this 120 m map (stored value 0, below 2e-5 after quantisation; averaged hourly over ~18.6 years; south of 80° S), polygonised, with regions under 1 km² omitted and outlines simplified at 120 m.",
   },
   {
     name: "LROC and Quickmap (NASA LRO, Arizona State University)",

@@ -130,15 +130,15 @@ describe("MapPicker drag, heatmap, and PSR overlay", () => {
     expect(afterScenarios[afterScenarios.length - 1].site.kind).toBe("custom");
   });
 
-  it("toggling Shadowed craters (PSR) lazily loads and renders PSR polygons", async () => {
+  it("toggling Permanent shadow (PSR) lazily loads and renders PSR polygons", async () => {
     render(<MapPicker scenarioKey="a" mode="south" />);
-    const toggle = screen.getByRole("button", { name: "Shadowed craters (PSR)" });
+    const toggle = screen.getByRole("button", { name: "Permanent shadow (PSR)" });
     fireEvent.click(toggle);
 
     const layer = await screen.findByTestId("psr-layer");
     expect(layer).toBeTruthy();
     await waitFor(() => {
-      expect(screen.getByTestId("psr-polygon-shackleton")).toBeTruthy();
+      expect(screen.getByTestId("psr-polygon-psr-0")).toBeTruthy();
     });
   });
 });

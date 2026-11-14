@@ -20,21 +20,18 @@ export interface ProjectedHeatmapCell extends HeatmapPoint {
   distKm: number;
 }
 
-export interface PsrPolygon {
-  id: string;
-  name: string;
-  lat: number;
-  lon: number;
-  radiusKm: number;
-  floorM?: number;
-  rimM?: number;
-  ring: [number, number][];
+/** GeoJSON Polygon feature for one permanent-shadow region (rings are [lon, lat]). */
+export interface PsrFeature {
+  type: "Feature";
+  properties: { areaKm2: number };
+  geometry: { type: "Polygon"; coordinates: [number, number][][] };
 }
 
+/** GeoJSON FeatureCollection written by pipeline/lsp/psr.py. */
 export interface PsrOverlayData {
-  source: string;
-  sourceUrl: string;
-  polygons: PsrPolygon[];
+  type: "FeatureCollection";
+  metadata: { source_url: string; citation: string; threshold: string; [key: string]: unknown };
+  features: PsrFeature[];
 }
 
 /** Polar stereographic Euclidean distance in kilometres between two south-polar points. */
@@ -100,22 +97,27 @@ export function projectHeatmapCells(
   return out;
 }
 
-/** Convert PSR polygons into SVG `<polygon points="...">` strings in south-polar map coordinates. */
+/** Convert PSR GeoJSON features into SVG path data (even-odd, holes preserved) in south-polar map coordinates. */
 export function projectPsrPolygons(
-  polygons: readonly PsrPolygon[],
+  features: readonly PsrFeature[],
   size: number,
-): Array<{ id: string; name: string; points: string }> {
-  const out: Array<{ id: string; name: string; points: string }> = [];
-  for (const poly of polygons) {
-    const pts = poly.ring
-      .map(([lat, lon]) => southToPixel(lat, lon, size))
-      .filter((p): p is { x: number; y: number } => p !== null);
-    if (pts.length < 3) continue;
+): Array<{ id: string; name: string; d: string }> {
+  const out: Array<{ id: string; name: string; d: string }> = [];
+  features.forEach((feature, i) => {
+    const parts: string[] = [];
+    for (const ring of feature.geometry.coordinates) {
+      const pts = ring
+        .map(([lon, lat]) => southToPixel(lat, lon, size))
+        .filter((p): p is { x: number; y: number } => p !== null);
+      if (pts.length < 3) continue;
+      parts.push(`M${pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join("L")}Z`);
+    }
+    if (parts.length === 0) return;
     out.push({
-      id: poly.id,
-      name: poly.name,
-      points: pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" "),
+      id: `psr-${i}`,
+      name: `Permanent shadow, ${feature.properties.areaKm2.toFixed(1)} km²`,
+      d: parts.join(""),
     });
-  }
+  });
   return out;
 }

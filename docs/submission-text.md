@@ -51,11 +51,11 @@ Existing planetary GIS tools show static long-term averages or single-point ephe
    - Independently validated against **JPL Horizons** (`< 0.0001°` angular error), **NASA's Five Millennium Catalog of Lunar Eclipses** (`~3 min` totality agreement), **NASA PGDA Lunar Polar Illumination maps**, and historical mission timelines (*Chandrayaan-3*, *SLIM*, *IM-2*).
 
 ### NASA & Partner Datasets Used
-- **LOLA South-Pole 40 m DEM (`LDEM_80S_40MPP_ADJ`, NASA GSFC PGDA):** https://pgda.gsfc.nasa.gov/products/90 — Computes south-polar terrain horizon profiles, 3D surface meshes, permanently shadowed crater overlays, and polar hillshade basemaps.
+- **LOLA South-Pole 40 m DEM (`LDEM_80S_40MPP_ADJ`, NASA GSFC PGDA):** https://pgda.gsfc.nasa.gov/products/90 — Computes south-polar terrain horizon profiles, 3D surface meshes, and polar hillshade basemaps.
 - **LOLA Global 64 ppd DEM (`LDEM_64`, NASA GSFC / PDS):** https://imbrium.mit.edu/DATA/LOLA_GDR/CYLINDRICAL/IMG/ — Computes non-polar site horizons (Apollo, SLIM, Chang'e, Blue Ghost) and the global lunar basemap.
 - **NAIF SPICE Kernels (`de440s.bsp`, `moon_pa_de440_200625.bpc`, `moon_de440_250416.tf`, `naif0012.tls`, `pck00011.tpc`, NASA JPL):** https://naif.jpl.nasa.gov/pub/naif/generic_kernels/ — Provides Sun and Earth ephemeris vectors in the `MOON_ME` frame and DSN station geometry from 1969 to 2035.
 - **JPL Horizons On-Line Ephemeris System (NASA JPL):** https://ssd.jpl.nasa.gov/horizons/ — Independent reference used at build time to validate topocentric Sun and Earth azimuth/elevation angles.
-- **PGDA Lunar Polar Illumination Maps (Mazarico et al., NASA GSFC):** https://pgda.gsfc.nasa.gov/products/69 — Cross-checks multi-year average Sun and Earth visibility at polar sites and informs permanently shadowed region (PSR) overlays.
+- **PGDA Lunar Polar Illumination Maps (Mazarico et al., NASA GSFC):** https://pgda.gsfc.nasa.gov/products/69 — Cross-checks multi-year average Sun and Earth visibility at polar sites and is the source of the permanently shadowed region (PSR) overlay, polygonised from its zero-average-illumination pixels.
 - **LROC & Quickmap (NASA LRO / ASU):** https://quickmap.lroc.asu.edu/ — Provides measured coordinates for landed missions and Artemis candidate regions, and is linked from every scenario card.
 - **NASA Moon Trek (NASA JPL / SSERVI):** https://trek.nasa.gov/moon/ — Linked from every scenario card for external GIS cross-reference.
 - **NASA Deep Space Network Handbook (810-005, Module 301):** https://deepspace.jpl.nasa.gov/dsndocs/810-005/301/301K.pdf — Reference station coordinates for Goldstone, Madrid, and Canberra coverage.
