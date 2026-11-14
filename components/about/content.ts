@@ -77,14 +77,17 @@ export const PARTNERS: Partner[] = [
   },
 ];
 
-export const LIMITATIONS: string[] = [
-  "Terrain resolution: horizons come from 40 m (polar) and 120 m (coarse) LOLA grids. Features smaller than the grid, such as boulders, are not modelled.",
-  "Horizon across the disc: the horizon is sampled along the azimuth of the body's centre and treated as flat across the Sun or Earth disc, so the lit fraction near a ridge is approximate.",
-  "No thermal model: power is a sunlight proxy. Battery, heat and dust effects are not simulated.",
-  "Eclipses: Earth's atmosphere refraction is ignored during a lunar eclipse, so the umbral dimming is a geometric estimate.",
-  "Time: all times are UTC, not lunar local time.",
-  "Surface only: no regolith, slope or traverse model. The 2 km landing ellipse samples the DEM, not a descent simulation.",
-];
+/** Limitations text; the landing-ellipse radius comes from the caller (DEFAULT_SETTINGS.ellipseKm). */
+export function limitations(ellipseKm: number): string[] {
+  return [
+    "Terrain resolution: horizons use a 40 m grid within 5 km of each observer and a 120 m grid beyond, both built from the LOLA 40 m south-polar map; beyond about 80° S the 120 m grid is filled from the global LOLA map (64 pixels per degree, about 470 m). Non-polar sites use the global map directly, so features smaller than the grid spacing, such as boulders and small craters, are not resolved.",
+    "Horizon across the disc: the horizon is sampled along the azimuth of the body's centre and treated as flat across the Sun or Earth disc, so the lit fraction near a ridge is approximate.",
+    "No thermal model: power is a sunlight proxy. Battery, heat and dust effects are not simulated.",
+    "Eclipses: Earth's atmosphere refraction is ignored during a lunar eclipse, so the umbral dimming is a geometric estimate.",
+    "Time: all times are UTC, not lunar local time.",
+    `Surface only: no regolith, slope or traverse model. The ${ellipseKm} km landing ellipse samples the DEM, not a descent simulation.`,
+  ];
+}
 
 export const AI_DISCLOSURE =
   "Built with AI assistance (Anthropic Claude) for code and drafting. Data processing, physics and validation were reviewed by automated tests, and their results are published on this page.";

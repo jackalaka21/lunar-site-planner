@@ -11,7 +11,7 @@ import { VStack } from "@astryxdesign/core/Stack";
 import { Table, proportional } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { ValidationTable, type ValidationEntry, type ValidationReport } from "../../components/about/ValidationTable";
-import { AI_DISCLOSURE, LIMITATIONS, NASA_DATASETS, PARTNERS, type Dataset } from "../../components/about/content";
+import { AI_DISCLOSURE, limitations, NASA_DATASETS, PARTNERS, type Dataset } from "../../components/about/content";
 import { DEFAULT_SETTINGS } from "../../lib/engine/settings";
 import { encodeState, type UrlState } from "../../lib/state/url";
 
@@ -332,7 +332,7 @@ export default function AboutPage() {
                 Limitations
               </Heading>
               <List density="compact" listStyle="disc">
-                {LIMITATIONS.map((l) => (
+                {limitations(DEFAULT_SETTINGS.ellipseKm).map((l) => (
                   <ListItem key={l} label={l} />
                 ))}
               </List>
