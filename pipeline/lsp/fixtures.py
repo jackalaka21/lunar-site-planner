@@ -71,6 +71,12 @@ CASES = [
         -80.0, 10.0, 800.0, "ridge", "2028-01-10T00:00:00Z",
         panel={"mode": "fixed", "azDeg": 90}, earthMarginDeg=2, batteryH=48, durationDays=10,
     ),
+    # verdict-branch cases (landing check passes unless noted)
+    make_case("verdict-darkness-equator", 0.0, 0.0, 0.0, "flat", "2027-04-20T00:00:00Z"),
+    make_case("verdict-both-under-20-limb", 0.0, 90.0, 0.0, "flat", "2027-04-20T00:00:00Z", batteryH=200),
+    make_case("verdict-marginal-low-both", -89.5, 0.0, 0.0, "ridge", "2027-11-11T00:00:00Z", earthMarginDeg=5),
+    make_case("verdict-marginal-battery", -85.3, 31.2, 1500.0, "ridge", "2027-11-11T00:00:00Z", batteryH=70),
+    make_case("verdict-good-pole-ridge", -89.5, 0.0, 0.0, "ridge", "2027-11-11T00:00:00Z"),
     make_case("landing-in-darkness-equator", 0.0, 0.0, 0.0, "flat", "2027-03-12T00:00:00Z", durationDays=5),
 ]
 

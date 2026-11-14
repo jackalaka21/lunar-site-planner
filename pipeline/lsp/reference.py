@@ -9,6 +9,13 @@ Conventions fixed here (the TS engine and fixtures must match):
 - Flicker merge: a False run strictly bounded by True on both sides with length*step < flickerMergeMin
   minutes is set True. Applied to lit and earthIn separately, before both / longest runs / countdowns.
 - Hours = samples * step / 60; percentages = samples / n * 100 (n includes the inclusive end sample).
+- Verdict precedence (ruling R8), first match wins:
+  1. Earth never in view in the window -> Poor "Earth never in view (relay needed)".
+  2. Landing check fails -> Poor "Landing in darkness" (any unlit landing sample, checked first) or
+     "No DTE during descent" (lit throughout, Earth out of view at some sample).
+  3. longestDarkH > 2*batteryH -> Poor "<N> h darkness starting T+<d> d".
+  4. bothPct < 20 -> Poor "Only <P>% sun + Earth".
+  5. bothPct >= 50 and longestDarkH <= batteryH -> Good; otherwise Marginal.
 - Landing check: samples at T0 - 60 min .. T0 every 10 min (7 samples), raw (unmerged) lit and earthIn.
 """
 
@@ -237,14 +244,14 @@ def metrics(series: dict, settings: dict) -> dict:
     battery = float(settings["batteryH"])
     dark_txt = f"{round(dark_h)} h darkness starting T+{int(dark_i * hrs // 24)} d"
 
-    if not landing_ok:
+    if int(earth.sum()) == 0:
+        verdict, reason = "Poor", "Earth never in view (relay needed)"
+    elif not landing_ok:
         verdict, reason = "Poor", landing_reason
-    elif int(earth.sum()) == 0:
-        verdict, reason = "Poor", "Earth never in view"
-    elif both_pct < POOR_BOTH_PCT:
-        verdict, reason = "Poor", f"Lit with Earth in view only {both_pct:.0f}% of the window"
     elif dark_h > 2 * battery:
         verdict, reason = "Poor", dark_txt
+    elif both_pct < POOR_BOTH_PCT:
+        verdict, reason = "Poor", f"Only {both_pct:.0f}% sun + Earth"
     elif both_pct >= GOOD_BOTH_PCT and dark_h <= battery:
         verdict, reason = "Good", f"{both_pct:.0f}% lit with Earth in view, longest darkness {round(dark_h)} h"
     elif dark_h > battery:

@@ -98,3 +98,10 @@ def test_eclipse_2025_03_14_detected():
     b = ephemeris_at(np.array([t]))[0]
     p, *_ = site_frame(0.0, 0.0, 0.0)
     assert sun_blocked_by_earth(b[0:3], b[3:6], p) == pytest.approx(1.0)
+
+
+def test_azimuth_strictly_below_360():
+    frame = site_frame(0.0, 0.0, 0.0)
+    p, u, e, n = frame
+    az, *_ = topocentric(p + 1000 * n - 1e-18 * e, frame, 1.0)  # rounds to exactly 360.0 without the guard
+    assert 0.0 <= az < 360.0

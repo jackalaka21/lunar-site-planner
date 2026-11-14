@@ -39,6 +39,8 @@ def topocentric(body_vec, frame, radius_km: float = R_SUN_KM):
     dist = float(np.linalg.norm(v))
     el = math.degrees(math.asin(max(-1.0, min(1.0, float(v @ u) / dist))))
     az = math.degrees(math.atan2(float(v @ e), float(v @ n))) % 360.0
+    if az >= 360.0:  # tiny negative angles round up to exactly 360.0
+        az = 0.0
     r = math.degrees(math.asin(radius_km / dist))
     return az, el, r, dist
 

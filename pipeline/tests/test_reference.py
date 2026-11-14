@@ -78,8 +78,9 @@ def test_verdict_rules():
     assert poor["verdict"] == "Poor" and "darkness" in poor["reason"] and "T+" in poor["reason"]
     p2 = metrics(_series([1] * n, _runs((1, 100), (0, 900))), st)
     assert p2["verdict"] == "Poor" and p2["bothPct"] == pytest.approx(10.0)
+    assert p2["reason"] == "Only 10% sun + Earth"
     p3 = metrics(_series([1] * n, [0] * n), st)
-    assert p3["verdict"] == "Poor" and "never" in p3["reason"].lower()
+    assert p3["verdict"] == "Poor" and p3["reason"] == "Earth never in view (relay needed)"
     lit = _runs((1, 500), (0, 144))  # 24 h dark == battery, both = 500/644 >= 50%
     g = metrics(_series(lit, [1] * 644), st)
     assert g["longestDarkH"] == pytest.approx(24.0)
@@ -143,3 +144,28 @@ def test_fixture_file_shape():
         assert {"name", "lat", "lon", "hDemM", "horizon", "t0Utc", "settings", "expect"} <= set(c)
         assert [s["i"] for s in c["expect"]["samplesAt"]][0] == 0
         assert len(c["horizon"]["values"]) == 720
+
+
+def test_verdict_precedence_order():
+    st = dict(DEFAULT_SETTINGS, batteryH=24)
+    n = 1000
+    long_dark = _runs((1, 400), (0, 360), (1, 240))  # 60 h dark > 48
+    ll, le = [0] * 7, [1] * 7
+    # 1 beats 2: Earth never in view and landing in darkness
+    r = metrics(_series(long_dark, [0] * n, landing_lit=ll, landing_earth=le), st)
+    assert r["reason"] == "Earth never in view (relay needed)"
+    # 2 beats 3: landing fails and darkness > 2x battery
+    r = metrics(_series(long_dark, [1] * n, landing_lit=ll, landing_earth=le), st)
+    assert r["reason"] == "Landing in darkness"
+    # "Landing in darkness" wins when both landing conditions fail
+    r = metrics(_series([1] * n, [1] * n, landing_lit=[0] * 7, landing_earth=[0] * 7), st)
+    assert r["reason"] == "Landing in darkness"
+    # 3 beats 4: long darkness and both < 20%
+    lit = _runs((1, 100), (0, 900))
+    r = metrics(_series(lit, [1] * n), st)
+    assert r["bothPct"] < 20 and r["reason"] == "150 h darkness starting T+0 d"
+    # 4 then 5
+    r = metrics(_series([1] * n, _runs((1, 100), (0, 900))), st)
+    assert r["reason"] == "Only 10% sun + Earth"
+    lit = _runs((1, 400), (0, 180), (1, 420))
+    assert metrics(_series(lit, [1] * n), st)["verdict"] == "Marginal"
