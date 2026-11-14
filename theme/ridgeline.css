@@ -306,6 +306,7 @@
     --color-data-categorical-orange: light-dark(#bf8400, #e69f00);
     --color-data-categorical-blue: light-dark(#0072b2, #56b4e9);
     --color-data-neutral: light-dark(#737373, #85858b);
+    --size-element-lg: 2.75rem;
     --radius-chat: 1.125rem;
     --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-exit: cubic-bezier(0.22, 1, 0.36, 1);
