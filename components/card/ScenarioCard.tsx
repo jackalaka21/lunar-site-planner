@@ -40,6 +40,8 @@ export interface ScenarioCardProps {
     key: string;
     name: string;
     groupTag?: string;
+    /** Catalogue site id when the scenario is a catalogue site (not a custom point). */
+    siteId?: string;
     lat: number;
     lon: number;
     t0Ms: number;
@@ -75,16 +77,7 @@ function compassDir(azDeg: number): string {
 export function ScenarioCard(p: ScenarioCardProps) {
   const { scenario, result, cursorIndex, axis, tz, countdowns, deltaVsA, robust } = p;
   const { ctx, series, metrics } = result;
-  const [viewMode, setViewMode] = useState<"2d" | "3d">(() => {
-    try {
-      return typeof window !== "undefined" &&
-        window.sessionStorage?.getItem("ridgeline-entered-planner") === "1"
-        ? "3d"
-        : "2d";
-    } catch {
-      return "2d";
-    }
-  });
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
   const letter = scenario.key.toUpperCase();
   const idx = Math.max(0, Math.min(series.n - 1, cursorIndex));
   const cursorMs = series.t0Ms + idx * series.stepMs;
@@ -246,7 +239,7 @@ export function ScenarioCard(p: ScenarioCardProps) {
               cursorIndex={idx}
               lat={scenario.lat}
               lon={scenario.lon}
-              hDemM={ctx.hDemM}
+              siteId={scenario.siteId}
               obsHeightM={ctx.obsHeightM}
               pole={Math.abs(scenario.lat) >= POLE_LAT}
               onScrubTime={p.onScrubTime}

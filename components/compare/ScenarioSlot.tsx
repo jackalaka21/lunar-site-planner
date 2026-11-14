@@ -146,6 +146,7 @@ export function ScenarioSlot({ scenario, slot, ctx, onRetry, fallback }: Scenari
           key: scenario.key,
           name: ctx.name,
           groupTag: ctx.groupTag,
+          siteId: scenario.site.kind === "catalog" ? scenario.site.id : undefined,
           lat: r.ctx.lat,
           lon: r.ctx.lon,
           t0Ms: scenario.t0Ms,

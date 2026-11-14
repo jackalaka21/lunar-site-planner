@@ -4,9 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
 import * as THREE from "three";
 import { Button } from "@astryxdesign/core/Button";
+import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack } from "@astryxdesign/core/HStack";
 import { useTheme } from "@astryxdesign/core/theme";
-import { buildLocalTerrainPatch, loadPolarDem } from "../../lib/data/terrain";
+import {
+  buildCoarsePolarPatch,
+  loadPolarDem,
+  loadSitePatch,
+  type LocalTerrainPatch,
+} from "../../lib/data/terrain";
 import { earthPhase } from "../../lib/engine/disc";
 import { horizonAt } from "../../lib/engine/horizon";
 import type { TimeSeries } from "../../lib/engine/sample";
@@ -20,7 +26,9 @@ export interface LunarTerrain3DProps {
   cursorIndex: number;
   lat: number;
   lon: number;
-  hDemM: number;
+  hDemM?: number;
+  /** Catalogue site id; its real LOLA patch is loaded. Omit for a custom point. */
+  siteId?: string;
   obsHeightM: number;
   ellipseKm?: number;
   pole?: boolean;
@@ -29,7 +37,6 @@ export interface LunarTerrain3DProps {
 }
 
 const PATCH_RADIUS_KM = 10;
-const GRID_SIZE = 31;
 const VERT_EXAG = 3.2;
 const SKY_RADIUS_KM = 9.6;
 /** Vertical exaggeration for sky elevation angles so grazing 1.5 deg polar tracks are clearly separated above ridges. */
@@ -81,13 +88,29 @@ function skyDomeVec(azDeg: number, elDeg: number, radiusKm = SKY_RADIUS_KM): THR
   return new THREE.Vector3(xKm, yKm, zKm);
 }
 
+/** Caption naming the real LOLA product and resolution behind a patch. */
+export function terrainCaption(patch: LocalTerrainPatch): string {
+  const size = `${2 * patch.radiusKm} × ${2 * patch.radiusKm} km`;
+  const vert = `vertical ×${VERT_EXAG}`;
+  switch (patch.source) {
+    case "LOLA polar 40 m":
+      return `LOLA polar DEM, ${size} at ${patch.spacingM} m (from 40 m), ${vert}`;
+    case "LOLA polar 120 m":
+      return `LOLA polar DEM, ${size} at ${patch.spacingM} m (from 120 m), ${vert}`;
+    case "LOLA global 64 ppd":
+      return `LOLA global DEM (~470 m), ${size}, ${vert}`;
+    default:
+      return `LOLA 2 km grid (coarse), ${size}, ${vert}`;
+  }
+}
+
 export function LunarTerrain3D({
   horizon,
   series,
   cursorIndex,
   lat,
   lon,
-  hDemM,
+  siteId,
   obsHeightM,
   ellipseKm = 0.5,
   pole = false,
@@ -96,7 +119,7 @@ export function LunarTerrain3D({
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [width, setWidth] = useState(0);
-  const [polarDem, setPolarDem] = useState<Int16Array | null>(null);
+  const [patchState, setPatchState] = useState<{ key: string; patch: LocalTerrainPatch | null } | null>(null);
   const [camMode, setCamMode] = useState<"orbit" | "pov">("orbit");
   const [orbitAz, setOrbitAz] = useState(215);
   const [orbitPitch, setOrbitPitch] = useState(26);
@@ -104,17 +127,20 @@ export function LunarTerrain3D({
   const dragRef = useRef<{ x: number; y: number; az: number; pitch: number } | null>(null);
   const { mode } = useTheme();
 
+  const patchKey = siteId ? `site:${siteId}` : `pt:${lat}:${lon}`;
   useEffect(() => {
     let active = true;
-    loadPolarDem()
-      .then((dem) => {
-        if (active) setPolarDem(dem);
-      })
-      .catch(() => undefined);
+    const done = (patch: LocalTerrainPatch | null) => {
+      if (active) setPatchState({ key: patchKey, patch });
+    };
+    const job: Promise<LocalTerrainPatch | null> = siteId
+      ? loadSitePatch(siteId)
+      : loadPolarDem().then((dem) => buildCoarsePolarPatch(dem, lat, lon, PATCH_RADIUS_KM));
+    job.then(done).catch(() => done(null));
     return () => {
       active = false;
     };
-  }, []);
+  }, [patchKey, siteId, lat, lon]);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -127,19 +153,8 @@ export function LunarTerrain3D({
     return () => ro.disconnect();
   }, []);
 
-  const patch = useMemo(
-    () =>
-      buildLocalTerrainPatch({
-        lat,
-        lon,
-        hDemM,
-        horizon,
-        polarDem,
-        radiusKm: PATCH_RADIUS_KM,
-        gridSize: GRID_SIZE,
-      }),
-    [lat, lon, hDemM, horizon, polarDem],
-  );
+  const patch = patchState && patchState.key === patchKey ? patchState.patch : null;
+  const unavailable = patchState !== null && patchState.key === patchKey && patchState.patch === null;
 
   const idx = Math.min(Math.max(cursorIndex, 0), Math.max(series.n - 1, 0));
   const sunAz = series.sunAz[idx] ?? 0;
@@ -153,6 +168,7 @@ export function LunarTerrain3D({
 
   // Precompute 3D vertices and vertex normals in local km (Y is elevation relative to hDemM, scaled by VERT_EXAG)
   const meshData = useMemo(() => {
+    if (!patch) return null;
     const gs = patch.gridSize;
     const rKm = patch.radiusKm;
     const verts: THREE.Vector3[] = new Array(gs * gs);
@@ -161,16 +177,16 @@ export function LunarTerrain3D({
       const zKm = -northKm; // +Z is South, -Z is North
       for (let ix = 0; ix < gs; ix++) {
         const eastKm = ((ix / (gs - 1)) * 2 - 1) * rKm;
-        const dhKm = ((patch.heightsM[iy * gs + ix] - hDemM) / 1000) * VERT_EXAG;
+        const dhKm = ((patch.heightsM[iy * gs + ix] - patch.centerHM) / 1000) * VERT_EXAG;
         verts[iy * gs + ix] = new THREE.Vector3(eastKm, dhKm, zKm);
       }
     }
     return { gs, verts };
-  }, [patch, hDemM]);
+  }, [patch]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || width <= 0) return;
+    if (!canvas || width <= 0 || !patch || !meshData) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -572,11 +588,14 @@ export function LunarTerrain3D({
     // Bottom-left plain-English status legend
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
-    const terrainLabel = patch.isPolarGrid
-      ? `3D LOLA polar DEM (20×20 km, vertical ×${VERT_EXAG})`
-      : `3D LOLA horizon relief (20×20 km, vertical ×${VERT_EXAG})`;
+    ctx.fillStyle = withAlpha(pal.rim, 0.7);
+    ctx.fillText(
+      "Local terrain only; ridge values come from terrain up to 200 km away",
+      10,
+      height - 40,
+    );
     ctx.fillStyle = pal.rim;
-    ctx.fillText(terrainLabel, 10, height - 24);
+    ctx.fillText(terrainCaption(patch), 10, height - 24);
 
     const statusLine =
       `Sun ${isSunLit ? "clear of" : "behind"} ${sunRidgeEl.toFixed(1)}° ridge · ` +
@@ -663,6 +682,16 @@ export function LunarTerrain3D({
     `At the cursor the Sun is at azimuth ${sunAz.toFixed(1)}°, elevation ${sunEl.toFixed(1)}° ` +
     `(ridge ${sunRidgeEl.toFixed(1)}°); Earth is at azimuth ${earthAz.toFixed(1)}°, elevation ${earthEl.toFixed(1)}° ` +
     `(ridge ${earthRidgeEl.toFixed(1)}°).${pole ? " At the pole, north points toward 0° longitude." : ""}`;
+
+  if (unavailable) {
+    return (
+      <EmptyState
+        isCompact
+        title="3D terrain is available for catalog sites and south-polar points"
+        description="The 2D skyline works for every location."
+      />
+    );
+  }
 
   return (
     <div

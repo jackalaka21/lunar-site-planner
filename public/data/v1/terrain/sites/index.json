@@ -1,0 +1,123 @@
+{
+  "gridSize": 101,
+  "radiusKm": 10.0,
+  "spacingM": 200.0,
+  "sites": {
+    "apollo-11": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "apollo-12": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "apollo-14": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "apollo-15": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "apollo-16": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "apollo-17": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "im-1": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "im-2": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "blue-ghost-1": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "slim": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "chandrayaan-3": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "change-3": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "change-4": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "change-5": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "change-6": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "luna-16": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "luna-17": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "luna-21": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "luna-24": {
+      "source": "LOLA global 64 ppd",
+      "resM": 474.0
+    },
+    "shackleton-rim": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "connecting-ridge": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "malapert-massif": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "mons-mouton": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "artemis3-peak-near-cabeus-b": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "artemis3-haworth": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "artemis3-malapert-massif": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "artemis3-mons-mouton-plateau": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "artemis3-mons-mouton": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    },
+    "artemis3-nobile-rim-2": {
+      "source": "LOLA polar 40 m",
+      "resM": 40.0
+    }
+  }
+}

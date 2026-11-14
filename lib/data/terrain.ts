@@ -1,7 +1,5 @@
-import { horizonAt } from "../engine/horizon";
-import type { HorizonProfile } from "../engine/types";
-import { browserFetcher, type Fetcher } from "./fetchers";
-import { PS_R_M, psToXY } from "./ps";
+import { browserFetcher, fetchJson, type Fetcher } from "./fetchers";
+import { psToXY } from "./ps";
 
 export const POLAR_DEM_SPACING_M = 2000;
 export const POLAR_DEM_HALF_COUNT = 95;
@@ -66,16 +64,13 @@ export function samplePolarDem(dem: Int16Array, xM: number, yM: number): number 
   return valSum / weightSum;
 }
 
-export interface LocalTerrainPatchOptions {
-  lat: number;
-  lon: number;
-  hDemM: number;
-  horizon: HorizonProfile;
-  polarDem?: Int16Array | null;
-  /** Half-width of the square patch in km (default 10 km -> 20 x 20 km patch). */
-  radiusKm?: number;
-  /** Number of vertices per side (default 41). */
-  gridSize?: number;
+export type TerrainSource = "LOLA polar 40 m" | "LOLA global 64 ppd" | "LOLA polar 120 m" | "LOLA 2 km grid";
+
+export interface SitePatchIndex {
+  gridSize: number;
+  radiusKm: number;
+  spacingM: number;
+  sites: Record<string, { source: Exclude<TerrainSource, "LOLA 2 km grid">; resM: number }>;
 }
 
 export interface LocalTerrainPatch {
@@ -85,86 +80,107 @@ export interface LocalTerrainPatch {
   heightsM: Float32Array;
   minHM: number;
   maxHM: number;
-  isPolarGrid: boolean;
+  /** Height at the patch centre (the site), metres above the 1737.4 km sphere. */
+  centerHM: number;
+  /** Which real LOLA product the heights were sampled from. */
+  source: TerrainSource;
+  /** Native resolution of that product in metres. */
+  resM: number;
+  /** Sample spacing of this patch in metres. */
+  spacingM: number;
 }
 
-/**
- * Build a local 3D height patch in local East (+x) / North (+y) coordinates around (lat, lon).
- * Uses the real LOLA south-polar DEM when lat <= -84 and polarDem is available, blended with the
- * site's LOLA 360-azimuth horizon profile; otherwise reconstructs radial topography from the horizon profile.
- */
-export function buildLocalTerrainPatch(opts: LocalTerrainPatchOptions): LocalTerrainPatch {
-  const { lat, lon, hDemM, horizon, polarDem } = opts;
-  const radiusKm = opts.radiusKm ?? 10;
-  const gridSize = Math.max(3, opts.gridSize ?? 41);
-  const radiusM = radiusKm * 1000;
-  const heightsM = new Float32Array(gridSize * gridSize);
-
-  const centerPs = psToXY(lat, lon);
-  const centerDemSample =
-    lat <= -84 && polarDem ? samplePolarDem(polarDem, centerPs.x, centerPs.y) : null;
-  const isPolarGrid = centerDemSample !== null;
-  const centerDelta = centerDemSample !== null ? hDemM - centerDemSample : 0;
-
-  const lam = (lon * Math.PI) / 180;
-  const cosLam = Math.cos(lam);
-  const sinLam = Math.sin(lam);
-
+function finish(
+  heightsM: Float32Array,
+  gridSize: number,
+  radiusKm: number,
+  source: TerrainSource,
+  resM: number,
+): LocalTerrainPatch {
   let minHM = Infinity;
   let maxHM = -Infinity;
-
-  for (let iy = 0; iy < gridSize; iy++) {
-    const northM = ((iy / (gridSize - 1)) * 2 - 1) * radiusM;
-    for (let ix = 0; ix < gridSize; ix++) {
-      const eastM = ((ix / (gridSize - 1)) * 2 - 1) * radiusM;
-      const rM = Math.hypot(eastM, northM);
-      const u = Math.min(1, rM / Math.max(radiusM, 1));
-      const azDeg = rM > 1e-3 ? ((Math.atan2(eastM, northM) * 180) / Math.PI + 360) % 360 : 0;
-
-      const el0 = horizonAt(horizon, azDeg);
-      const elSmooth =
-        0.5 * el0 +
-        0.25 * horizonAt(horizon, azDeg - 1.5) +
-        0.25 * horizonAt(horizon, azDeg + 1.5);
-      const tanEl = Math.tan((elSmooth * Math.PI) / 180);
-      // Radial shaping so ridges peak realistically toward the mid-to-outer ring while center is anchored at 0.
-      const radialEnv = Math.pow(u, 1.1) * (0.88 + 0.12 * Math.sin(u * Math.PI));
-      const curvatureDropM = (rM * rM) / (2 * PS_R_M);
-      const horizonReliefM = rM * tanEl * radialEnv + curvatureDropM * 0.25 * u;
-
-      let hM = hDemM;
-      if (isPolarGrid && polarDem) {
-        const psX = centerPs.x + eastM * cosLam + northM * sinLam;
-        const psY = centerPs.y - eastM * sinLam + northM * cosLam;
-        const sampled = samplePolarDem(polarDem, psX, psY);
-        const demH = sampled !== null ? sampled + centerDelta : hDemM + horizonReliefM;
-        // Anchor exact site height at r = 0 and blend DEM macro-topography with horizon-matched local ridges.
-        const horizonBlend = 0.22 * Math.sin(u * Math.PI);
-        hM =
-          u < 1e-4
-            ? hDemM
-            : demH * (1 - horizonBlend) + (hDemM + horizonReliefM) * horizonBlend;
-      } else {
-        const microCrater =
-          Math.sin(eastM * 0.00085 + lat * 0.7) *
-          Math.cos(northM * 0.00085 - lon * 0.7) *
-          14 *
-          Math.sin(u * Math.PI);
-        hM = u < 1e-4 ? hDemM : hDemM + horizonReliefM + microCrater;
-      }
-
-      heightsM[iy * gridSize + ix] = hM;
-      if (hM < minHM) minHM = hM;
-      if (hM > maxHM) maxHM = hM;
-    }
+  for (const h of heightsM) {
+    if (h < minHM) minHM = h;
+    if (h > maxHM) maxHM = h;
   }
-
+  const c = Math.floor(gridSize / 2);
   return {
     gridSize,
     radiusKm,
     heightsM,
-    minHM: Number.isFinite(minHM) ? minHM : hDemM,
-    maxHM: Number.isFinite(maxHM) ? maxHM : hDemM,
-    isPolarGrid,
+    minHM,
+    maxHM,
+    centerHM: heightsM[c * gridSize + c],
+    source,
+    resM,
+    spacingM: (2 * radiusKm * 1000) / (gridSize - 1),
   };
+}
+
+let cachedIndex: Promise<SitePatchIndex> | null = null;
+
+/** Load terrain/sites/index.json (grid geometry and the LOLA product each site patch came from). */
+export function loadSitePatchIndex(fetcher: Fetcher = browserFetcher): Promise<SitePatchIndex> {
+  if (fetcher === browserFetcher && cachedIndex) return cachedIndex;
+  const job = fetchJson<SitePatchIndex>(fetcher, "terrain/sites/index.json").catch((err: unknown) => {
+    if (fetcher === browserFetcher && cachedIndex === job) cachedIndex = null;
+    throw err;
+  });
+  if (fetcher === browserFetcher) cachedIndex = job;
+  return job;
+}
+
+/**
+ * Load the precomputed 20 x 20 km LOLA patch of a catalogue site (pipeline/lsp/terrain_patches.py).
+ * Returns null when the site has no patch. The heights are used as stored.
+ */
+export async function loadSitePatch(
+  siteId: string,
+  fetcher: Fetcher = browserFetcher,
+): Promise<LocalTerrainPatch | null> {
+  const index = await loadSitePatchIndex(fetcher);
+  const entry = index.sites[siteId];
+  if (!entry) return null;
+  const buf = await fetcher(`terrain/sites/${siteId}.bin`);
+  if (buf.byteLength !== index.gridSize * index.gridSize * 2) {
+    throw new Error(`terrain patch ${siteId}: unexpected size ${buf.byteLength}`);
+  }
+  const raw = new Int16Array(buf);
+  const heights = Float32Array.from(raw);
+  return finish(heights, index.gridSize, index.radiusKm, entry.source, entry.resM);
+}
+
+/**
+ * Patch for a custom south-polar point, sampled bilinearly from the real 2 km LOLA grid. No horizon data and
+ * no synthetic terms are used. Returns null unless every vertex lies inside the grid on valid data.
+ */
+export function buildCoarsePolarPatch(
+  dem: Int16Array,
+  lat: number,
+  lon: number,
+  radiusKm = 10,
+  gridSize = 41,
+): LocalTerrainPatch | null {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  const n = Math.max(3, gridSize);
+  const radiusM = radiusKm * 1000;
+  const c = psToXY(lat, lon);
+  const lam = (lon * Math.PI) / 180;
+  const cosLam = Math.cos(lam);
+  const sinLam = Math.sin(lam);
+  const heights = new Float32Array(n * n);
+  for (let iy = 0; iy < n; iy++) {
+    const northM = ((iy / (n - 1)) * 2 - 1) * radiusM;
+    for (let ix = 0; ix < n; ix++) {
+      const eastM = ((ix / (n - 1)) * 2 - 1) * radiusM;
+      const h = samplePolarDem(
+        dem,
+        c.x + eastM * cosLam + northM * sinLam,
+        c.y - eastM * sinLam + northM * cosLam,
+      );
+      if (h === null) return null;
+      heights[iy * n + ix] = h;
+    }
+  }
+  return finish(heights, n, radiusKm, "LOLA 2 km grid", POLAR_DEM_SPACING_M);
 }

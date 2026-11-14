@@ -14,13 +14,13 @@ export const NASA_DATASETS: Dataset[] = [
     name: "LOLA polar 40 m DEM (LDEM_80S_40MPP_ADJ), NASA GSFC PGDA",
     source: "PGDA product 90",
     href: "https://pgda.gsfc.nasa.gov/products/90",
-    role: "Terrain horizons at the south pole: the horizon line each site sees, the interactive 3D south-polar DEM relief patch, and the polar basemap.",
+    role: "Terrain horizons at the south pole: the horizon line each site sees, the polar basemap, and the polar part of the 3D terrain patches (20 × 20 km around each catalogue site, sampled every 200 m from the 40 m map; a south-polar custom point gets only the 2 km grid).",
   },
   {
     name: "LOLA global 64 ppd DEM (LDEM_64), NASA GSFC",
     source: "imbrium.mit.edu LOLA GDR",
     href: "https://imbrium.mit.edu/DATA/LOLA_GDR/CYLINDRICAL/IMG/",
-    role: "Terrain horizons away from the pole, and the global basemap.",
+    role: "Terrain horizons away from the pole, the global basemap, and the 3D terrain patches of non-polar catalogue sites (20 × 20 km, global map, about 470 m native).",
   },
   {
     name: "NAIF SPICE kernels (JPL): de440s, moon_pa_de440_200625, moon_de440_250416.tf, naif0012, pck00011",
@@ -38,7 +38,7 @@ export const NASA_DATASETS: Dataset[] = [
     name: "PGDA Lunar Polar Illumination maps, as shown in LROC Quickmap",
     source: "PGDA product 69",
     href: "https://pgda.gsfc.nasa.gov/products/69",
-    role: "Illumination cross-check and Permanently Shadowed Region (PSR) crater polygons at the lunar south pole.",
+    role: "Illumination cross-check and Permanently Shadowed Region (PSR) overlay: PSRs are the regions with zero average sunlight in this 120 m map (visible-sun fraction <= 1e-6 south of 80° S), polygonised, with regions under 1 km² dropped and outlines simplified at 120 m.",
   },
   {
     name: "LROC and Quickmap (NASA LRO, Arizona State University)",
