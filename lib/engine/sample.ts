@@ -152,6 +152,8 @@ export function sample(
       let bits = 0;
       for (let k = 0; k < el.length; k++) if (el[k] >= s.dsnMaskDeg) bits |= 1 << k;
       out.dsnBits[i] = bits;
+      // A DTE link needs both ends: Earth above the site horizon AND the Moon above a station's mask.
+      if (bits === 0) out.earthIn[i] = 0;
     }
   }
   const lit = mergeFlickers(out.lit, stepMs, s.flickerMergeMin).merged;

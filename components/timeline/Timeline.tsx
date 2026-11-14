@@ -40,6 +40,24 @@ const MUTED = "var(--color-text-muted)";
 const RAIL = "var(--color-border)";
 const EDGE = "var(--color-border-emphasized)";
 
+const STATION_MIN_W = 12;
+const STATION_INITIALS = ["G", "M", "C"] as const;
+
+/** Spans of constant station coverage while Earth is in view; label = initials of covering complexes. */
+function stationSpans(bits: Uint8Array, earthIn: Uint8Array): Array<{ start: number; end: number; label: string }> {
+  const out: Array<{ start: number; end: number; label: string }> = [];
+  let start = 0;
+  const m = (i: number) => (earthIn[i] ? bits[i] & 7 : 0);
+  for (let i = 1; i <= bits.length; i++) {
+    if (i === bits.length || m(i) !== m(start)) {
+      const v = m(start);
+      if (v) out.push({ start, end: i, label: STATION_INITIALS.filter((_, k) => v & (1 << k)).join("") });
+      start = i;
+    }
+  }
+  return out;
+}
+
 /** Text for assistive tech, on the same clock as the rest of the card. */
 function clockText(series: TimeSeries, i: number, axis: "met" | "cal", tz?: string): string {
   return axis === "met" ? formatMet(i * series.stepMs) : formatCalendar(series.t0Ms + i * series.stepMs, tz);
@@ -67,6 +85,7 @@ export function Timeline({ series, metrics, cursorIndex, axis, tz, flickerMergeM
       eclipse: positiveRuns(series.eclipseFrac),
       interference: runs(series.interference).filter((r) => r.value === 1),
       comms: longestRun(ein, 0),
+      stations: stationSpans(series.dsnBits, series.earthIn),
     };
   }, [series, flickerMergeMin]);
 
@@ -153,6 +172,20 @@ export function Timeline({ series, metrics, cursorIndex, axis, tz, flickerMergeM
       {lanes.sun.map((r, k) => bar(r, SUN_Y, LANE_H, SUN, `s${k}`))}
       {lanes.earth.map((r, k) => bar(r, EARTH_Y, LANE_H, EARTH, `e${k}`))}
       {lanes.both.map((r, k) => bar(r, BOTH_Y, BOTH_H, INK, `b${k}`))}
+      {lanes.stations.map((r) =>
+        (r.end - r.start) * (TRACK / last) >= STATION_MIN_W ? (
+          <text
+            key={`d${r.start}`}
+            data-testid="dsn-station"
+            x={(x(r.start) + x(r.end - 1) + TRACK / last) / 2}
+            y={EARTH_Y + LANE_H / 2 + 4}
+            textAnchor="middle"
+            style={{ fill: MUTED, fontSize: 10, fontFamily: "var(--font-family-code)", pointerEvents: "none" }}
+          >
+            {r.label}
+          </text>
+        ) : null,
+      )}
       {lanes.interference.map((r, k) => bar(r, EARTH_Y, LANE_H, `url(#hatch${uid})`, `i${k}`))}
       {lanes.eclipse.map((r, k) => bar(r, SUN_Y - 8, 6, EDGE, `x${k}`))}
       {dayTicks.map((i) => (
