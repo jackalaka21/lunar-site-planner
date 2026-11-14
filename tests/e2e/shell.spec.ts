@@ -23,3 +23,24 @@ test("stat strip dismisses and stays dismissed", async ({ page }) => {
   await page.reload();
   await expect(page.getByTestId("stat-strip")).toHaveCount(0);
 });
+
+for (const width of [375, 1440]) {
+  test(`every shell button is at least 44 by 44 at ${width} wide`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/");
+    await expect(page.getByTestId("stat-strip")).toBeVisible();
+    const buttons = page.getByRole("button");
+    const count = await buttons.count();
+    expect(count).toBeGreaterThan(2);
+    for (let i = 0; i < count; i++) {
+      const b = buttons.nth(i);
+      if (!(await b.isVisible())) continue;
+      const box = await b.boundingBox();
+      const name = (await b.getAttribute("aria-label")) ?? (await b.innerText());
+      // The Next.js dev overlay is not part of the app.
+      if (/Next\.js Dev Tools/.test(name)) continue;
+      expect(box?.width ?? 0, `${name} width`).toBeGreaterThanOrEqual(44);
+      expect(box?.height ?? 0, `${name} height`).toBeGreaterThanOrEqual(44);
+    }
+  });
+}

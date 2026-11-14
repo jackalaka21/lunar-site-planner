@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@astryxdesign/core/Button";
 import { Banner } from "@astryxdesign/core/Banner";
 import { Stack } from "@astryxdesign/core/Stack";
 import { useAppStore } from "../../lib/state/store";
@@ -18,9 +19,7 @@ export function Notice() {
           title={text}
           container="section"
           collapsible={false}
-          isDismissable
-          dismissLabel="Dismiss notice"
-          onDismiss={() => dismissNotice(i)}
+          endContent={<Button label="Dismiss" size="lg" variant="ghost" onClick={() => dismissNotice(i)} />}
         />
       ))}
     </Stack>

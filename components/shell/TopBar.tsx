@@ -34,7 +34,7 @@ export function TopBar({ onOpenNav, onOpenSettings }: TopBarProps) {
         <Heading level={1}>Ridgeline</Heading>
       </HStack>
       <HStack gap={1} vAlign="center">
-        <Button label="Copy link" variant="ghost" icon={<Icon icon={LinkIcon} />} onClick={copyLink} />
+        <Button label="Copy link" size="lg" variant="ghost" icon={<Icon icon={LinkIcon} />} onClick={copyLink} />
         <IconButton
           label="Settings"
           tooltip="Settings"

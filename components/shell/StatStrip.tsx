@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { Button } from "@astryxdesign/core/Button";
 import { Banner } from "@astryxdesign/core/Banner";
 
 export const STAT_STRIP_KEY = "lsp.statstrip.dismissed";
@@ -13,7 +14,10 @@ function subscribe(cb: () => void): () => void {
   listeners.add(cb);
   return () => listeners.delete(cb);
 }
+// Set on dismissal so the banner closes even when storage is unavailable (private window, blocked site data).
+let dismissedThisVisit = false;
 function isDismissed(): boolean {
+  if (dismissedThisVisit) return true;
   try {
     return window.localStorage.getItem(STAT_STRIP_KEY) === "1";
   } catch {
@@ -26,10 +30,11 @@ const serverSnapshot = () => true;
 export function StatStrip() {
   const dismissed = useSyncExternalStore(subscribe, isDismissed, serverSnapshot);
   const dismiss = () => {
+    dismissedThisVisit = true;
     try {
       window.localStorage.setItem(STAT_STRIP_KEY, "1");
     } catch {
-      // not persisted; hidden for this visit through the listener below
+      // not persisted; dismissedThisVisit keeps it closed for this visit
     }
     listeners.forEach((l) => l());
   };
@@ -40,9 +45,8 @@ export function StatStrip() {
       container="section"
       collapsible={false}
       title={STAT_STRIP_COPY}
-      isDismissable
-      dismissLabel="Dismiss"
-      onDismiss={dismiss}
+      // The built-in dismiss control is smaller than 44, so the action is our own large Button.
+      endContent={<Button label="Dismiss" size="lg" variant="ghost" onClick={dismiss} />}
       data-testid="stat-strip"
     />
   );

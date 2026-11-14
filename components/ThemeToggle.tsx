@@ -32,6 +32,7 @@ export function ThemeToggle() {
       label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       tooltip={isDark ? "Light theme" : "Dark theme"}
       variant="ghost"
+      size="lg"
       icon={<Icon icon={isDark ? Sun : Moon} />}
       onClick={() => setMode(isDark ? "light" : "dark")}
     />

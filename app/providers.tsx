@@ -9,13 +9,15 @@ import { ridgelineTheme } from "../theme/ridgeline";
 export type ColorMode = "system" | "light" | "dark";
 
 const STORAGE_KEY = "ridgeline.mode";
+/** Dark unless the visitor has chosen otherwise (spec 6, principle 6). */
+const DEFAULT_MODE: ColorMode = "dark";
 
 interface ModeContextValue {
   mode: ColorMode;
   setMode: (mode: ColorMode) => void;
 }
 
-const ModeContext = createContext<ModeContextValue>({ mode: "system", setMode: () => {} });
+const ModeContext = createContext<ModeContextValue>({ mode: DEFAULT_MODE, setMode: () => {} });
 
 export function useColorMode(): ModeContextValue {
   return useContext(ModeContext);
@@ -26,13 +28,13 @@ function readStoredMode(): ColorMode {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === "light" || stored === "dark" || stored === "system") return stored;
   } catch {
-    // storage unavailable (private window, blocked site data): follow the system
+    // storage unavailable (private window, blocked site data): use the default
   }
-  return "system";
+  return DEFAULT_MODE;
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<ColorMode>("system");
+  const [mode, setModeState] = useState<ColorMode>(DEFAULT_MODE);
 
   useEffect(() => {
     // Reading storage after mount keeps server and first client render identical.

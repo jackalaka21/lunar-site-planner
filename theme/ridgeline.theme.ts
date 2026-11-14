@@ -112,6 +112,9 @@ export const ridgelineTheme = defineTheme({
     "--color-data-categorical-blue": ["#0072b2", "#56b4e9"],
     "--color-data-neutral": ["#737373", "#85858b"],
 
+    // Touch targets: the large control size is 44 (WCAG 2.5.5 / brief). Shell buttons use size="lg".
+    "--size-element-lg": "2.75rem",
+
     // Radius: tags 4-6, controls 8-10, cards 12-16, panels 14-20
     "--radius-inner": "0.375rem",
     "--radius-element": "0.625rem",
