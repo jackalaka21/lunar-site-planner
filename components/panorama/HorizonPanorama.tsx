@@ -8,6 +8,7 @@ import { horizonAt } from "../../lib/engine/horizon";
 import { earthPhase } from "../../lib/engine/disc";
 import type { TimeSeries } from "../../lib/engine/sample";
 import type { HorizonProfile, Topo } from "../../lib/engine/types";
+import { panoramaPalette } from "./palette";
 import { azToX, elScale, exaggeration, splitAtWrap, withAlpha, type AzEl } from "./layout";
 
 export interface HorizonPanoramaProps {
@@ -49,33 +50,6 @@ const COMPASS: Array<{ az: number; label: string }> = [
 
 const fmt = (v: number) => v.toFixed(1);
 
-interface Palette {
-  sun: string;
-  earth: string;
-  sky: string;
-  far: string;
-  near: string;
-  deepest: string;
-  hairline: string;
-  rim: string;
-}
-
-/** Resolve theme tokens for canvas use: the computed style follows the active mode; the hook tokens are the fallback. */
-function readPalette(el: HTMLElement | null, tokens: Record<string, string> | undefined): Palette {
-  const cs = el ? getComputedStyle(el) : null;
-  const get = (name: string) => cs?.getPropertyValue(name).trim() || tokens?.[name] || "currentColor";
-  return {
-    sun: get("--color-data-categorical-orange"),
-    earth: get("--color-data-categorical-blue"),
-    sky: get("--color-background-surface"),
-    far: get("--surface-deepest"),
-    near: get("--surface-raised"),
-    deepest: get("--surface-deepest"),
-    hairline: get("--color-border"),
-    rim: get("--color-border-emphasized"),
-  };
-}
-
 function topoAt(az: number, el: number, r: number): Topo {
   return { az, el, r, distKm: 0 };
 }
@@ -98,7 +72,7 @@ export function HorizonPanorama({
   const [width, setWidth] = useState(0);
   const [panAz, setPanAz] = useState(0);
   const drag = useRef<{ x: number; touch: boolean } | null>(null);
-  const { mode, tokens } = useTheme();
+  const { mode } = useTheme();
 
   const center = centerAz + panAz;
   const [lo, hi] = elDomain;
@@ -140,7 +114,7 @@ export function HorizonPanorama({
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const pal = readPalette(wrapRef.current, tokens as Record<string, string> | undefined);
+    const pal = panoramaPalette(mode);
     const y = elScale(elDomain, height);
     const pxPerDegX = width / 360;
     const pxPerDegY = height / (hi - lo);
@@ -278,12 +252,12 @@ export function HorizonPanorama({
     ctx.arc(0, 0, 1, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-  }, [width, height, elDomain, lo, hi, center, horizon, series, dayTicks, sunAz, sunEl, earthAz, earthEl, sunRDeg, earthRDeg, tokens]);
+  }, [width, height, elDomain, lo, hi, center, horizon, series, dayTicks, sunAz, sunEl, earthAz, earthEl, sunRDeg, earthRDeg, mode]);
 
   // Redraw on any data, size or theme-mode change.
   useEffect(() => {
     draw();
-  }, [draw, mode]);
+  }, [draw]);
 
   const onPointerDown = (ev: ReactPointerEvent<HTMLDivElement>) => {
     drag.current = { x: ev.clientX, touch: ev.pointerType === "touch" };

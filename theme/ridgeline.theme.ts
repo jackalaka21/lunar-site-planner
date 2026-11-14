@@ -40,7 +40,7 @@ export const ridgelineTheme = defineTheme({
 
   localTokens: {
     // Spec 10.3 has two surface steps Astryx has no semantic name for.
-    "--surface-deepest": ["#f4f4f5", "#0f0f10"],
+    "--surface-deepest": ["#ececee", "#0f0f10"],
     "--surface-raised": ["#f4f4f5", "#232325"],
     // Spec 10.3 third text role (muted). Astryx has primary/secondary/disabled only.
     "--color-text-muted": ["#737373", "#85858b"],

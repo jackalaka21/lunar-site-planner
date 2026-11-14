@@ -234,7 +234,7 @@ export const ridgelineTheme = {
   },
   localTokens: {
     "--astryx-theme-neutral-color-status-fill-accent": "light-dark(#0074e2, #6d9cfe)",
-    "--surface-deepest": "light-dark(#f4f4f5, #0f0f10)",
+    "--surface-deepest": "light-dark(#ececee, #0f0f10)",
     "--surface-raised": "light-dark(#f4f4f5, #232325)",
     "--color-text-muted": "light-dark(#737373, #85858b)"
   },
