@@ -5,3 +5,7 @@ export * from "./horizon";
 export * from "./topo";
 export * from "./types";
 export * from "./vec";
+export * from "./events";
+export * from "./format";
+export * from "./metrics";
+export * from "./sample";
