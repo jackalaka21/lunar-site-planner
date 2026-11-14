@@ -1,0 +1,31 @@
+{
+  "frame": "MOON_ME",
+  "abcorr": "LT+S",
+  "stepHours": 1,
+  "epochUtc": "1969-01-01T00:00:00Z",
+  "firstYear": 1969,
+  "lastYear": 2035,
+  "coverageEndUtc": "2650-01-24T23:58:50Z",
+  "kernels": [
+    {
+      "name": "naif0012.tls",
+      "sha256": "678E32BDB5A744117A467CD9601CD6B373F0E9BC9BBDE1371D5EEE39600A039B"
+    },
+    {
+      "name": "pck00011.tpc",
+      "sha256": "3DFF7B1DBECEAA01F25467767D3FA25816051C85D162D1EDF04ACB310EE28BB1"
+    },
+    {
+      "name": "moon_pa_de440_200625.bpc",
+      "sha256": "60CD55AA401EA2EA97360636F567554BFE4E37BB829F901B4460A455DFAF783F"
+    },
+    {
+      "name": "moon_de440_250416.tf",
+      "sha256": "A47C71E9C9F33796BDAFB2C9D69A7EE447B6016ECAD80F71CD6F3E479F9CF768"
+    },
+    {
+      "name": "de440s.bsp",
+      "sha256": "C1C7FEEAB882263FC493A9D5A5B2DDD71B54826CDF65D8D17A76126B260A49F2"
+    }
+  ]
+}
