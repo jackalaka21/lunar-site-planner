@@ -18,7 +18,7 @@ Built and deployed:
 
 - A sleek Moon landing experience with interactive 3D illuminated lunar globe, 3-step onboarding, and 1-click mission showcase presets.
 - A catalogue of 29 sites (Apollo, recent landers, Chandrayaan-3, SLIM, Chang'e, Luna, and south-pole candidates) plus custom coordinates, with maps and a coordinate picker.
-- A 2D horizon panorama and an interactive 3D lunar terrain and sky view (orbit and lander POV camera modes) built from real LOLA elevation data, with the Sun and Earth drawn against terrain ridges and live plain-English status readouts.
+- A 2D horizon panorama and an interactive 3D terrain view of LOLA elevation patches around each site (orbit and lander POV camera modes), with the Sun and Earth drawn against terrain ridges and plain-language status readouts computed from the engine.
 - A timeline of Sun, Earth and both, with a verdict (Good, Marginal, Poor) and plain-language reasons, plus countdowns to sunset and Earthset.
 - Eclipse, Sun-near-Earth interference, and Deep Space Network (Goldstone, Madrid, Canberra) ground-station visibility tracks.
 - A 365-day landing calendar view and "Find next good date" search.
@@ -137,7 +137,7 @@ Installable PWA: manifest, icons (including maskable), service worker with offli
 
 ## AI-use disclosure
 
-Anthropic's Claude wrote much of the code and drafted the text, directed and reviewed by Jack. Correctness is checked by automated tests (TypeScript and Python) and by the published validation against NASA and JPL data above, not by trusting the model.
+Built with AI assistance: Anthropic Claude wrote most of the engine, data pipeline, validation and app, and Google Gemini wrote the landing page, the 3D terrain view and several further features (PSR overlay, tip-over, glare check, CSV and PNG export). Jack directed and reviewed the work. Correctness is checked by automated tests (TypeScript and Python) and by the published validation against NASA and JPL data above, not by trusting the models.
 
 ## Licence
 

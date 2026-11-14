@@ -14,13 +14,41 @@ interface SitePin {
   highlight?: boolean;
 }
 
-const FEATURED_PINS: SitePin[] = [
-  { id: "mons-mouton", label: "Mons Mouton · IM-2 (84.8°S)", lat: -84.78, lon: 29.13, highlight: true },
-  { id: "shackleton-rim", label: "Shackleton Rim (89.7°S)", lat: -89.67, lon: 125.0, highlight: true },
-  { id: "chandrayaan-3", label: "Chandrayaan-3 (69.4°S)", lat: -69.37, lon: 32.32 },
-  { id: "slim", label: "JAXA SLIM (13.3°S)", lat: -13.32, lon: 25.25 },
-  { id: "apollo-11", label: "Apollo 11 (0.7°N)", lat: 0.67, lon: 23.47 },
+/** Featured catalogue sites. Coordinates come from public/data/v1/sites.json by id, never hard-coded. */
+const FEATURED_SITES: Array<{ siteId: string; name: string; highlight?: boolean }> = [
+  { siteId: "artemis3-mons-mouton", name: "Mons Mouton · IM-2", highlight: true },
+  { siteId: "shackleton-rim", name: "Shackleton rim", highlight: true },
+  { siteId: "chandrayaan-3", name: "Chandrayaan-3" },
+  { siteId: "slim", name: "JAXA SLIM" },
+  { siteId: "apollo-11", name: "Apollo 11" },
 ];
+
+interface CatalogSite {
+  id: string;
+  lat: number;
+  lon: number;
+}
+
+/** Latitude text derived from the data, e.g. "84.8°S". */
+export function latText(lat: number): string {
+  return `${Math.abs(lat).toFixed(1)}°${lat < 0 ? "S" : "N"}`;
+}
+
+export function pinsFromCatalog(sites: CatalogSite[]): SitePin[] {
+  const out: SitePin[] = [];
+  for (const f of FEATURED_SITES) {
+    const site = sites.find((x) => x.id === f.siteId);
+    if (!site) continue;
+    out.push({
+      id: f.siteId,
+      label: `${f.name} (${latText(site.lat)})`,
+      lat: site.lat,
+      lon: site.lon,
+      highlight: f.highlight,
+    });
+  }
+  return out;
+}
 
 const STARS: Array<{ x: number; y: number; r: number; phase: number; depth: number }> = Array.from(
   { length: 124 },
@@ -74,9 +102,9 @@ export interface MoonHeroCanvasProps {
   /** Target camera longitude in degrees. */
   focusLonDeg?: number;
   /**
-   * "hero": centerpiece 3D Moon with full atmosphere, LOLA relief, and scroll parallax;
+   * "hero": centerpiece 3D Moon (airless: no halo) with LOLA relief, and scroll parallax;
    * "showcase": focused interactive stage preview;
-   * "horizon": wide closing lunar horizon glow arc at the bottom of the landing page.
+   * "horizon": wide closing lunar horizon arc at the bottom of the landing page.
    */
   variant?: "hero" | "showcase" | "horizon";
 }
@@ -108,6 +136,7 @@ export function MoonHeroCanvas({
     scrollOffset: 0,
   });
   const basemapRef = useRef<HTMLImageElement | null>(null);
+  const pinsRef = useRef<SitePin[]>([]);
   const { mode } = useTheme();
 
   useEffect(() => {
@@ -127,6 +156,22 @@ export function MoonHeroCanvas({
     img.src = "/data/v1/basemaps/global-2048.webp";
     img.onload = () => {
       basemapRef.current = img;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof fetch === "undefined") return;
+    let cancelled = false;
+    fetch("/data/v1/sites.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((doc: { sites: CatalogSite[] }) => {
+        if (!cancelled) pinsRef.current = pinsFromCatalog(doc.sites);
+      })
+      .catch(() => {
+        /* pins are decorative: draw none if the catalogue cannot be read */
+      });
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -206,26 +251,10 @@ export function MoonHeroCanvas({
       }
 
       if (variant === "horizon") {
-        // Wide closing lunar horizon glow arc at the bottom of the landing page
+        // Wide closing lunar horizon arc at the bottom of the landing page
         const arcR = Math.max(width * 0.96, 560);
         const arcCx = width * 0.5;
         const arcCy = resolvedHeight + arcR - 52;
-
-        const horizonGlow = ctx.createRadialGradient(
-          arcCx,
-          arcCy,
-          arcR * 0.92,
-          arcCx,
-          arcCy,
-          arcR * 1.1,
-        );
-        horizonGlow.addColorStop(0, withAlpha(pal.sun, 0.32));
-        horizonGlow.addColorStop(0.45, withAlpha(pal.earth, 0.16));
-        horizonGlow.addColorStop(1, withAlpha(pal.deepest, 0));
-        ctx.fillStyle = horizonGlow;
-        ctx.beginPath();
-        ctx.arc(arcCx, arcCy, arcR * 1.1, Math.PI * 1.12, Math.PI * 1.88);
-        ctx.fill();
 
         ctx.fillStyle = pal.near;
         ctx.beginPath();
@@ -244,7 +273,7 @@ export function MoonHeroCanvas({
         ctx.textBaseline = "bottom";
         ctx.fillStyle = pal.rim;
         ctx.fillText(
-          "84°S–90°S Lunar South Pole · NASA LOLA 40 m DEM & JPL DE440 Ephemeris",
+          "84°S–90°S Lunar South Pole · NASA LOLA DEM & JPL DE440 Ephemeris",
           width * 0.5,
           resolvedHeight - 12,
         );
@@ -265,23 +294,6 @@ export function MoonHeroCanvas({
       const phaseRad = (st.phase * Math.PI) / 180;
       const sunShiftX = Math.sin(phaseRad) * rPx * 0.62;
       const sunShiftY = Math.cos(phaseRad) * rPx * 0.16;
-
-      // Multi-layered atmospheric / solar corona glow around the Moon
-      const outerCorona = ctx.createRadialGradient(
-        cx + sunShiftX * 0.4,
-        cy + rPx * 0.14,
-        rPx * 0.68,
-        cx,
-        cy,
-        rPx * 1.65,
-      );
-      outerCorona.addColorStop(0, withAlpha(pal.sun, 0.28));
-      outerCorona.addColorStop(0.42, withAlpha(pal.earth, 0.12));
-      outerCorona.addColorStop(1, withAlpha(pal.deepest, 0));
-      ctx.fillStyle = outerCorona;
-      ctx.beginPath();
-      ctx.arc(cx, cy, rPx * 1.65, 0, Math.PI * 2);
-      ctx.fill();
 
       // Lunar sphere clip
       ctx.save();
@@ -399,7 +411,7 @@ export function MoonHeroCanvas({
       ctx.setLineDash([]);
       ctx.restore();
 
-      // Atmospheric rim highlight
+      // Limb outline (airless body, no halo)
       ctx.strokeStyle = pal.rim;
       ctx.lineWidth = 1.4;
       ctx.beginPath();
@@ -429,7 +441,7 @@ export function MoonHeroCanvas({
       // Plot mission site beacons on the rotating globe
       ctx.save();
       ctx.font = "500 11px var(--font-family-code), monospace";
-      for (const site of FEATURED_PINS) {
+      for (const site of pinsRef.current) {
         const p = projectSphere(site.lat, site.lon, cLat, cLon, cx, cy, rPx);
         if (!p.visible) continue;
 
@@ -471,19 +483,19 @@ export function MoonHeroCanvas({
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
       ctx.fillStyle = pal.sun;
-      ctx.fillText("Sun grazing ~1.5° at South Pole", 14, 12);
+      ctx.fillText("Sun grazing ~1.5° at the pole (illustrative)", 14, 12);
 
       ctx.textAlign = "right";
       ctx.fillStyle = pal.earth;
-      ctx.fillText("Earth 14-day libration sightline", width - 14, 12);
+      ctx.fillText("Earth direction (illustrative)", width - 14, 12);
 
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
       ctx.fillStyle = pal.rim;
       ctx.fillText(
         variant === "showcase"
-          ? "Interactive lighting stage · NASA LOLA 40 m DEM & JPL DE440"
-          : "Drag or hover globe · NASA LOLA 40 m DEM & JPL DE440 Ephemeris",
+          ? "Interactive lighting stage · NASA LOLA DEM & JPL DE440"
+          : "Drag or hover globe · NASA LOLA DEM & JPL DE440 Ephemeris",
         width / 2,
         resolvedHeight - 10,
       );
@@ -554,7 +566,7 @@ export function MoonHeroCanvas({
         data-testid={testId}
         aria-label={
           variant === "horizon"
-            ? "Lunar south-polar horizon glow"
+            ? "Lunar south-polar horizon arc"
             : variant === "showcase"
               ? "Interactive 3D lunar lighting showcase"
               : "Interactive 3D lunar globe showing south-polar grazing sunlight and mission landing sites"

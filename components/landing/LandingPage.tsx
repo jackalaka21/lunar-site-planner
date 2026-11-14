@@ -14,6 +14,7 @@ import { Token } from "@astryxdesign/core/Token";
 import { VStack } from "@astryxdesign/core/VStack";
 import { useAppStore } from "../../lib/state/store";
 import type { Scenario } from "../../lib/state/url";
+import { MONS_MOUTON_COPY, REPLAY_COPY, RIDGE_COPY, SLIP_COPY } from "../../lib/landing/copy";
 import { ThemeToggle } from "../ThemeToggle";
 import { MoonHeroCanvas } from "./MoonHeroCanvas";
 
@@ -38,13 +39,11 @@ const SHOWCASE_STAGES: ShowcaseStage[] = [
   {
     id: "summer",
     tabLabel: "1. Polar summer plateau",
-    badge: "317 h sunlit + Earth",
+    badge: MONS_MOUTON_COPY.badge,
     badgeColor: "orange",
-    title: "Mons Mouton plateau: 14 days of continuous grazing sunlight",
-    summary:
-      "At 84.8° S on 14 Jan 2027, Mons Mouton stands 5.3 km above the surrounding basin. The Sun skims the horizon between 1.5° and 2.8° without dropping behind any ridge for the entire 14-day window.",
-    detail:
-      "Solar power remains active for 94% of the window while Earth stays 6° to 9° above the northwestern horizon for continuous direct-to-Earth telemetry.",
+    title: MONS_MOUTON_COPY.title,
+    summary: MONS_MOUTON_COPY.summary,
+    detail: MONS_MOUTON_COPY.detail,
     phaseDeg: -34,
     focusLatDeg: -48,
     focusLonDeg: 29,
@@ -60,13 +59,11 @@ const SHOWCASE_STAGES: ShowcaseStage[] = [
   {
     id: "ridge",
     tabLabel: "2. Crater rim occlusion",
-    badge: "202 h (-115 h ridge shadow)",
+    badge: RIDGE_COPY.badge,
     badgeColor: "gray",
-    title: "Shackleton Rim vs Mons Mouton: when a nearby peak blocks the Sun",
-    summary:
-      "At 89.7° S on the exact same landing date, Shackleton's narrow rim sits beside 4 km massifs. As the Sun sweeps around the horizon, a neighbouring ridge clips the solar disc after 5 d 23 h.",
-    detail:
-      "Open the 3D Terrain & Sky View in the planner to inspect the exact azimuth where the Sun beam intersects the crater wall.",
+    title: RIDGE_COPY.title,
+    summary: RIDGE_COPY.summary,
+    detail: RIDGE_COPY.detail,
     phaseDeg: 24,
     focusLatDeg: -60,
     focusLonDeg: 125,
@@ -89,11 +86,9 @@ const SHOWCASE_STAGES: ShowcaseStage[] = [
     tabLabel: "3. Two-week launch slip",
     badge: "+14 d schedule shift",
     badgeColor: "blue",
-    title: "What happens when a rocket launch slips by 14 days?",
-    summary:
-      "A two-week delay flips the lunar synodic phase by 180°. The Sun arrives from the opposite side of the mountain relief while Earth is half a libration cycle away.",
-    detail:
-      "Side-by-side comparison calculates the exact hour delta in simultaneous sunlight and Earth visibility so mission planners can re-target immediately.",
+    title: SLIP_COPY.title,
+    summary: SLIP_COPY.summary,
+    detail: SLIP_COPY.detail,
     phaseDeg: 58,
     focusLatDeg: -38,
     focusLonDeg: 29,
@@ -116,11 +111,9 @@ const SHOWCASE_STAGES: ShowcaseStage[] = [
     tabLabel: "4. Historical mission replay",
     badge: "IM-2 / CH-3 / SLIM",
     badgeColor: "blue",
-    title: "Validated against real lunar landings and NASA/JPL ephemerides",
-    summary:
-      "Replay Intuitive Machines IM-2 Athena at Mons Mouton, ISRO Chandrayaan-3 at 69.4° S, or JAXA SLIM at Shioli crater with JPL DE440 ephemerides and LOLA terrain horizons.",
-    detail:
-      "Predicted sunset and solar azimuth tracks match published mission telemetry and JPL Horizons within 0.001°.",
+    title: REPLAY_COPY.title,
+    summary: REPLAY_COPY.summary,
+    detail: REPLAY_COPY.detail,
     phaseDeg: -10,
     focusLatDeg: -28,
     focusLonDeg: 32,
@@ -276,11 +269,11 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
 
               <Stack maxWidth={820}>
                 <Text type="body">
-                  At the lunar south pole, the Sun skims the horizon at barely 1.5° while 5 km
-                  mountain walls cast pitch-black shadows and block Earth radio links. Ridgeline
-                  replaces cryptic elevation plots with an interactive 3D NASA LOLA terrain and sky
-                  simulator so you can find windows where solar power and direct-to-Earth
-                  communications stay active together.
+                  At the lunar poles the Sun never climbs more than about 1.5° above the horizon,
+                  so mountains and crater walls cast long shadows and can block the line of sight to
+                  Earth. Ridgeline computes Sun and Earth visibility against NASA LOLA terrain
+                  horizons and JPL ephemerides, so you can find windows where solar power and
+                  direct-to-Earth communications are available together.
                 </Text>
               </Stack>
 
@@ -325,7 +318,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
                   <Token label="Mission planning suite" size="sm" color="orange" />
                 </HStack>
                 <Heading level={2}>
-                  Built for polar terrain, grazing illumination, and live telemetry
+                  Built for polar terrain, grazing illumination, and computed visibility
                 </Heading>
               </VStack>
 
@@ -339,9 +332,9 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
                       </Text>
                     </HStack>
                     <Text type="body">
-                      Real 20×20 km south-polar DEM relief and 3,600-azimuth horizon profiles with
-                      Orbit and Lander POV cameras, live Sun and Earth sightline beams, and ridge
-                      occlusion markers.
+                      20×20 km terrain patches built from LOLA elevation data and 3,600-azimuth
+                      horizon profiles, with Orbit and Lander POV cameras, Sun and Earth sightline
+                      beams, and ridge occlusion markers.
                     </Text>
                   </VStack>
                 </Card>
@@ -351,13 +344,13 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
                     <HStack gap={1.5} vAlign="center">
                       <Token label="DTE + DSN" size="sm" color="blue" />
                       <Text type="label" weight="medium">
-                        Plain-English telemetry & DSN handovers
+                        Plain-language status & DSN visibility
                       </Text>
                     </HStack>
                     <Text type="body">
-                      Replaces confusing 2D angle charts with clear live status readouts, Earth
-                      phase and libration tracking, and Goldstone, Madrid, and Canberra Deep Space
-                      Network visibility.
+                      Replaces raw angle charts with plain-language status readouts, the Earth
+                      phase, and Moon visibility from the Goldstone, Madrid, and Canberra Deep Space
+                      Network stations.
                     </Text>
                   </VStack>
                 </Card>
@@ -386,7 +379,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
                       </Text>
                     </HStack>
                     <Text type="body">
-                      Test 7-point navigation dispersion, 10° lander tip-over resilience, descent
+                      Test a 2 km landing-ellipse robustness band, 10° lander tip-over resilience, descent
                       approach glare, 20 km nearby heatmaps, and Permanently Shadowed Regions.
                     </Text>
                   </VStack>
