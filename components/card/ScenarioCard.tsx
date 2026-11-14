@@ -20,6 +20,7 @@ import { Timeline } from "../timeline/Timeline";
 import { MissionClock } from "../ui/MissionClock";
 import { Term } from "../ui/Term";
 import { MetricsBar } from "./MetricsBar";
+import { NextGood } from "./NextGood";
 import { Provenance } from "./Provenance";
 import { SecondaryMetrics } from "./SecondaryMetrics";
 import { VerdictChip } from "./VerdictChip";
@@ -202,6 +203,8 @@ export function ScenarioCard(p: ScenarioCardProps) {
           lon={scenario.lon}
           deltaVsA={deltaVsA}
         />
+
+        <NextGood scenarioKey={scenario.key} siteName={scenario.name} siteLat={scenario.lat} t0Ms={scenario.t0Ms} />
       </VStack>
     </Card>
   );

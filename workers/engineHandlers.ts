@@ -12,6 +12,7 @@ import {
   robustness,
   sample,
   scanDates,
+  subsolarLatitude,
   type DaySummary,
   type EventKind,
   type HorizonSource,
@@ -41,7 +42,10 @@ export interface EngineApi {
   evaluate(req: { ref: SiteRef; t0Ms: number; settings: Settings }): Promise<EvaluateResult>;
   countdowns(req: { ref: SiteRef; fromMs: number; settings: Settings }): Promise<Record<EventKind, number | null>>;
   calendar(req: { ref: SiteRef; fromMs: number; days: number; settings: Settings }): Promise<DaySummary[]>;
-  nextGood(req: { ref: SiteRef; fromMs: number; settings: Settings }): Promise<DaySummary[]>;
+  /** `count` caps the 6 h hits returned (default 3); the client asks for more and dedupes to distinct windows. */
+  nextGood(req: { ref: SiteRef; fromMs: number; settings: Settings; count?: number }): Promise<DaySummary[]>;
+  /** Sub-solar latitude (deg) at noon UTC of each day from fromMs, for the calendar's season overlay. */
+  subsolar(req: { fromMs: number; days: number }): Promise<number[]>;
   robustness(req: { ref: SiteRef; t0Ms: number; settings: Settings }): Promise<ReturnType<typeof robustness>>;
   heatmap(req: {
     ref: SiteRef;
@@ -151,10 +155,21 @@ export function createEngineHandlers(f: Fetcher): EngineApi {
       return scanDates(ctx, e, fromMs, days, CALENDAR_STEP_H, s);
     },
 
-    async nextGood({ ref, fromMs, settings: s }) {
+    async nextGood({ ref, fromMs, settings: s, count }) {
       const ctx = await context(ref, s);
       const e = await load(fromMs - HOUR_MS, fromMs + (NEXT_GOOD_DAYS + s.durationDays) * DAY_MS);
-      return nextGoodDates(ctx, e, fromMs, s);
+      return nextGoodDates(ctx, e, fromMs, s, count);
+    },
+
+    async subsolar({ fromMs, days }) {
+      const e = await load(fromMs, fromMs + (days + 1) * DAY_MS);
+      const [lo, hi] = e.coverage();
+      const out: number[] = [];
+      for (let k = 0; k < days; k++) {
+        const t = Math.min(hi, Math.max(lo, fromMs + (k + 0.5) * DAY_MS));
+        out.push(subsolarLatitude(e.bodyAt("sun", t)));
+      }
+      return out;
     },
 
     async robustness({ ref, t0Ms, settings: s }) {
