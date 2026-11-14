@@ -1,6 +1,6 @@
 "use client";
 
-import { Link as LinkIcon, Menu, Settings } from "lucide-react";
+import { Download, Link as LinkIcon, Menu, Settings } from "lucide-react";
 import { Button } from "@astryxdesign/core/Button";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -17,16 +17,29 @@ interface TopBarProps {
 }
 
 const PHONE_QUERY = "(max-width: 47.99rem)";
+const TABLET_UP_QUERY = "(min-width: 48rem)";
 
 export function TopBar({ onOpenNav, onOpenSettings }: TopBarProps) {
   const showToast = useToast();
   const isPhone = useMediaQuery(PHONE_QUERY);
+  const isTabletUp = useMediaQuery(TABLET_UP_QUERY);
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
       showToast({ body: "Link copied", uniqueID: "copy-link" });
     } catch {
       showToast({ body: "Could not copy the link", type: "error", uniqueID: "copy-link" });
+    }
+  };
+  const exportPng = async () => {
+    try {
+      const el = document.querySelector<HTMLElement>("[data-testid='cards']");
+      if (!el) return;
+      const { downloadComparisonPng } = await import("../../lib/exportPng");
+      await downloadComparisonPng(el);
+      showToast({ body: "PNG exported", uniqueID: "export-png" });
+    } catch {
+      showToast({ body: "Could not export PNG", type: "error", uniqueID: "export-png" });
     }
   };
   return (
@@ -52,6 +65,15 @@ export function TopBar({ onOpenNav, onOpenSettings }: TopBarProps) {
           icon={<Icon icon={LinkIcon} />}
           onClick={copyLink}
         />
+        {isTabletUp ? (
+          <Button
+            label="Export PNG"
+            size="lg"
+            variant="ghost"
+            icon={<Icon icon={Download} />}
+            onClick={exportPng}
+          />
+        ) : null}
         <IconButton
           label="Settings"
           tooltip="Settings"

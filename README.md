@@ -16,15 +16,16 @@ At the lunar south pole the Sun never rises more than a few degrees above the ho
 
 Built and deployed:
 
+- A sleek Moon landing experience with interactive 3D illuminated lunar globe, 3-step onboarding, and 1-click mission showcase presets.
 - A catalogue of 29 sites (Apollo, recent landers, Chandrayaan-3, SLIM, Chang'e, Luna, and south-pole candidates) plus custom coordinates, with maps and a coordinate picker.
-- A horizon panorama with the Sun and Earth drawn at true angular size (Earth with its true phase) against terrain from LOLA elevation data.
+- A 2D horizon panorama and an interactive 3D lunar terrain and sky view (orbit and lander POV camera modes) built from real LOLA elevation data, with the Sun and Earth drawn against terrain ridges and live plain-English status readouts.
 - A timeline of Sun, Earth and both, with a verdict (Good, Marginal, Poor) and plain-language reasons, plus countdowns to sunset and Earthset.
-- Eclipse and Sun-near-Earth interference flags, and a direct-to-Earth check at the landing moment.
-- A robustness range that includes terrain uncertainty and landing dispersion.
-- Up to four scenarios side by side, with deltas against scenario A, and playback.
-- Shareable links, historical mission replays, an About page with the validation results, and a PWA for mobile.
-
-Planned, not built yet: calendar view, "next good date" search, DSN station layer, mast height control, draggable pin, permanently shadowed region overlay, CSV export.
+- Eclipse, Sun-near-Earth interference, and Deep Space Network (Goldstone, Madrid, Canberra) ground-station visibility tracks.
+- A 365-day landing calendar view and "Find next good date" search.
+- Mast-height selector (2 m / 10 m / 50 m), live draggable map pin, 20 km nearby-alternatives heatmap, and Permanently Shadowed Regions (PSR) overlay.
+- A robustness range for terrain uncertainty and landing dispersion, tip-over resilience (10° tilt sweep), and descent approach glare checks.
+- Up to four scenarios side by side, with deltas against scenario A, playback, CSV time-series export, and PNG comparison export.
+- Shareable links, historical mission replays, an About page with the validation results, and an offline-capable PWA for mobile.
 
 Candidate regions are labelled "Artemis crewed landing candidates". NASA has moved the first crewed landing to Artemis IV; Artemis III is now a 2027 low Earth orbit test. Region coordinates are representative points, because NASA publishes none; each site lists its own source link.
 

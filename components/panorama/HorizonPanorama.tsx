@@ -145,42 +145,8 @@ export function HorizonPanorama({
     }
     ctx.stroke();
 
-    // Terrain in two graphite steps: the full silhouette (far), then the ridge foot (near) eroded inside it,
-    // so the true skyline is never raised.
-    const cols = Math.ceil(width);
-    const azAt = (px: number) => center - 180 + (px / width) * 360;
-    const ridge = (erode: number) => {
-      ctx.beginPath();
-      ctx.moveTo(0, height);
-      for (let px = 0; px <= cols; px++) {
-        const a = azAt(px);
-        let e = horizonAt(horizon, a);
-        if (erode > 0) {
-          for (let d = -erode; d <= erode; d += erode / 2)
-            e = Math.min(e, horizonAt(horizon, a + d));
-        }
-        ctx.lineTo(px, y(e));
-      }
-      ctx.lineTo(width, height);
-      ctx.closePath();
-    };
-    ridge(0);
-    ctx.fillStyle = pal.far;
-    ctx.fill();
-    ridge(NEAR_ERODE_DEG);
-    ctx.fillStyle = pal.near;
-    ctx.fill();
-    ctx.beginPath();
-    for (let px = 0; px <= cols; px++) {
-      const yy = y(horizonAt(horizon, azAt(px)));
-      if (px === 0) ctx.moveTo(px, yy);
-      else ctx.lineTo(px, yy);
-    }
-    ctx.strokeStyle = pal.rim;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
     // Sun and Earth paths: runs inside the visible band, split where they cross the canvas seam.
+    // Drawn before the terrain silhouette so submerged segments pass behind the mountain ridges.
     const track = (az: Float32Array, el: Float32Array, color: string, ticks: boolean) => {
       const floor = lo - OFFSCREEN_DEG;
       const runs: AzEl[][] = [];
@@ -264,6 +230,63 @@ export function HorizonPanorama({
     ctx.arc(0, 0, 1, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+
+    // Terrain in two graphite steps: drawn over the sky tracks and discs so ridges occlude anything below
+    // the local horizon, with 88% opacity on the far step so submerged trajectories remain faintly legible.
+    const cols = Math.ceil(width);
+    const azAt = (px: number) => center - 180 + (px / width) * 360;
+    const ridge = (erode: number) => {
+      ctx.beginPath();
+      ctx.moveTo(0, height);
+      for (let px = 0; px <= cols; px++) {
+        const a = azAt(px);
+        let elVal = horizonAt(horizon, a);
+        if (erode > 0) {
+          for (let d = -erode; d <= erode; d += erode / 2)
+            elVal = Math.min(elVal, horizonAt(horizon, a + d));
+        }
+        ctx.lineTo(px, y(elVal));
+      }
+      ctx.lineTo(width, height);
+      ctx.closePath();
+    };
+    ridge(0);
+    ctx.fillStyle = withAlpha(pal.far, 0.86);
+    ctx.fill();
+    ridge(NEAR_ERODE_DEG);
+    ctx.fillStyle = withAlpha(pal.near, 0.92);
+    ctx.fill();
+    ctx.beginPath();
+    for (let px = 0; px <= cols; px++) {
+      const yy = y(horizonAt(horizon, azAt(px)));
+      if (px === 0) ctx.moveTo(px, yy);
+      else ctx.lineTo(px, yy);
+    }
+    ctx.strokeStyle = pal.rim;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // Subtle dashed ghost ring when Sun or Earth is occluded behind the local ridge.
+    if (earthEl < horizonAt(horizon, earthAz)) {
+      ctx.save();
+      ctx.strokeStyle = withAlpha(pal.earth, 0.5);
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.ellipse(e.cx, e.cy, e.rx, e.ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    if (sunEl < horizonAt(horizon, sunAz)) {
+      ctx.save();
+      ctx.strokeStyle = withAlpha(pal.sun, 0.55);
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.ellipse(s.cx, s.cy, s.rx, s.ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
   }, [
     width,
     height,

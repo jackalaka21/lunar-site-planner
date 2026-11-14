@@ -30,6 +30,10 @@ const SettingsPanel = dynamic(
   () => import("../settings/SettingsPanel").then((m) => m.SettingsPanel),
   { ssr: false },
 );
+const LandingHero = dynamic(
+  () => import("../landing/LandingHero").then((m) => m.LandingHero),
+  { ssr: false },
+);
 // The cards (panorama, timeline, metrics) and the scenario editor load right after the shell paints.
 const CompareView = dynamic(() => import("../compare/CompareView").then((m) => m.CompareView), {
   ssr: false,
@@ -201,7 +205,8 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
                   </>
                 ) : null}
                 <StatStrip />
-                <Stack data-testid="cards">
+                {ready ? <LandingHero /> : null}
+                <Stack id="planner-cards" data-testid="cards">
                   {ready && typeof Worker !== "undefined" ? (
                     <CompareView onEdit={editScenario} />
                   ) : ready ? null : (

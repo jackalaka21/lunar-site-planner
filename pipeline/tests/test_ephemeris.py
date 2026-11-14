@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 
 import numpy as np
 import pytest
-import spiceypy as sp
 
 from lsp import ephemeris
 from lsp.paths import RAW_DIR

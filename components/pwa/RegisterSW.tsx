@@ -63,12 +63,14 @@ export function RegisterSW() {
         text,
       );
     const onError = (ev: ErrorEvent) => {
-      if (navigator.onLine && isChunkError(`${ev.error?.name ?? ""} ${ev.message}`))
+      const text = `${ev.error?.name ?? ""} ${ev.message}`;
+      if ((navigator.onLine || /ChunkLoadError/i.test(text)) && isChunkError(text))
         setUpdated(true);
     };
     const onRejection = (ev: PromiseRejectionEvent) => {
       const r = ev.reason as { name?: string; message?: string } | undefined;
-      if (navigator.onLine && isChunkError(`${r?.name ?? ""} ${r?.message ?? ""}`)) {
+      const text = `${r?.name ?? ""} ${r?.message ?? ""}`;
+      if ((navigator.onLine || /ChunkLoadError/i.test(text)) && isChunkError(text)) {
         setUpdated(true);
         void registration?.update().catch(() => undefined);
       }

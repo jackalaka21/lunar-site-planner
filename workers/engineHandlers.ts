@@ -64,7 +64,7 @@ const EVAL_STEP_MIN = 10;
 
 function gridContext(
   n: { lat: number; lon: number; hDemM: number; profile: SiteContext["horizon"] },
-  mastM: number,
+  mastM = 2,
 ): SiteContext {
   return {
     lat: n.lat,
@@ -180,7 +180,7 @@ export function createEngineHandlers(f: Fetcher): EngineApi {
       const nodes = await st.neighbours(ctx.lat, ctx.lon, s.ellipseKm);
       return robustness(
         ctx,
-        nodes.map((n) => gridContext(n, s.mastM)),
+        nodes.map((n) => gridContext(n)),
         e,
         t0Ms,
         s,
@@ -193,7 +193,7 @@ export function createEngineHandlers(f: Fetcher): EngineApi {
       const e = await load(t0Ms - HOUR_MS, t0Ms + s.durationDays * DAY_MS);
       const nodes = await st.neighbours(ctx.lat, ctx.lon, radiusKm);
       return heatmapValues(
-        nodes.map((n) => gridContext(n, s.mastM)),
+        nodes.map((n) => gridContext(n)),
         e,
         t0Ms,
         s,

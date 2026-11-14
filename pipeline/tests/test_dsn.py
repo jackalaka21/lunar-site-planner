@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-import spiceypy as sp
 
 from lsp import dsn, ephemeris
 from lsp.paths import RAW_DIR
@@ -36,6 +35,8 @@ def test_at_least_one_station_most_hours():
 
 
 def test_canberra_dominates_south():
+    import spiceypy as sp
+
     hours = ephemeris.year_hours(2027)[: 31 * 24]
     ets = np.array([sp.str2et(s) for s in ephemeris._utc_strings(hours)])
     pos, _ = sp.spkpos("MOON", ets, "J2000", "LT+S", "EARTH")

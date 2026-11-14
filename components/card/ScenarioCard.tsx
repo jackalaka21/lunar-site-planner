@@ -1,16 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import dynamic from "next/dynamic";
+import { useMemo, useState } from "react";
 import { Pencil, X } from "lucide-react";
 import { Card } from "@astryxdesign/core/Card";
 import { HStack } from "@astryxdesign/core/HStack";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
+import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
 import { VStack } from "@astryxdesign/core/VStack";
 import type { EventKind } from "../../lib/engine/events";
 import { fmtHours } from "../../lib/engine/format";
+import { horizonAt } from "../../lib/engine/horizon";
 import type { Metrics } from "../../lib/engine/metrics";
 import type { RobustnessResult } from "../../lib/engine/robustness";
 import { mergeFlickers, type TimeSeries } from "../../lib/engine/sample";
@@ -25,6 +29,11 @@ import { Provenance } from "./Provenance";
 import { SecondaryMetrics } from "./SecondaryMetrics";
 import { VerdictChip } from "./VerdictChip";
 import { formatDelta, formatSpan } from "./delta";
+
+const LunarTerrain3D = dynamic(
+  () => import("../terrain3d/LunarTerrain3D").then((m) => m.LunarTerrain3D),
+  { ssr: false },
+);
 
 export interface ScenarioCardProps {
   scenario: {
@@ -57,9 +66,16 @@ const POLE_LAT = 89.9;
 const NONE_WITHIN = "> 60 d";
 const PENDING = "…";
 
+const COMPASS_8 = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
+function compassDir(azDeg: number): string {
+  const norm = ((azDeg % 360) + 360) % 360;
+  return COMPASS_8[Math.round(norm / 45) % 8];
+}
+
 export function ScenarioCard(p: ScenarioCardProps) {
   const { scenario, result, cursorIndex, axis, tz, countdowns, deltaVsA, robust } = p;
   const { ctx, series, metrics } = result;
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
   const letter = scenario.key.toUpperCase();
   const idx = Math.max(0, Math.min(series.n - 1, cursorIndex));
   const cursorMs = series.t0Ms + idx * series.stepMs;
@@ -90,6 +106,20 @@ export function ScenarioCard(p: ScenarioCardProps) {
   const sunValue = countdown(merged.lit, sunLit ? countdowns.sunset : countdowns.sunrise);
   const earthNever = metrics.earthH === 0;
   const earthValue = countdown(merged.earth, earthUp ? countdowns.earthset : countdowns.earthrise);
+
+  const sunAzNow = series.sunAz[idx] ?? 0;
+  const sunElNow = series.sunEl[idx] ?? 0;
+  const earthAzNow = series.earthAz[idx] ?? 0;
+  const earthElNow = series.earthEl[idx] ?? 0;
+  const sunRidgeDeg = horizonAt(ctx.horizon, sunAzNow);
+  const earthRidgeDeg = horizonAt(ctx.horizon, earthAzNow);
+
+  const sunPlainStatus = sunLit
+    ? `Solar power active: Sun is ${sunElNow.toFixed(1)}° in the ${compassDir(sunAzNow)} (ridge ${sunRidgeDeg.toFixed(1)}°)`
+    : `In darkness: Sun (${sunElNow.toFixed(1)}°) blocked by ${sunRidgeDeg.toFixed(1)}° ridge to the ${compassDir(sunAzNow)}`;
+  const earthPlainStatus = earthUp
+    ? `Earth radio open: ${earthElNow.toFixed(1)}° in the ${compassDir(earthAzNow)} (ridge ${earthRidgeDeg.toFixed(1)}°)`
+    : `Earth link blocked: (${earthElNow.toFixed(1)}°) behind ${earthRidgeDeg.toFixed(1)}° ridge to the ${compassDir(earthAzNow)}`;
 
   return (
     <Card padding={5} data-testid={`scenario-card-${scenario.key}`}>
@@ -163,19 +193,67 @@ export function ScenarioCard(p: ScenarioCardProps) {
           }
           sunEl={{
             label: <Term id="elevation">Sun elevation now</Term>,
-            value: `${series.sunEl[idx].toFixed(1)}°`,
+            value: `${sunElNow.toFixed(1)}°`,
           }}
         />
 
-        <HorizonPanorama
-          horizon={ctx.horizon}
-          series={series}
-          cursorIndex={idx}
-          elDomain={p.elDomain}
-          centerAz={p.centerAz}
-          onScrubTime={p.onScrubTime}
-          pole={Math.abs(scenario.lat) >= POLE_LAT}
-        />
+        <VStack gap={2}>
+          <HStack gap={2} vAlign="center" hAlign="between" wrap="wrap">
+            <HStack gap={3} vAlign="center" wrap="wrap">
+              <HStack gap={1.5} vAlign="center">
+                <StatusDot
+                  variant={sunLit ? "success" : "error"}
+                  label={sunLit ? "Sun visible" : "Sun blocked"}
+                />
+                <Text type="supporting" size="xsm">
+                  {sunPlainStatus}
+                </Text>
+              </HStack>
+              <HStack gap={1.5} vAlign="center">
+                <StatusDot
+                  variant={earthUp ? "success" : "error"}
+                  label={earthUp ? "Earth visible" : "Earth blocked"}
+                />
+                <Text type="supporting" size="xsm">
+                  {earthPlainStatus}
+                </Text>
+              </HStack>
+            </HStack>
+            <SegmentedControl
+              label="Terrain view mode"
+              size="lg"
+              value={viewMode}
+              onChange={(v) => setViewMode(v === "3d" ? "3d" : "2d")}
+            >
+              <SegmentedControlItem value="2d" label="2D skyline" />
+              <SegmentedControlItem value="3d" label="3D terrain" />
+            </SegmentedControl>
+          </HStack>
+
+          {viewMode === "3d" ? (
+            <LunarTerrain3D
+              horizon={ctx.horizon}
+              series={series}
+              cursorIndex={idx}
+              lat={scenario.lat}
+              lon={scenario.lon}
+              hDemM={ctx.hDemM}
+              obsHeightM={ctx.obsHeightM}
+              pole={Math.abs(scenario.lat) >= POLE_LAT}
+              onScrubTime={p.onScrubTime}
+            />
+          ) : (
+            <HorizonPanorama
+              horizon={ctx.horizon}
+              series={series}
+              cursorIndex={idx}
+              elDomain={p.elDomain}
+              centerAz={p.centerAz}
+              onScrubTime={p.onScrubTime}
+              pole={Math.abs(scenario.lat) >= POLE_LAT}
+            />
+          )}
+        </VStack>
 
         <Timeline
           series={series}
@@ -190,6 +268,8 @@ export function ScenarioCard(p: ScenarioCardProps) {
         <Provenance ctx={ctx} />
 
         <SecondaryMetrics
+          scenarioName={scenario.name}
+          t0Ms={scenario.t0Ms}
           metrics={metrics}
           series={series}
           cursorIndex={idx}

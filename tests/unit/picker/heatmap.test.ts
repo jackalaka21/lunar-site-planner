@@ -1,0 +1,80 @@
+import { describe, expect, it } from "vitest";
+import {
+  DEFAULT_HEATMAP_RADIUS_KM,
+  filterWithinRadius,
+  heatmapStepFill,
+  projectHeatmapCells,
+  psDistanceKm,
+  rampStep,
+} from "../../../components/picker/heatmapModel";
+import { nodeFetchers } from "../../../lib/data/nodeFetchers";
+import { psToLatLon } from "../../../lib/data/ps";
+import { loadSites } from "../../../lib/data/sites";
+import { DEFAULT_SETTINGS } from "../../../lib/engine/settings";
+import { createEngineHandlers } from "../../../workers/engineHandlers";
+
+const T0 = Date.UTC(2027, 0, 14, 6);
+
+describe("nearby heatmap (S4)", () => {
+  it("heatmap returns only points within radius", async () => {
+    const api = createEngineHandlers(nodeFetchers);
+    await api.init();
+    const catalog = await loadSites(nodeFetchers);
+    const site = catalog.byId.get("connecting-ridge")!;
+    const radiusKm = DEFAULT_HEATMAP_RADIUS_KM;
+
+    const pts = await api.heatmap({
+      ref: { kind: "catalog", id: "connecting-ridge" },
+      t0Ms: T0,
+      radiusKm,
+      settings: { ...DEFAULT_SETTINGS, durationDays: 3 },
+    });
+
+    expect(pts.length).toBeGreaterThan(0);
+    for (const p of pts) {
+      expect(psDistanceKm(site.lat, site.lon, p.lat, p.lon)).toBeLessThanOrEqual(radiusKm + 1e-6);
+      expect(p.bothH).toBeGreaterThanOrEqual(0);
+    }
+
+    // Pure filter helper also drops synthetic points outside radiusKm.
+    const inside = psToLatLon(5_000, 0);
+    const edge = psToLatLon(20_000, 0);
+    const outside = psToLatLon(25_000, 0);
+    const pole = psToLatLon(0, 0);
+    const filtered = filterWithinRadius(
+      [
+        { ...inside, bothH: 100 },
+        { ...edge, bothH: 200 },
+        { ...outside, bothH: 300 },
+      ],
+      pole.lat,
+      pole.lon,
+      20,
+    );
+    expect(filtered).toHaveLength(2);
+    expect(filtered.map((x) => x.bothH)).toEqual([100, 200]);
+  });
+
+  it("maps bothH to the 5-step luminance ramp without hex literals", () => {
+    const windowH = 336;
+    expect(rampStep(0, windowH)).toBe(0);
+    expect(rampStep(70, windowH)).toBe(1);
+    expect(rampStep(120, windowH)).toBe(2);
+    expect(rampStep(200, windowH)).toBe(3);
+    expect(rampStep(300, windowH)).toBe(4);
+
+    for (let s = 0; s < 5; s++) {
+      const fill = heatmapStepFill(s);
+      expect(fill).toContain("color-mix(in srgb, var(--color-text-primary)");
+      expect(fill).toContain("var(--surface-deepest)");
+      expect(fill).not.toMatch(/#[0-9a-fA-F]{3,8}/);
+    }
+
+    const pole = psToLatLon(0, 0);
+    const cells = projectHeatmapCells([{ lat: pole.lat, lon: pole.lon, bothH: 300 }], pole.lat, pole.lon, windowH, 400);
+    expect(cells).toHaveLength(1);
+    expect(cells[0].step).toBe(4);
+    expect(cells[0].x).toBeCloseTo(200, 3);
+    expect(cells[0].y).toBeCloseTo(200, 3);
+  });
+});

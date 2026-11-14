@@ -50,7 +50,7 @@ export function powerFactor(sunAz: number, sunEl: number, panel: Settings["panel
 }
 
 export function frameFor(ctx: SiteContext, s: Settings): SiteFrame {
-  return siteFrame(ctx.lat, ctx.lon, ctx.hDemM, s.mastM);
+  return siteFrame(ctx.lat, ctx.lon, ctx.hDemM, ctx.obsHeightM ?? s.mastM);
 }
 
 /** Raw lit state at one instant. */

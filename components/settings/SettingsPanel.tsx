@@ -36,10 +36,14 @@ const TIME_ZONES = [
 ];
 
 const PANEL_AZ_RANGE = { min: 0, max: 359 };
+export const MAST_DISABLED_MESSAGE =
+  "Mast height options apply to catalogue sites only; grid and sphere horizons use a 2 m mast";
 
 export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
   const settings = useAppStore((s) => s.settings);
   const setSettings = useAppStore((s) => s.setSettings);
+  const scenarios = useAppStore((s) => s.scenarios);
+  const hasCatalogSite = scenarios.some((sc) => sc.site.kind === "catalog");
 
   const ranged = (
     key: RangedKey,
@@ -68,10 +72,16 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
     </Stack>
   );
 
-  const group = (id: GlossaryId, control: React.ReactNode) => (
+  const group = (id: GlossaryId, control: React.ReactNode, isDisabled = false) => (
     <Stack gap={0}>
       <Term id={id} />
-      <Field label={GLOSSARY[id].term} isLabelHidden inputID={`setting-${id}`} isGroupLabel>
+      <Field
+        label={GLOSSARY[id].term}
+        isLabelHidden
+        inputID={`setting-${id}`}
+        isGroupLabel
+        isDisabled={isDisabled}
+      >
         {control}
       </Field>
     </Stack>
@@ -105,6 +115,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 "litThreshold",
                 <SegmentedControl
                   label={GLOSSARY.litThreshold.term}
+                  size="lg"
                   value={settings.litThreshold}
                   onChange={(v) => setSettings({ litThreshold: v as Settings["litThreshold"] })}
                 >
@@ -142,18 +153,23 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 "mastHeight",
                 <SegmentedControl
                   label={GLOSSARY.mastHeight.term}
+                  size="lg"
                   value={String(settings.mastM)}
+                  isDisabled={!hasCatalogSite}
+                  disabledMessage={MAST_DISABLED_MESSAGE}
                   onChange={(v) => setSettings({ mastM: Number(v) as Settings["mastM"] })}
                 >
                   <SegmentedControlItem value="2" label="2 m" />
                   <SegmentedControlItem value="10" label="10 m" />
                   <SegmentedControlItem value="50" label="50 m" />
                 </SegmentedControl>,
+                !hasCatalogSite,
               )}
               {group(
                 "panelMode",
                 <SegmentedControl
                   label={GLOSSARY.panelMode.term}
+                  size="lg"
                   value={settings.panel.mode}
                   onChange={(v) =>
                     setSettings({
@@ -193,6 +209,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 "timeAxis",
                 <SegmentedControl
                   label={GLOSSARY.timeAxis.term}
+                  size="lg"
                   value={settings.axis}
                   onChange={(v) => setSettings({ axis: v as Settings["axis"] })}
                 >
@@ -204,6 +221,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 "displayTz",
                 <SegmentedControl
                   label={GLOSSARY.displayTz.term}
+                  size="lg"
                   value={settings.displayTz}
                   onChange={(v) => setSettings({ displayTz: v })}
                 >

@@ -169,14 +169,14 @@ export async function resolveSiteContext(
   }
   const g = await store.forPoint(ref.lat, ref.lon);
   if (g) {
-    return { lat: ref.lat, lon: ref.lon, hDemM: g.hDemM, obsHeightM: mastM, horizon: g.profile, source: g.source };
+    return { lat: ref.lat, lon: ref.lon, hDemM: g.hDemM, obsHeightM: 2, horizon: g.profile, source: g.source };
   }
   return {
     lat: ref.lat,
     lon: ref.lon,
     hDemM: 0,
-    obsHeightM: mastM,
-    horizon: sphereHorizon(mastM),
+    obsHeightM: 2,
+    horizon: sphereHorizon(2),
     source: { kind: "sphere" },
   };
 }

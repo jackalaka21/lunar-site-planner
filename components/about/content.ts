@@ -14,7 +14,7 @@ export const NASA_DATASETS: Dataset[] = [
     name: "LOLA polar 40 m DEM (LDEM_80S_40MPP_ADJ), NASA GSFC PGDA",
     source: "PGDA product 90",
     href: "https://pgda.gsfc.nasa.gov/products/90",
-    role: "Terrain horizons at the south pole: the horizon line each site sees, for Sun and Earth visibility, and the polar basemap.",
+    role: "Terrain horizons at the south pole: the horizon line each site sees, the interactive 3D south-polar DEM relief patch, and the polar basemap.",
   },
   {
     name: "LOLA global 64 ppd DEM (LDEM_64), NASA GSFC",
@@ -38,7 +38,7 @@ export const NASA_DATASETS: Dataset[] = [
     name: "PGDA Lunar Polar Illumination maps, as shown in LROC Quickmap",
     source: "PGDA product 69",
     href: "https://pgda.gsfc.nasa.gov/products/69",
-    role: "Illumination cross-check: average Sun and Earth visibility from the same LOLA data shown in LROC Quickmap.",
+    role: "Illumination cross-check and Permanently Shadowed Region (PSR) crater polygons at the lunar south pole.",
   },
   {
     name: "LROC and Quickmap (NASA LRO, Arizona State University)",

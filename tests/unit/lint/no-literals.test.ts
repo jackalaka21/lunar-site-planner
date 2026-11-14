@@ -3,7 +3,14 @@ import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = process.cwd();
-const CANVAS_DIRS = ["components/panorama", "components/timeline", "components/picker/projection", "components/calendar"];
+const CANVAS_DIRS = [
+  "components/panorama",
+  "components/timeline",
+  "components/picker/projection",
+  "components/calendar",
+  "components/terrain3d",
+  "components/landing",
+];
 
 function walk(dir: string): string[] {
   let out: string[] = [];

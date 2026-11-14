@@ -1,0 +1,9 @@
+{
+  "projection": "ps-south-sphere",
+  "R": 1737400,
+  "spacingM": 2000,
+  "halfCount": 95,
+  "side": 191,
+  "nodata": -32768,
+  "source": "Extracted hDemM (metres above 1737.4 km sphere) from LOLA LDEM_80S_40MPP_ADJ horizon grid tiles"
+}

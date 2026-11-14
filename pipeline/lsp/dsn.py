@@ -4,7 +4,11 @@ import argparse
 from pathlib import Path
 
 import numpy as np
-import spiceypy as sp
+
+try:
+    import spiceypy as sp
+except ImportError:  # pragma: no cover
+    sp = None
 
 from . import ephemeris
 from .paths import RAW_DIR, REPO_ROOT

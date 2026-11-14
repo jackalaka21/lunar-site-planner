@@ -7,7 +7,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
-import spiceypy as sp
+
+try:
+    import spiceypy as sp
+except ImportError:  # pragma: no cover
+    sp = None
 
 from .constants import EPOCH_UTC
 from .io import sha256
