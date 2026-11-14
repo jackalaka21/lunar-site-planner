@@ -3,19 +3,23 @@ import { Ephemeris } from "../../../lib/data/ephemeris";
 import { HorizonStore, resolveSiteContext } from "../../../lib/data/horizons";
 import { nodeFetchers } from "../../../lib/data/nodeFetchers";
 import { loadSites } from "../../../lib/data/sites";
-import { nextGoodDates, scanDates, type SiteContext } from "../../../lib/engine";
+import { landingCheck, metrics, nextGoodDates, sample, scanDates, type DaySummary, type SiteContext } from "../../../lib/engine";
 import { DEFAULT_SETTINGS } from "../../../lib/engine/settings";
 
 const DAY = 86_400_000;
 const FROM = Date.UTC(2027, 0, 1);
 let eph: Ephemeris;
 let ctx: SiteContext;
+let scanCtx: SiteContext;
+// Shackleton rim, 2 d windows from 16 Jan 2027: good, marginal and poor all occur at a 6 h stride.
+const SCAN_FROM = Date.UTC(2027, 0, 16);
 
 beforeAll(async () => {
   eph = await Ephemeris.open(nodeFetchers);
   await eph.ensure(FROM, FROM + 400 * DAY);
   const [cat, store] = await Promise.all([loadSites(nodeFetchers), HorizonStore.open(nodeFetchers)]);
   ctx = await resolveSiteContext({ kind: "catalog", id: "connecting-ridge" }, cat, store, 2);
+  scanCtx = await resolveSiteContext({ kind: "catalog", id: "shackleton-rim" }, cat, store, 2);
 });
 
 describe("scanDates", () => {
@@ -35,7 +39,8 @@ describe("scanDates", () => {
     const end = eph.coverage()[1];
     await eph.ensure(end - 3 * DAY, end);
     const r = scanDates(ctx, eph, end - 2 * DAY, 5, 24, { ...DEFAULT_SETTINGS, durationDays: 1 });
-    expect(r.length).toBeLessThanOrEqual(3);
+    // Candidates at end-2d, end-1d and end are in coverage; the other two are dropped.
+    expect(r.map((d) => d.t0Ms)).toEqual([end - 2 * DAY, end - DAY, end]);
     expect(r.every((d) => d.t0Ms <= end)).toBe(true);
   });
 
@@ -65,16 +70,55 @@ describe("nextGoodDates", () => {
   });
 });
 
+
+/** Independent per-date evaluation: its own sample() over each window, no slicing. */
+function perDate(c: SiteContext, t0Ms: number, s: typeof DEFAULT_SETTINGS) {
+  const m = metrics(sample(c, eph, t0Ms, s.durationDays * 24, 10, s), landingCheck(c, eph, t0Ms, s), s);
+  return { t0Ms, bothH: m.bothH, verdict: m.verdict, sunlitPct: m.sunlitPct, earthPct: m.earthPct };
+}
+
+function expectSame(got: DaySummary[], want: DaySummary[]): void {
+  expect(got).toHaveLength(want.length);
+  got.forEach((g, i) => {
+    expect(g.t0Ms).toBe(want[i].t0Ms);
+    expect(g.verdict).toBe(want[i].verdict);
+    expect(g.bothH).toBeCloseTo(want[i].bothH, 9);
+    expect(g.sunlitPct).toBeCloseTo(want[i].sunlitPct, 9);
+    expect(g.earthPct).toBeCloseTo(want[i].earthPct, 9);
+  });
+}
+
 describe("window scan parity", () => {
-  it("matches an independent per-date evaluation", async () => {
-    const { sample, metrics, landingCheck } = await import("../../../lib/engine");
-    const s = DEFAULT_SETTINGS;
-    const r = scanDates(ctx, eph, FROM, 4, 24, s);
-    for (const d of r) {
-      const m = metrics(sample(ctx, eph, d.t0Ms, s.durationDays * 24, 10, s), landingCheck(ctx, eph, d.t0Ms, s), s);
-      expect(d.verdict).toBe(m.verdict);
-      expect(d.bothH).toBeCloseTo(m.bothH, 9);
-      expect(d.sunlitPct).toBeCloseTo(m.sunlitPct, 9);
+  const S = { ...DEFAULT_SETTINGS, durationDays: 2 };
+
+  it("6 h stride over 32 dates matches per-date evaluation, with a verdict transition", async () => {
+    const from = SCAN_FROM;
+    const r = scanDates(scanCtx, eph, from, 8, 6, S);
+    expect(r).toHaveLength(32);
+    expectSame(r, r.map((d) => perDate(scanCtx, d.t0Ms, S)));
+    expect(new Set(r.map((d) => d.verdict)).size).toBeGreaterThanOrEqual(2);
+  });
+
+  it("clipped tail near the coverage end matches per-date evaluation", async () => {
+    const end = eph.coverage()[1];
+    const from = end - 10 * DAY;
+    await eph.ensure(from, end);
+    const s = { ...DEFAULT_SETTINGS, durationDays: 14 };
+    const r = scanDates(ctx, eph, from, 14, 12, s);
+    // Candidates at from + k*12 h up to and including coverage end (10 d => k = 0..20), the rest dropped.
+    expect(r).toHaveLength(21);
+    expect(r[r.length - 1].t0Ms).toBe(end);
+    expectSame(r, r.map((d) => perDate(ctx, d.t0Ms, s)));
+  });
+
+  it("nextGoodDates equals the first N good entries of the per-date scan", () => {
+    const from = SCAN_FROM;
+    const days = 60;
+    const all = scanDates(scanCtx, eph, from, days, 6, S).filter((d) => d.verdict === "good");
+    expect(all.length).toBeGreaterThanOrEqual(3);
+    for (const n of [1, 3]) {
+      const ng = nextGoodDates(scanCtx, eph, from, S, n, 6, days);
+      expectSame(ng, all.slice(0, n).map((d) => perDate(scanCtx, d.t0Ms, S)));
     }
   });
 });
