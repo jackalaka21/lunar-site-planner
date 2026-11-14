@@ -9,3 +9,5 @@ export * from "./events";
 export * from "./format";
 export * from "./metrics";
 export * from "./sample";
+export * from "./scan";
+export * from "./robustness";

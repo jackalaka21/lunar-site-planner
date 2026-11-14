@@ -46,7 +46,14 @@ export class HorizonStore {
   private siteFile(id: string): Promise<Int16Array> {
     let p = this.siteFiles.get(id);
     if (!p) {
-      p = this.f(`horizons/sites/${id}.bin`).then((b) => new Int16Array(b));
+      const job: Promise<Int16Array> = this.f(`horizons/sites/${id}.bin`)
+        .then((b) => new Int16Array(b))
+        .catch((e: unknown) => {
+          // A failed load must not be cached, or a transient error could never be retried.
+          if (this.siteFiles.get(id) === job) this.siteFiles.delete(id);
+          throw e;
+        });
+      p = job;
       this.siteFiles.set(id, p);
     }
     return p;
@@ -55,7 +62,13 @@ export class HorizonStore {
   async forSite(id: string, mastM: 2 | 10 | 50): Promise<{ profile: HorizonProfile; hDemM: number }> {
     const mi = MASTS.indexOf(mastM);
     if (mi < 0) throw new RangeError(`Unsupported mast height ${mastM} m`);
-    this.catalog ??= loadSites(this.f);
+    if (!this.catalog) {
+      const job: Promise<SiteCatalog> = loadSites(this.f).catch((e: unknown) => {
+        if (this.catalog === job) this.catalog = null;
+        throw e;
+      });
+      this.catalog = job;
+    }
     const [data, cat] = await Promise.all([this.siteFile(id), this.catalog]);
     const site = cat.byId.get(id);
     if (!site) throw new Error(`Unknown site ${id}`);
@@ -68,9 +81,17 @@ export class HorizonStore {
     const name = `${i}_${j}`;
     let p = this.tiles.get(name);
     if (!p) {
-      p = this.tileSet.has(name)
-        ? this.f(`horizons/grid/${name}.bin`).then((b) => new Int16Array(b))
-        : Promise.resolve(null);
+      if (this.tileSet.has(name)) {
+        const job: Promise<Int16Array | null> = this.f(`horizons/grid/${name}.bin`)
+          .then((b) => new Int16Array(b))
+          .catch((e: unknown) => {
+            if (this.tiles.get(name) === job) this.tiles.delete(name);
+            throw e;
+          });
+        p = job;
+      } else {
+        p = Promise.resolve(null);
+      }
       this.tiles.set(name, p);
     }
     return p;
