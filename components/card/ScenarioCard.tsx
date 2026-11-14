@@ -91,10 +91,6 @@ export function ScenarioCard(p: ScenarioCardProps) {
   const earthNever = metrics.earthH === 0;
   const earthValue = countdown(merged.earth, earthUp ? countdowns.earthset : countdowns.earthrise);
 
-  const robustRange = robust
-    ? `${Math.round(robust.bothH.min)} to ${Math.round(robust.bothH.max)} h`
-    : undefined;
-
   return (
     <Card padding={5} data-testid={`scenario-card-${scenario.key}`}>
       <VStack gap={5}>
@@ -146,7 +142,7 @@ export function ScenarioCard(p: ScenarioCardProps) {
         <MetricsBar
           both={fmtHours(metrics.bothH)}
           bothDelta={deltaVsA ? formatDelta(deltaVsA.bothH) : undefined}
-          robustRange={robustRange}
+          robust={robust ? { ...robust.bothH, points: robust.points } : undefined}
           sun={{
             label: (
               <Term id={sunLit ? "sunset" : "sunrise"}>{sunLit ? "Sunset in" : "Sunrise in"}</Term>
@@ -204,7 +200,12 @@ export function ScenarioCard(p: ScenarioCardProps) {
           deltaVsA={deltaVsA}
         />
 
-        <NextGood scenarioKey={scenario.key} siteName={scenario.name} siteLat={scenario.lat} t0Ms={scenario.t0Ms} />
+        <NextGood
+          scenarioKey={scenario.key}
+          siteName={scenario.name}
+          siteLat={scenario.lat}
+          t0Ms={scenario.t0Ms}
+        />
       </VStack>
     </Card>
   );

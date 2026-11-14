@@ -10,30 +10,44 @@ export interface MetricsBarProps {
   both: string;
   /** Comparison against scenario A, e.g. "−96 h vs A". Omitted on the first card. */
   bothDelta?: string;
-  /** Range across the robustness variants, e.g. "88 to 104 h". */
-  robustRange?: string;
+  /** Spread of both-hours across horizon and site shifts; absent until the engine returns it. */
+  robust?: { min: number; max: number; points: number };
   sun: { label?: ReactNode; value: string };
   earth: { label?: ReactNode; value: string };
   sunEl: { label?: ReactNode; value: string };
 }
 
 /** Label, figure and delta only: no sparklines, no icons. */
-export function MetricsBar({ both, bothDelta, robustRange, sun, earth, sunEl }: MetricsBarProps) {
+export function MetricsBar({ both, bothDelta, robust, sun, earth, sunEl }: MetricsBarProps) {
   return (
     <VStack gap={3} data-testid="metrics-bar">
       <VStack gap={0.5}>
         <Text type="supporting">Both hours</Text>
         <Text size="3xl" weight="medium" hasTabularNumbers>
           {both}
+          {robust && (
+            <>
+              {" "}
+              <Text
+                as="span"
+                type="supporting"
+                size="xsm"
+                hasTabularNumbers
+                data-testid="robust-range"
+              >
+                {`(${Math.round(robust.min)}–${Math.round(robust.max)})`}
+              </Text>
+            </>
+          )}
         </Text>
         {bothDelta && (
           <Text type="code" size="xsm" color="secondary" hasTabularNumbers>
             {bothDelta}
           </Text>
         )}
-        {robustRange && (
-          <Text type="supporting" size="xsm">
-            {`Range ${robustRange} across horizon and site shifts`}
+        {robust && (
+          <Text type="supporting" size="xsm" data-testid="robust-points">
+            {`Range across horizon and site shifts, ${robust.points} points`}
           </Text>
         )}
       </VStack>
