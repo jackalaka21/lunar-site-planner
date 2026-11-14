@@ -1,0 +1,14 @@
+{
+  "southPole": {
+    "radiusM": 190000,
+    "sizes": [
+      4096,
+      2048
+    ]
+  },
+  "global": {
+    "w": 2048,
+    "h": 1024,
+    "proj": "equirect"
+  }
+}
