@@ -39,7 +39,7 @@ test("standalone landing page transitions into 3D terrain planner and back", asy
   await expect(page.getByTestId("left-panel")).toHaveCount(0);
   await expect(landing.getByTestId("moon-hero-canvas")).toBeVisible();
   await expect(landing.getByTestId("moon-showcase-canvas")).toBeVisible();
-  await expect(landing.getByTestId("moon-horizon-glow")).toBeVisible();
+  await expect(landing.getByTestId("moon-horizon")).toBeVisible();
 
   await landing.getByRole("button", { name: "Mons Mouton vs Shackleton", exact: true }).click();
   await expect(page.getByTestId("landing-page")).toHaveCount(0);

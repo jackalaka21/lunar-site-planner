@@ -260,7 +260,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
           >
             <VStack gap={4} hAlign="center">
               <HStack gap={1.5} vAlign="center" hAlign="center" wrap="wrap">
-                <Token label="0.1° LOLA Horizon Ray-Cast" size="sm" color="orange" />
+                <Token label="3,600-azimuth LOLA horizons (0.1° steps)" size="sm" color="orange" />
                 <Token label="Interactive 3D Terrain & Sky View" size="sm" color="blue" />
                 <Token label="1969–2035 Mission Window Calculator" size="sm" color="gray" />
               </HStack>
@@ -269,8 +269,8 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
 
               <Stack maxWidth={820}>
                 <Text type="body">
-                  At the lunar poles the Sun never climbs more than about 1.5° above the horizon,
-                  so mountains and crater walls cast long shadows and can block the line of sight to
+                  Near the south pole the Sun stays within a few degrees of the horizon (about 1.5°
+                  at the pole itself, up to about 7° at Mons Mouton), so mountains and crater walls cast long shadows and can block the line of sight to
                   Earth. Ridgeline computes Sun and Earth visibility against NASA LOLA terrain
                   horizons and JPL ephemerides, so you can find windows where solar power and
                   direct-to-Earth communications are available together.

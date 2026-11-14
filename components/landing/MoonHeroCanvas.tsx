@@ -483,7 +483,7 @@ export function MoonHeroCanvas({
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
       ctx.fillStyle = pal.sun;
-      ctx.fillText("Sun grazing ~1.5° at the pole (illustrative)", 14, 12);
+      ctx.fillText("Sun about 1.5° up at the pole (illustrative)", 14, 12);
 
       ctx.textAlign = "right";
       ctx.fillStyle = pal.earth;
@@ -540,7 +540,7 @@ export function MoonHeroCanvas({
 
   const testId =
     variant === "horizon"
-      ? "moon-horizon-glow"
+      ? "moon-horizon"
       : variant === "showcase"
         ? "moon-showcase-canvas"
         : "moon-hero-canvas";

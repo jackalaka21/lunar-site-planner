@@ -18,8 +18,7 @@ describe("landing showcase numbers equal the engine's output", () => {
     expect(Math.round(f.bothH)).toBe(F.bothH);
     expect(Math.round(f.sunlitPct)).toBe(F.sunlitPct);
     expect(Math.round(f.earthPct)).toBe(F.earthPct);
-    expect(Math.floor(f.earthsetH! / 24)).toBe(F.earthsetDays);
-    expect(Math.floor(f.earthsetH! % 24)).toBe(F.earthsetHours);
+    expect(Math.floor(f.earthsetH!)).toBe(F.earthsetDays * 24 + F.earthsetHours);
     expect(f.firstSunsetH).toBeNull();
     expect(Number(f.sunElMin.toFixed(1))).toBe(F.sunElMinDeg);
     expect(Number(f.sunElMax.toFixed(1))).toBe(F.sunElMaxDeg);
@@ -34,7 +33,9 @@ describe("landing showcase numbers equal the engine's output", () => {
     expect(Math.round(c.shackletonBothH)).toBe(F.shackletonBothH);
     expect(c.shackletonFirstSunsetH).toBeCloseTo(F.shackletonFirstSunsetH, 1);
     expect(Math.round(c.slipBothH)).toBe(F.slipBothH);
-    expect(c.slipSunlitH).toBeLessThan(1);
+    expect(c.slipFirstSunsetH).not.toBeNull();
+    expect(c.slipFirstSunsetH!).toBeLessThan(F.slipSunsetWithinH);
+    expect(c.slipSunlitH).toBeLessThan(F.slipSunsetWithinH);
   });
 });
 
@@ -48,7 +49,7 @@ describe("landing wording", () => {
     const text = read(file);
     expect(text).not.toMatch(/telemetry/i);
     expect(text).not.toMatch(/atmospher/i);
-    expect(text).not.toMatch(/corona/i);
+    expect(text).not.toMatch(/corona|basin|continuous|real-time|live telemetry/i);
   });
 });
 

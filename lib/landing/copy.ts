@@ -16,12 +16,14 @@ export const SHOWCASE_FACTS = {
   earthElMaxDeg: 11,
   earthAzMinDeg: 323,
   earthAzMaxDeg: 338,
-  /** hDemM 5312.4 m above the 1737.4 km reference sphere, not above a basin. */
+  /** hDemM 5312.4 m above the 1737.4 km reference sphere, not above local terrain. */
   refHeightKm: 5.3,
   shackletonBothH: 202,
   /** First Sun loss at the Shackleton rim: T+143.5 h. */
   shackletonFirstSunsetH: 143.5,
   slipBothH: 0,
+  /** At the +14 d start the Sun sets within this many hours (engine: 0.67 h). */
+  slipSunsetWithinH: 1,
 } as const;
 
 const F = SHOWCASE_FACTS;
@@ -29,7 +31,7 @@ const F = SHOWCASE_FACTS;
 export const MONS_MOUTON_COPY = {
   badge: `${F.bothH} h Sun + Earth`,
   title: `Mons Mouton: Sun lit all window, Earth in view for ${F.earthsetDays} d ${F.earthsetHours} h`,
-  summary: `At 84.8° S on 14 Jan 2027 the engine finds the Sun lit for ${F.sunlitPct}% of the 14-day window. The Sun's centre stays between ${Math.abs(F.sunElMinDeg)}° below and ${F.sunElMaxDeg}° above the horizon, so the light is always grazing. The site is about ${F.refHeightKm} km above the Moon's reference radius.`,
+  summary: `At 84.8° S on 14 Jan 2027 the Sun is lit for ${F.sunlitPct}% of the 14-day window (at least half the disc above the surrounding terrain), with no sunset within the window. The Sun's centre ranges from ${F.sunElMinDeg}° to ${F.sunElMaxDeg}° relative to local level, so the light is always grazing. The site is about ${F.refHeightKm} km above the Moon's reference radius.`,
   detail: `Earth is in view for ${F.earthPct}% of the window, roughly northwest to north-northwest (${F.earthAzMinDeg}° to ${F.earthAzMaxDeg}° azimuth) and up to about ${F.earthElMaxDeg}° above the horizon. It sets at T+${F.earthsetDays} d ${F.earthsetHours} h, so Sun and Earth are both up for ${F.bothH} h.`,
 } as const;
 

@@ -80,6 +80,7 @@ export interface ComparisonFacts {
   shackletonFirstSunsetH: number | null;
   slipBothH: number;
   slipSunlitH: number;
+  slipFirstSunsetH: number | null;
 }
 
 export async function computeComparisonFacts(api: EngineApi): Promise<ComparisonFacts> {
@@ -99,5 +100,7 @@ export async function computeComparisonFacts(api: EngineApi): Promise<Comparison
     shackletonFirstSunsetH: sunset === null ? null : (sunset - rim.series.t0Ms) / 3_600_000,
     slipBothH: slip.metrics.bothH,
     slipSunlitH: slip.metrics.sunlitH,
+    slipFirstSunsetH:
+      slip.metrics.firstSunsetMs === null ? null : (slip.metrics.firstSunsetMs - slip.series.t0Ms) / 3_600_000,
   };
 }
