@@ -14,12 +14,13 @@ interface TopBarProps {
   /** Shown below the 1024 breakpoint, where the left panel becomes a drawer. */
   onOpenNav?: () => void;
   onOpenSettings: () => void;
+  onOpenLanding?: () => void;
 }
 
 const PHONE_QUERY = "(max-width: 47.99rem)";
 const TABLET_UP_QUERY = "(min-width: 48rem)";
 
-export function TopBar({ onOpenNav, onOpenSettings }: TopBarProps) {
+export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding }: TopBarProps) {
   const showToast = useToast();
   const isPhone = useMediaQuery(PHONE_QUERY);
   const isTabletUp = useMediaQuery(TABLET_UP_QUERY);
@@ -57,6 +58,14 @@ export function TopBar({ onOpenNav, onOpenSettings }: TopBarProps) {
         <Heading level={1}>Ridgeline</Heading>
       </HStack>
       <HStack gap={1} vAlign="center">
+        {isTabletUp && onOpenLanding ? (
+          <Button
+            label="Landing page"
+            size="lg"
+            variant="ghost"
+            onClick={onOpenLanding}
+          />
+        ) : null}
         <Button
           label="Copy link"
           size="lg"

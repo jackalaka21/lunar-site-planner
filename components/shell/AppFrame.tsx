@@ -30,8 +30,8 @@ const SettingsPanel = dynamic(
   () => import("../settings/SettingsPanel").then((m) => m.SettingsPanel),
   { ssr: false },
 );
-const LandingHero = dynamic(
-  () => import("../landing/LandingHero").then((m) => m.LandingHero),
+const LandingPage = dynamic(
+  () => import("../landing/LandingPage").then((m) => m.LandingPage),
   { ssr: false },
 );
 // The cards (panorama, timeline, metrics) and the scenario editor load right after the shell paints.
@@ -91,6 +91,7 @@ const CONTENT_MAX_WIDTH = 1600;
 const WIDE_QUERY = "(min-width: 64rem)";
 /** Below 768: scenario editing is a bottom sheet instead of a side drawer. */
 const PHONE_QUERY = "(max-width: 47.99rem)";
+const ENTERED_PLANNER_KEY = "ridgeline-entered-planner";
 
 /** Frame first: header, left panel, fluid content, pinned footer. The regions are filled by later tasks. */
 export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
@@ -99,11 +100,41 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
   const cursorH = useAppStore((s) => s.cursorH);
   // The prerendered card is only right for the default view: not for a link that asks for something else.
   const [linkIsDefault, setLinkIsDefault] = useState(true);
+  const [showLanding, setShowLanding] = useState(false);
+
   useEffect(() => {
-    const { state } = decodeState(window.location.search, null);
+    const search = window.location.search;
+    const { state } = decodeState(search, null);
+    const isDef = isDefaultState(state);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLinkIsDefault(isDefaultState(state));
+    setLinkIsDefault(isDef);
+
+    const params = new URLSearchParams(search);
+    const forceLanding = params.get("landing") === "1";
+    const hasScenarioParam = params.has("sc") || params.has("v");
+    let alreadyEntered = false;
+    try {
+      alreadyEntered = window.sessionStorage.getItem(ENTERED_PLANNER_KEY) === "1";
+    } catch {
+      // ignore storage errors
+    }
+    if (forceLanding || (!hasScenarioParam && !alreadyEntered && !navigator.webdriver)) {
+      setShowLanding(true);
+    }
   }, []);
+
+  const enterPlannerFromLanding = () => {
+    try {
+      window.sessionStorage.setItem(ENTERED_PLANNER_KEY, "1");
+    } catch {
+      // ignore storage errors
+    }
+    setShowLanding(false);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const staticCard =
     linkIsDefault && isDefaultState({ scenarios, settings, cursorH }) ? (firstCard ?? null) : null;
 
@@ -170,6 +201,15 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
     document.getElementById(dateFieldId(key))?.focus();
   };
 
+  if (showLanding) {
+    return (
+      <Stack minHeight="100dvh">
+        {mounted ? <RegisterSW /> : null}
+        <LandingPage onEnterPlanner={enterPlannerFromLanding} />
+      </Stack>
+    );
+  }
+
   return (
     <FirstCardContext.Provider value={staticCard}>
       <Stack height="100dvh">
@@ -179,6 +219,7 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
               <TopBar
                 onOpenNav={isWide || !mounted ? undefined : openNav}
                 onOpenSettings={openSettings}
+                onOpenLanding={() => setShowLanding(true)}
               />
             </LayoutHeader>
           }
@@ -205,7 +246,6 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
                   </>
                 ) : null}
                 <StatStrip />
-                {ready ? <LandingHero /> : null}
                 <Stack id="planner-cards" data-testid="cards">
                   {ready && typeof Worker !== "undefined" ? (
                     <CompareView onEdit={editScenario} />

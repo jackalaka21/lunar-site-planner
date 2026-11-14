@@ -75,7 +75,16 @@ function compassDir(azDeg: number): string {
 export function ScenarioCard(p: ScenarioCardProps) {
   const { scenario, result, cursorIndex, axis, tz, countdowns, deltaVsA, robust } = p;
   const { ctx, series, metrics } = result;
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+  const [viewMode, setViewMode] = useState<"2d" | "3d">(() => {
+    try {
+      return typeof window !== "undefined" &&
+        window.sessionStorage?.getItem("ridgeline-entered-planner") === "1"
+        ? "3d"
+        : "2d";
+    } catch {
+      return "2d";
+    }
+  });
   const letter = scenario.key.toUpperCase();
   const idx = Math.max(0, Math.min(series.n - 1, cursorIndex));
   const cursorMs = series.t0Ms + idx * series.stepMs;

@@ -32,19 +32,25 @@ test("dragging pin updates card metrics within one frame-throttled cycle", async
   await expect(page.getByRole("textbox", { name: "Latitude (°)" })).toHaveValue(/^-8\d/);
 });
 
-test("landing hero presets and 3D terrain view switcher work interactively", async ({ page }) => {
-  await page.goto("/");
-  const hero = page.getByTestId("landing-hero");
-  await expect(hero).toBeVisible({ timeout: 30_000 });
-  await expect(hero.getByTestId("moon-hero-canvas")).toBeVisible();
+test("standalone landing page transitions into 3D terrain planner and back", async ({ page }) => {
+  await page.goto("/?landing=1");
+  const landing = page.getByTestId("landing-page");
+  await expect(landing).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("left-panel")).toHaveCount(0);
+  await expect(landing.getByTestId("moon-hero-canvas")).toBeVisible();
+  await expect(landing.getByTestId("moon-showcase-canvas")).toBeVisible();
+  await expect(landing.getByTestId("moon-horizon-glow")).toBeVisible();
 
-  const card = page.getByTestId("scenario-card-a");
-  await expect(card).toBeVisible({ timeout: 30_000 });
-  await card.getByRole("radio", { name: "3D terrain" }).click();
-  await expect(card.getByTestId("lunar-terrain-3d")).toBeVisible({ timeout: 30_000 });
-  await expect(card.getByRole("button", { name: "Lander POV" })).toBeVisible();
+  await landing.getByRole("button", { name: "Mons Mouton vs Shackleton", exact: true }).click();
+  await expect(page.getByTestId("landing-page")).toHaveCount(0);
 
-  await hero.getByRole("button", { name: "Mons Mouton vs Shackleton", exact: true }).click();
-  await expect(page.getByTestId("scenario-card-b")).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByTestId("scenario-card-b")).toContainText("Shackleton");
+  const cardA = page.getByTestId("scenario-card-a");
+  const cardB = page.getByTestId("scenario-card-b");
+  await expect(cardA).toBeVisible({ timeout: 30_000 });
+  await expect(cardB).toBeVisible({ timeout: 30_000 });
+  await expect(cardB).toContainText("Shackleton");
+  await expect(cardA.getByTestId("lunar-terrain-3d")).toBeVisible({ timeout: 30_000 });
+
+  await page.getByRole("button", { name: "Landing page" }).click();
+  await expect(page.getByTestId("landing-page")).toBeVisible({ timeout: 30_000 });
 });

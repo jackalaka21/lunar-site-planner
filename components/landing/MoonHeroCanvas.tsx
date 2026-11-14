@@ -7,6 +7,7 @@ import { withAlpha } from "../panorama/layout";
 import { panoramaPalette } from "../panorama/palette";
 
 interface SitePin {
+  id: string;
   label: string;
   lat: number;
   lon: number;
@@ -14,20 +15,21 @@ interface SitePin {
 }
 
 const FEATURED_PINS: SitePin[] = [
-  { label: "Mons Mouton (84.8°S)", lat: -84.78, lon: 29.13, highlight: true },
-  { label: "Shackleton Rim (89.7°S)", lat: -89.67, lon: 125.0, highlight: true },
-  { label: "Chandrayaan-3 (69.4°S)", lat: -69.37, lon: 32.32 },
-  { label: "SLIM (13.3°S)", lat: -13.32, lon: 25.25 },
-  { label: "Apollo 11 (0.7°N)", lat: 0.67, lon: 23.47 },
+  { id: "mons-mouton", label: "Mons Mouton · IM-2 (84.8°S)", lat: -84.78, lon: 29.13, highlight: true },
+  { id: "shackleton-rim", label: "Shackleton Rim (89.7°S)", lat: -89.67, lon: 125.0, highlight: true },
+  { id: "chandrayaan-3", label: "Chandrayaan-3 (69.4°S)", lat: -69.37, lon: 32.32 },
+  { id: "slim", label: "JAXA SLIM (13.3°S)", lat: -13.32, lon: 25.25 },
+  { id: "apollo-11", label: "Apollo 11 (0.7°N)", lat: 0.67, lon: 23.47 },
 ];
 
-const STARS: Array<{ x: number; y: number; r: number; phase: number }> = Array.from(
-  { length: 78 },
+const STARS: Array<{ x: number; y: number; r: number; phase: number; depth: number }> = Array.from(
+  { length: 124 },
   (_, i) => ({
-    x: ((i * 73 + 19) % 100) / 100,
-    y: ((i * 41 + 7) % 100) / 100,
-    r: (i % 3) * 0.48 + 0.6,
-    phase: i * 0.7,
+    x: ((i * 73 + 19) % 1000) / 1000,
+    y: ((i * 41 + 7) % 1000) / 1000,
+    r: (i % 4) * 0.42 + 0.48,
+    phase: i * 0.67,
+    depth: 0.35 + ((i * 29) % 65) / 100,
   }),
 );
 
@@ -71,26 +73,38 @@ export interface MoonHeroCanvasProps {
   focusLatDeg?: number;
   /** Target camera longitude in degrees. */
   focusLonDeg?: number;
-  /** "hero" renders the full 3D globe; "horizon" renders the closing lunar horizon glow arc. */
-  variant?: "hero" | "horizon";
+  /**
+   * "hero": centerpiece 3D Moon with full atmosphere, LOLA relief, and scroll parallax;
+   * "showcase": focused interactive stage preview;
+   * "horizon": wide closing lunar horizon glow arc at the bottom of the landing page.
+   */
+  variant?: "hero" | "showcase" | "horizon";
 }
 
 export function MoonHeroCanvas({
-  height = 340,
+  height,
   phaseDeg = -28,
   focusLatDeg = -42,
-  focusLonDeg = 24,
+  focusLonDeg = 28,
   variant = "hero",
 }: MoonHeroCanvasProps) {
+  const resolvedHeight =
+    height ?? (variant === "horizon" ? 150 : variant === "showcase" ? 260 : 440);
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [width, setWidth] = useState(0);
   const rotRef = useRef({
-    lon: focusLonDeg,
+    baseLon: focusLonDeg,
+    autoLon: 0,
     lat: focusLatDeg,
     phase: phaseDeg,
     targetLonOffset: 0,
     targetLatOffset: 0,
+    dragLonOffset: 0,
+    dragLatOffset: 0,
+    dragging: false,
+    dragStartX: 0,
+    dragStartY: 0,
     scrollOffset: 0,
   });
   const basemapRef = useRef<HTMLImageElement | null>(null);
@@ -117,14 +131,14 @@ export function MoonHeroCanvas({
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || variant !== "hero") return;
     const onScroll = () => {
       const y = window.scrollY || 0;
-      rotRef.current.scrollOffset = Math.min(1, Math.max(0, y / 700));
+      rotRef.current.scrollOffset = Math.min(1, Math.max(0, y / 750));
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [variant]);
 
   useEffect(() => {
     if (width <= 0) return;
@@ -135,7 +149,7 @@ export function MoonHeroCanvas({
 
     const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
     canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(height * dpr);
+    canvas.height = Math.round(resolvedHeight * dpr);
 
     let animId = 0;
     let t0 = performance.now();
@@ -144,60 +158,73 @@ export function MoonHeroCanvas({
       const dt = Math.min(0.05, (now - t0) / 1000);
       t0 = now;
       const st = rotRef.current;
-      st.lon = (st.lon + dt * 3.8) % 360;
+      const spinSpeed = variant === "showcase" ? 1.4 : 3.4;
+      if (!st.dragging) {
+        st.autoLon = (st.autoLon + dt * spinSpeed) % 360;
+      }
+      const lonDelta = ((focusLonDeg - st.baseLon + 540) % 360) - 180;
+      st.baseLon = (st.baseLon + lonDelta * 0.08 + 360) % 360;
       st.phase += (phaseDeg - st.phase) * 0.08;
-      st.lat += (focusLatDeg - st.lat) * 0.06;
+      st.lat += (focusLatDeg - st.lat) * 0.07;
 
-      const cLon = st.lon + st.targetLonOffset;
-      const cLat = Math.max(-72, Math.min(-12, st.lat + st.targetLatOffset));
+      const cLon =
+        (variant === "showcase" ? st.baseLon + st.autoLon * 0.35 : st.baseLon + st.autoLon) +
+        st.targetLonOffset +
+        st.dragLonOffset;
+      const cLat = Math.max(
+        -78,
+        Math.min(-8, st.lat + st.targetLatOffset + st.dragLatOffset),
+      );
       const pal = panoramaPalette(mode);
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, resolvedHeight);
 
       // Deep space background with subtle radial depth
       const bgGrad = ctx.createRadialGradient(
         width * 0.5,
-        variant === "horizon" ? height * 1.35 : height * 0.52,
-        10,
+        variant === "horizon" ? resolvedHeight * 1.35 : resolvedHeight * 0.5,
+        12,
         width * 0.5,
-        height * 0.5,
-        Math.max(width, height) * 0.78,
+        resolvedHeight * 0.5,
+        Math.max(width, resolvedHeight) * 0.85,
       );
       bgGrad.addColorStop(0, pal.sky);
       bgGrad.addColorStop(1, pal.deepest);
       ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(0, 0, width, resolvedHeight);
 
-      // Faint twinkling starfield
+      // Deep-space twinkling starfield with parallax depth
+      const scrollShiftY = variant === "hero" ? st.scrollOffset * 18 : 0;
       for (const s of STARS) {
-        const twinkle = 0.28 + 0.45 * Math.sin(now * 0.0014 + s.phase);
-        ctx.fillStyle = withAlpha(pal.rim, Math.max(0.12, Math.min(0.75, twinkle)));
+        const twinkle = 0.25 + 0.5 * Math.sin(now * 0.0015 + s.phase);
+        const sy = (s.y * resolvedHeight - scrollShiftY * s.depth + resolvedHeight) % resolvedHeight;
+        ctx.fillStyle = withAlpha(pal.rim, Math.max(0.1, Math.min(0.8, twinkle * s.depth)));
         ctx.beginPath();
-        ctx.arc(s.x * width, s.y * height, s.r, 0, Math.PI * 2);
+        ctx.arc(s.x * width, sy, s.r, 0, Math.PI * 2);
         ctx.fill();
       }
 
       if (variant === "horizon") {
-        // Closing soft lunar horizon glow at the bottom of the viewport
-        const arcR = Math.max(width * 0.95, 520);
+        // Wide closing lunar horizon glow arc at the bottom of the landing page
+        const arcR = Math.max(width * 0.96, 560);
         const arcCx = width * 0.5;
-        const arcCy = height + arcR - 38;
+        const arcCy = resolvedHeight + arcR - 52;
 
         const horizonGlow = ctx.createRadialGradient(
           arcCx,
           arcCy,
-          arcR * 0.94,
+          arcR * 0.92,
           arcCx,
           arcCy,
-          arcR * 1.08,
+          arcR * 1.1,
         );
-        horizonGlow.addColorStop(0, withAlpha(pal.sun, 0.26));
-        horizonGlow.addColorStop(0.45, withAlpha(pal.earth, 0.14));
+        horizonGlow.addColorStop(0, withAlpha(pal.sun, 0.32));
+        horizonGlow.addColorStop(0.45, withAlpha(pal.earth, 0.16));
         horizonGlow.addColorStop(1, withAlpha(pal.deepest, 0));
         ctx.fillStyle = horizonGlow;
         ctx.beginPath();
-        ctx.arc(arcCx, arcCy, arcR * 1.08, Math.PI * 1.15, Math.PI * 1.85);
+        ctx.arc(arcCx, arcCy, arcR * 1.1, Math.PI * 1.12, Math.PI * 1.88);
         ctx.fill();
 
         ctx.fillStyle = pal.near;
@@ -205,10 +232,11 @@ export function MoonHeroCanvas({
         ctx.arc(arcCx, arcCy, arcR, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = withAlpha(pal.sun, 0.65);
-        ctx.lineWidth = 1.6;
+        // Subtle illuminated limb
+        ctx.strokeStyle = withAlpha(pal.sun, 0.72);
+        ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.arc(arcCx, arcCy, arcR, Math.PI * 1.2, Math.PI * 1.8);
+        ctx.arc(arcCx, arcCy, arcR, Math.PI * 1.18, Math.PI * 1.82);
         ctx.stroke();
 
         ctx.font = "500 11px var(--font-family-code), monospace";
@@ -218,36 +246,41 @@ export function MoonHeroCanvas({
         ctx.fillText(
           "84°S–90°S Lunar South Pole · NASA LOLA 40 m DEM & JPL DE440 Ephemeris",
           width * 0.5,
-          height - 10,
+          resolvedHeight - 12,
         );
         animId = window.requestAnimationFrame(renderFrame);
         return;
       }
 
-      const parallaxScale = 1 - st.scrollOffset * 0.06;
-      const parallaxY = st.scrollOffset * 12;
+      const parallaxScale = variant === "hero" ? 1 - st.scrollOffset * 0.08 : 1;
+      const parallaxY = variant === "hero" ? st.scrollOffset * 16 : 0;
       const cx = width * 0.5;
-      const cy = height * 0.5 + parallaxY;
-      const rPx = Math.max(72, Math.min(width * 0.36, height * 0.41) * parallaxScale);
+      const cy = resolvedHeight * 0.5 + parallaxY;
+      const radiusRatio = variant === "showcase" ? 0.37 : 0.39;
+      const rPx = Math.max(
+        76,
+        Math.min(width * 0.38, resolvedHeight * radiusRatio) * parallaxScale,
+      );
 
       const phaseRad = (st.phase * Math.PI) / 180;
-      const sunShiftX = Math.sin(phaseRad) * rPx * 0.55;
+      const sunShiftX = Math.sin(phaseRad) * rPx * 0.62;
+      const sunShiftY = Math.cos(phaseRad) * rPx * 0.16;
 
-      // Ambient atmospheric / solar corona glow around the Moon
-      const corona = ctx.createRadialGradient(
-        cx + sunShiftX * 0.35,
-        cy + rPx * 0.12,
-        rPx * 0.72,
+      // Multi-layered atmospheric / solar corona glow around the Moon
+      const outerCorona = ctx.createRadialGradient(
+        cx + sunShiftX * 0.4,
+        cy + rPx * 0.14,
+        rPx * 0.68,
         cx,
         cy,
-        rPx * 1.55,
+        rPx * 1.65,
       );
-      corona.addColorStop(0, withAlpha(pal.sun, 0.24));
-      corona.addColorStop(0.45, withAlpha(pal.earth, 0.1));
-      corona.addColorStop(1, withAlpha(pal.deepest, 0));
-      ctx.fillStyle = corona;
+      outerCorona.addColorStop(0, withAlpha(pal.sun, 0.28));
+      outerCorona.addColorStop(0.42, withAlpha(pal.earth, 0.12));
+      outerCorona.addColorStop(1, withAlpha(pal.deepest, 0));
+      ctx.fillStyle = outerCorona;
       ctx.beginPath();
-      ctx.arc(cx, cy, rPx * 1.55, 0, Math.PI * 2);
+      ctx.arc(cx, cy, rPx * 1.65, 0, Math.PI * 2);
       ctx.fill();
 
       // Lunar sphere clip
@@ -258,15 +291,15 @@ export function MoonHeroCanvas({
 
       // Base illuminated sphere gradient controlled by phaseDeg
       const litGrad = ctx.createRadialGradient(
-        cx + sunShiftX - rPx * 0.22,
-        cy + rPx * 0.18,
-        rPx * 0.08,
+        cx + sunShiftX - rPx * 0.2,
+        cy + sunShiftY + rPx * 0.16,
+        rPx * 0.06,
         cx,
         cy,
-        rPx * 1.18,
+        rPx * 1.2,
       );
-      litGrad.addColorStop(0, withAlpha(pal.rim, 0.42));
-      litGrad.addColorStop(0.58, pal.near);
+      litGrad.addColorStop(0, withAlpha(pal.rim, 0.46));
+      litGrad.addColorStop(0.56, pal.near);
       litGrad.addColorStop(1, pal.deepest);
       ctx.fillStyle = litGrad;
       ctx.fillRect(cx - rPx, cy - rPx, rPx * 2, rPx * 2);
@@ -275,7 +308,7 @@ export function MoonHeroCanvas({
       const img = basemapRef.current;
       if (img && img.width > 0) {
         ctx.save();
-        ctx.globalAlpha = 0.48;
+        ctx.globalAlpha = 0.52;
         const shiftPx = (((cLon % 360) + 360) % 360) * ((rPx * 2) / 180);
         const drawW = rPx * 4;
         const drawH = rPx * 2;
@@ -284,21 +317,21 @@ export function MoonHeroCanvas({
         ctx.restore();
       }
 
-      // Dynamic terminator shadow driven by phaseDeg
+      // Dynamic 3D terminator shadow driven by phaseDeg
       const termGrad = ctx.createLinearGradient(
         cx + sunShiftX - rPx,
-        cy + rPx * 0.3,
+        cy + rPx * 0.28,
         cx + sunShiftX + rPx,
-        cy - rPx * 0.3,
+        cy - rPx * 0.28,
       );
       if (st.phase <= 0) {
-        termGrad.addColorStop(0, withAlpha(pal.sun, 0.15));
-        termGrad.addColorStop(0.52, withAlpha(pal.deepest, 0.08));
-        termGrad.addColorStop(1, withAlpha(pal.deepest, 0.86));
+        termGrad.addColorStop(0, withAlpha(pal.sun, 0.16));
+        termGrad.addColorStop(0.5, withAlpha(pal.deepest, 0.08));
+        termGrad.addColorStop(1, withAlpha(pal.deepest, 0.88));
       } else {
-        termGrad.addColorStop(0, withAlpha(pal.deepest, 0.84));
-        termGrad.addColorStop(0.48, withAlpha(pal.deepest, 0.08));
-        termGrad.addColorStop(1, withAlpha(pal.sun, 0.16));
+        termGrad.addColorStop(0, withAlpha(pal.deepest, 0.86));
+        termGrad.addColorStop(0.5, withAlpha(pal.deepest, 0.08));
+        termGrad.addColorStop(1, withAlpha(pal.sun, 0.18));
       }
       ctx.fillStyle = termGrad;
       ctx.fillRect(cx - rPx, cy - rPx, rPx * 2, rPx * 2);
@@ -345,7 +378,7 @@ export function MoonHeroCanvas({
 
       // Highlighted 84°S South-Polar Grazing Sunlight Zone ring
       ctx.strokeStyle = pal.sun;
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 1.7;
       ctx.setLineDash([4, 3]);
       ctx.beginPath();
       let polarOpen = false;
@@ -368,7 +401,7 @@ export function MoonHeroCanvas({
 
       // Atmospheric rim highlight
       ctx.strokeStyle = pal.rim;
-      ctx.lineWidth = 1.3;
+      ctx.lineWidth = 1.4;
       ctx.beginPath();
       ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
       ctx.stroke();
@@ -377,14 +410,14 @@ export function MoonHeroCanvas({
       const polePt = projectSphere(-90, 0, cLat, cLon, cx, cy, rPx);
       if (polePt.visible) {
         ctx.save();
-        ctx.strokeStyle = withAlpha(pal.sun, 0.85);
-        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = withAlpha(pal.sun, 0.86);
+        ctx.lineWidth = 1.7;
         ctx.beginPath();
         ctx.moveTo(16, polePt.y + 10);
         ctx.lineTo(polePt.x, polePt.y);
         ctx.stroke();
 
-        ctx.strokeStyle = withAlpha(pal.earth, 0.85);
+        ctx.strokeStyle = withAlpha(pal.earth, 0.86);
         ctx.setLineDash([4, 3]);
         ctx.beginPath();
         ctx.moveTo(polePt.x, polePt.y);
@@ -400,28 +433,40 @@ export function MoonHeroCanvas({
         const p = projectSphere(site.lat, site.lon, cLat, cLon, cx, cy, rPx);
         if (!p.visible) continue;
 
-        ctx.fillStyle = site.highlight ? pal.sun : pal.earth;
+        const isActiveFocus =
+          Math.abs(site.lon - focusLonDeg) < 25 && Math.abs(site.lat - focusLatDeg) < 45;
+        const emphasized = site.highlight || isActiveFocus;
+
+        if (emphasized) {
+          ctx.strokeStyle = withAlpha(pal.sun, 0.45);
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 7.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = emphasized ? pal.sun : pal.earth;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, site.highlight ? 4.2 : 3.2, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, emphasized ? 4.2 : 3.2, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.strokeStyle = pal.deepest;
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        if (site.highlight || p.z > 0.35) {
+        if (emphasized || p.z > 0.35) {
           const isSouthPole = site.lat < -88;
-          const alignRight = isSouthPole ? false : site.highlight ? true : p.x > cx;
+          const alignRight = isSouthPole ? false : emphasized ? true : p.x > cx;
           ctx.textAlign = alignRight ? "left" : "right";
           ctx.textBaseline = "middle";
-          const lx = alignRight ? p.x + 8 : p.x - 8;
-          const ly = isSouthPole ? p.y + 6 : site.highlight ? p.y - 5 : p.y;
-          ctx.fillStyle = site.highlight ? pal.sun : pal.rim;
+          const lx = alignRight ? p.x + 9 : p.x - 9;
+          const ly = isSouthPole ? p.y + 7 : emphasized ? p.y - 5 : p.y;
+          ctx.fillStyle = emphasized ? pal.sun : pal.rim;
           ctx.fillText(site.label, lx, ly);
         }
       }
 
-      // Top & bottom technical callouts on the globe canvas
+      // Technical callouts on the globe canvas
       ctx.font = "500 11px var(--font-family-code), monospace";
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
@@ -436,9 +481,11 @@ export function MoonHeroCanvas({
       ctx.textBaseline = "bottom";
       ctx.fillStyle = pal.rim;
       ctx.fillText(
-        "Drag or hover globe · NASA LOLA 40 m DEM & JPL DE440 Ephemeris",
+        variant === "showcase"
+          ? "Interactive lighting stage · NASA LOLA 40 m DEM & JPL DE440"
+          : "Drag or hover globe · NASA LOLA 40 m DEM & JPL DE440 Ephemeris",
         width / 2,
-        height - 10,
+        resolvedHeight - 10,
       );
       ctx.restore();
 
@@ -447,46 +494,75 @@ export function MoonHeroCanvas({
 
     animId = window.requestAnimationFrame(renderFrame);
     return () => window.cancelAnimationFrame(animId);
-  }, [width, height, mode, phaseDeg, focusLatDeg, focusLonDeg, variant]);
+  }, [width, resolvedHeight, mode, phaseDeg, focusLatDeg, focusLonDeg, variant]);
 
-  const onPointerMove = (ev: ReactPointerEvent<HTMLDivElement>) => {
-    const rect = ev.currentTarget.getBoundingClientRect();
-    const nx = ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1;
-    const ny = ((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 - 1;
-    rotRef.current.targetLonOffset = nx * 32;
-    rotRef.current.targetLatOffset = -ny * 16;
+  const onPointerDown = (ev: ReactPointerEvent<HTMLDivElement>) => {
+    if (variant === "horizon") return;
+    rotRef.current.dragging = true;
+    rotRef.current.dragStartX = ev.clientX - rotRef.current.dragLonOffset * 3;
+    rotRef.current.dragStartY = ev.clientY - rotRef.current.dragLatOffset * 4;
   };
 
-  const onPointerLeave = () => {
+  const onPointerMove = (ev: ReactPointerEvent<HTMLDivElement>) => {
+    if (variant === "horizon") return;
+    const rect = ev.currentTarget.getBoundingClientRect();
+    if (rotRef.current.dragging) {
+      rotRef.current.dragLonOffset = (ev.clientX - rotRef.current.dragStartX) / 3;
+      rotRef.current.dragLatOffset = Math.max(
+        -24,
+        Math.min(24, -(ev.clientY - rotRef.current.dragStartY) / 4),
+      );
+      return;
+    }
+    const nx = ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1;
+    const ny = ((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 - 1;
+    rotRef.current.targetLonOffset = nx * 28;
+    rotRef.current.targetLatOffset = -ny * 14;
+  };
+
+  const onPointerUpOrLeave = () => {
+    rotRef.current.dragging = false;
     rotRef.current.targetLonOffset = 0;
     rotRef.current.targetLatOffset = 0;
   };
 
+  const testId =
+    variant === "horizon"
+      ? "moon-horizon-glow"
+      : variant === "showcase"
+        ? "moon-showcase-canvas"
+        : "moon-hero-canvas";
+
   return (
     <div
       ref={wrapRef}
+      onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
+      onPointerUp={onPointerUpOrLeave}
+      onPointerLeave={onPointerUpOrLeave}
       style={{
         position: "relative",
         width: "100%",
-        height,
+        height: resolvedHeight,
         borderRadius: 12,
         overflow: "hidden",
+        cursor: variant === "horizon" ? "default" : "grab",
       }}
     >
       <canvas
         ref={canvasRef}
-        data-testid={variant === "horizon" ? "moon-horizon-glow" : "moon-hero-canvas"}
+        data-testid={testId}
         aria-label={
           variant === "horizon"
             ? "Lunar south-polar horizon glow"
-            : "Interactive 3D lunar globe showing south-polar grazing sunlight and mission landing sites"
+            : variant === "showcase"
+              ? "Interactive 3D lunar lighting showcase"
+              : "Interactive 3D lunar globe showing south-polar grazing sunlight and mission landing sites"
         }
         style={{
           display: "block",
           width: "100%",
-          height,
+          height: resolvedHeight,
         }}
       />
     </div>
