@@ -303,7 +303,7 @@
     --color-border-success: light-dark(#16a34a, #4cc38a);
     --color-icon-error: light-dark(#dc2626, #e5484d);
     --color-border-error: light-dark(#dc2626, #e5484d);
-    --color-data-categorical-orange: light-dark(#e69f00, #e69f00);
+    --color-data-categorical-orange: light-dark(#bf8400, #e69f00);
     --color-data-categorical-blue: light-dark(#0072b2, #56b4e9);
     --color-data-neutral: light-dark(#737373, #85858b);
     --radius-chat: 1.125rem;

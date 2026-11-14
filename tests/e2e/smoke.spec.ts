@@ -10,3 +10,18 @@ test("body uses IBM Plex Sans", async ({ page }) => {
   const family = await page.evaluate(() => getComputedStyle(document.body).fontFamily);
   expect(family.replace(/["']/g, "")).toMatch(/^IBM Plex Sans/);
 });
+
+test.describe("system dark preference", () => {
+  test.use({ colorScheme: "dark" });
+
+  test("hydrates without errors and the toggle offers light", async ({ page }) => {
+    const problems: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") problems.push(msg.text());
+    });
+    page.on("pageerror", (err) => problems.push(err.message));
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
+    expect(problems.filter((p) => /hydrat|did not match|mismatch/i.test(p))).toEqual([]);
+  });
+});

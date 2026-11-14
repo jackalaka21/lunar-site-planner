@@ -105,8 +105,10 @@ export const ridgelineTheme = defineTheme({
     "--color-icon-error": ["#dc2626", "#e5484d"],
     "--color-border-error": ["#dc2626", "#e5484d"],
 
-    // Data visualisation: Sun amber, Earth blue, neutral = muted text
-    "--color-data-categorical-orange": ["#e69f00", "#e69f00"],
+    // Data visualisation: Sun amber, Earth blue, neutral = muted text.
+    // Sun light mode is #bf8400, darkened from #e69f00 (2.25:1 on white) to 3.22:1 on #ffffff
+    // and 3.09:1 on the page #fafafa (non-text target 3:1). Dark mode keeps #e69f00.
+    "--color-data-categorical-orange": ["#bf8400", "#e69f00"],
     "--color-data-categorical-blue": ["#0072b2", "#56b4e9"],
     "--color-data-neutral": ["#737373", "#85858b"],
 
