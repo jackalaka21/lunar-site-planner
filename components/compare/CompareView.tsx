@@ -98,6 +98,7 @@ export function CompareView({ onEdit }: CompareViewProps) {
           onSeekH: seekH,
           onEdit: () => onEdit(sc.key),
           onRemove: () => removeScenario(sc.key),
+          canRemove: scenarios.length > 1,
         }}
       />
     );

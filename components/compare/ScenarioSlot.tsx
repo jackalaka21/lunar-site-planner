@@ -1,7 +1,10 @@
 "use client";
 
 import { Banner } from "@astryxdesign/core/Banner";
+import { X } from "lucide-react";
 import { Button } from "@astryxdesign/core/Button";
+import { Icon } from "@astryxdesign/core/Icon";
+import { IconButton } from "@astryxdesign/core/IconButton";
 import { Card } from "@astryxdesign/core/Card";
 import { HStack } from "@astryxdesign/core/HStack";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
@@ -32,6 +35,8 @@ export interface SlotContext {
   onSeekH: (h: number) => void;
   onEdit: () => void;
   onRemove: () => void;
+  /** False for the only scenario, which cannot be removed. */
+  canRemove?: boolean;
 }
 
 function toSiteContext(c: EvaluateResult["ctx"]): SiteContext {
@@ -62,13 +67,23 @@ function LoadingCard({ label }: { label: string }) {
   );
 }
 
-function ErrorCard({ label, onRetry }: { label: string; onRetry: () => void }) {
+function ErrorCard({ label, onRetry, onRemove }: { label: string; onRetry: () => void; onRemove?: () => void }) {
   return (
     <Card padding={5} data-testid="scenario-error">
       <HStack gap={3} vAlign="center" wrap="wrap">
         <Text type="label" weight="medium">{`Scenario ${label}`}</Text>
         <Text>Couldn&apos;t load data —</Text>
         <Button label="Retry" size="lg" variant="secondary" onClick={onRetry} />
+        {onRemove ? (
+          <IconButton
+            label={`Remove scenario ${label}`}
+            tooltip="Remove"
+            variant="ghost"
+            size="lg"
+            icon={<Icon icon={X} />}
+            onClick={onRemove}
+          />
+        ) : null}
       </HStack>
     </Card>
   );
@@ -95,7 +110,7 @@ export function ScenarioSlot({ scenario, slot, ctx, onRetry }: ScenarioSlotProps
 
   const countdowns = useCountdowns(scenario.site, cursorMs, settings, ctx.playing, ready !== null);
 
-  if (slot?.status === "error") return <ErrorCard label={letter} onRetry={onRetry} />;
+  if (slot?.status === "error") return <ErrorCard label={letter} onRetry={onRetry} onRemove={ctx.canRemove === false ? undefined : ctx.onRemove} />;
   if (!ready || !series) return <LoadingCard label={letter} />;
 
   const outside = settings.axis === "cal" ? (rawIndex < 0 ? "Before landing" : rawIndex > series.n - 1 ? "After mission" : null) : null;
