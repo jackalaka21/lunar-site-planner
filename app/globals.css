@@ -40,3 +40,8 @@
     display: none;
   }
 }
+
+/* Set by the inline script in the root layout when the visitor already dismissed the stat strip. */
+html[data-statstrip="dismissed"] [data-testid="stat-strip"] {
+  display: none;
+}

@@ -29,6 +29,8 @@ for (const width of [375, 1440]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
     await expect(page.getByTestId("stat-strip")).toBeVisible();
+    // Wait for the live card: the prerendered one is swapped out, so its buttons would vanish mid-loop.
+    await expect(page.getByTestId("scenario-card-a").locator("canvas")).toBeVisible({ timeout: 60_000 });
     // The time bar shortcut trigger must be a real button, so the loop below covers it.
     // (Phones drop it: the shortcuts are for keyboards.)
     if (width >= 768)

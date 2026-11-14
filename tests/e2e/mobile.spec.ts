@@ -56,7 +56,8 @@ test.describe("layout at 375 wide", () => {
 
   test("touch targets are at least 44 px", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByTestId("scenario-card-a")).toBeVisible();
+    // Wait for the live card: the prerendered one is swapped out, so its buttons would vanish mid-loop.
+    await expect(page.getByTestId("scenario-card-a").locator("canvas")).toBeVisible({ timeout: 60_000 });
     const buttons = page.getByRole("button");
     const count = await buttons.count();
     for (let i = 0; i < count; i++) {
@@ -86,7 +87,7 @@ test.describe("layout at 375 wide", () => {
   test("card order is metrics, panorama, timeline", async ({ page }) => {
     await page.goto("/");
     const card = page.getByTestId("scenario-card-a");
-    await expect(card).toBeVisible();
+    await expect(card.locator("canvas")).toBeVisible({ timeout: 30_000 }); // the live card, not the prerendered one
     const ys = await card.evaluate((el) => {
       const top = (sel: string) => el.querySelector(sel)?.getBoundingClientRect().top ?? -1;
       return [top("[data-testid='metrics-bar']"), top("canvas"), top("[data-testid='timeline']")];
@@ -129,5 +130,46 @@ test.describe("production build", () => {
     await expect(page.getByRole("heading", { name: "Ridgeline" })).toBeVisible();
     await expect(page.getByText("Offline — showing cached data")).toBeVisible();
     await context.setOffline(false);
+  });
+
+  for (const [label, path] of [
+    ["the default scenario", "/"],
+    ["a non-default scenario (apollo-11)", "/?v=1&sc=apollo-11@2026-12-01T00:00Z"],
+  ] as const) {
+    test(`offline reload renders a live card for ${label} from the data cache`, async ({
+      page,
+      context,
+    }) => {
+      await page.goto(path);
+      const card = page.getByTestId("scenario-card-a");
+      // Live card: the canvas exists only once the worker has evaluated, so the data files were fetched and cached.
+      await expect(card.locator("canvas")).toBeVisible({ timeout: 60_000 });
+      await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+      await expect
+        .poll(() => page.evaluate(async () => (await caches.keys()).includes("ridgeline-data-v1")))
+        .toBe(true);
+      await context.setOffline(true);
+      await page.reload();
+      await expect(page.getByText("Offline — showing cached data")).toBeVisible();
+      await expect(card.getByText("Both hours")).toBeVisible({ timeout: 60_000 });
+      await expect(card.locator("canvas")).toBeVisible({ timeout: 60_000 });
+      await expect(card).toContainText(/\d+ h/);
+      await context.setOffline(false);
+    });
+  }
+
+  test("a chunk load failure shows the update notice", async ({ page }) => {
+    await page.goto("/");
+    // Hydrated and live: the prerendered card is visible before any script runs.
+    await expect(page.getByTestId("scenario-card-a").locator("canvas")).toBeVisible({
+      timeout: 60_000,
+    });
+    await page.evaluate(() => {
+      void Promise.reject(
+        Object.assign(new Error("Loading chunk 42 failed"), { name: "ChunkLoadError" }),
+      );
+    });
+    await expect(page.getByText("New version available — reload")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reload" })).toBeVisible();
   });
 });

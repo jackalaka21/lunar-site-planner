@@ -1,30 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Grid } from "@astryxdesign/core/Grid";
 import { useMediaQuery } from "@astryxdesign/core/hooks";
 import { Stack } from "@astryxdesign/core/Stack";
 import { useAppStore } from "../../lib/state/store";
-import type { Site } from "../../lib/data/sites";
+import { GROUP_LABEL } from "../../lib/siteGroups";
 import { useCatalog } from "../../lib/useCatalog";
 import { useScenarioResults } from "../../lib/useScenarioResults";
 import { sharedElDomain } from "../panorama/layout";
 import { SwipeDeck } from "../ui/SwipeDeck";
+import { FirstCardContext } from "../shell/FirstCardContext";
 import { ScenarioSlot } from "./ScenarioSlot";
 
 const HOURS_PER_DAY = 24;
 const DESKTOP_QUERY = "(min-width: 64rem)";
 const PHONE_QUERY = "(max-width: 47.99rem)";
 const FALLBACK_DOMAIN: [number, number] = [-2, 8];
-
-const GROUP_LABEL: Record<Site["group"], string> = {
-  apollo: "Apollo",
-  clps: "CLPS",
-  international: "International",
-  artemis3: "Artemis III",
-  polar: "Polar",
-};
 
 interface CompareViewProps {
   /** Focus the editor for a scenario (a date field in the left panel, or its drawer). */
@@ -46,6 +39,7 @@ export function CompareView({ onEdit }: CompareViewProps) {
   const catalog = useCatalog();
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const isPhone = useMediaQuery(PHONE_QUERY);
+  const firstCard = useContext(FirstCardContext);
 
   const { slots, retry } = useScenarioResults(scenarios, settings);
 
@@ -86,6 +80,7 @@ export function CompareView({ onEdit }: CompareViewProps) {
         scenario={sc}
         slot={slot}
         onRetry={() => retry(sc.key)}
+        fallback={i === 0 ? firstCard : undefined}
         ctx={{
           name,
           groupTag: site ? GROUP_LABEL[site.group] : undefined,
@@ -104,7 +99,7 @@ export function CompareView({ onEdit }: CompareViewProps) {
     );
   });
 
-  if (isPhone) return (
+  if (isPhone && scenarios.length > 1) return (
       <SwipeDeck label="Scenario cards">
         {nodes.map((n) => (
           <Stack key={n.key} width="calc(100vw - 3rem)">

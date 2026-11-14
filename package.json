@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
-    "prebuild": "astryx theme build theme/ridgeline.theme.ts",
+    "prebuild": "astryx theme build theme/ridgeline.theme.ts && tsx scripts/prerender-default.ts",
     "build": "next build && workbox generateSW workbox-config.cjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",

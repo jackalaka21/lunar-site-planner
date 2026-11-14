@@ -4,7 +4,9 @@ import { useSyncExternalStore } from "react";
 import { Button } from "@astryxdesign/core/Button";
 import { Banner } from "@astryxdesign/core/Banner";
 
-export const STAT_STRIP_KEY = "lsp.statstrip.dismissed";
+import { STAT_STRIP_KEY } from "../../lib/storageKeys";
+
+export { STAT_STRIP_KEY };
 
 export const STAT_STRIP_COPY =
   "On the Moon: the Sun peaks at ~1.5° at the pole (vs ~70° at mid-latitudes on Earth) · a day lasts ~29.5 Earth days · shadows are pitch-black with no air to scatter light.";
@@ -24,8 +26,9 @@ function isDismissed(): boolean {
     return false;
   }
 }
-// Hidden in the static prerender so a returning visitor never sees it flash.
-const serverSnapshot = () => true;
+// Shown in the static prerender (it is the first thing painted). A returning visitor who dismissed it never sees
+// it: a script in <head> marks <html> before first paint and the stylesheet hides the banner.
+const serverSnapshot = () => false;
 
 export function StatStrip() {
   const dismissed = useSyncExternalStore(subscribe, isDismissed, serverSnapshot);

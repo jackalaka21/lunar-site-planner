@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Banner } from "@astryxdesign/core/Banner";
 import { X } from "lucide-react";
 import { Button } from "@astryxdesign/core/Button";
@@ -94,10 +95,12 @@ interface ScenarioSlotProps {
   slot: Slot | undefined;
   ctx: SlotContext;
   onRetry: () => void;
+  /** Shown in place of the loading skeleton (the prerendered card for the default view). */
+  fallback?: ReactNode;
 }
 
 /** One scenario: loading skeleton, inline error with Retry, or the full card with live countdowns. */
-export function ScenarioSlot({ scenario, slot, ctx, onRetry }: ScenarioSlotProps) {
+export function ScenarioSlot({ scenario, slot, ctx, onRetry, fallback }: ScenarioSlotProps) {
   const letter = scenario.key.toUpperCase();
   const { settings } = ctx;
   const ready = slot?.status === "ready" ? slot : null;
@@ -111,7 +114,7 @@ export function ScenarioSlot({ scenario, slot, ctx, onRetry }: ScenarioSlotProps
   const countdowns = useCountdowns(scenario.site, cursorMs, settings, ctx.playing, ready !== null);
 
   if (slot?.status === "error") return <ErrorCard label={letter} onRetry={onRetry} onRemove={ctx.canRemove === false ? undefined : ctx.onRemove} />;
-  if (!ready || !series) return <LoadingCard label={letter} />;
+  if (!ready || !series) return fallback ? <VStack gap={2}>{fallback}</VStack> : <LoadingCard label={letter} />;
 
   const outside = settings.axis === "cal" ? (rawIndex < 0 ? "Before landing" : rawIndex > series.n - 1 ? "After mission" : null) : null;
   const r = ready.result;
