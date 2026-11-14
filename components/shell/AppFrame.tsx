@@ -11,11 +11,10 @@ import {
   LayoutHeader,
   LayoutPanel,
 } from "@astryxdesign/core/Layout";
-import { HStack, Stack } from "@astryxdesign/core/Stack";
-import { Text } from "@astryxdesign/core/Text";
+import { Stack } from "@astryxdesign/core/Stack";
 import { bindUrlSync, useAppStore } from "../../lib/state/store";
 import { SettingsPanel } from "../settings/SettingsPanel";
-import { MissionClock } from "../ui/MissionClock";
+import { TimeBar } from "../time/TimeBar";
 import { LeftPanel } from "./LeftPanel";
 import { Notice } from "./Notice";
 import { StatStrip } from "./StatStrip";
@@ -24,7 +23,6 @@ import { TopBar } from "./TopBar";
 const HEADER_HEIGHT = 56;
 const PANEL_WIDTH = 280;
 const CONTENT_MAX_WIDTH = 1600;
-const HOUR_MS = 3_600_000;
 /** 1024 at the 16 root size. Below it the left panel becomes a drawer. */
 const WIDE_QUERY = "(min-width: 64rem)";
 
@@ -33,10 +31,6 @@ export function AppFrame() {
   const isWide = useMediaQuery(WIDE_QUERY);
   const [navOpen, setNavOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const cursorH = useAppStore((s) => s.cursorH);
-  const axis = useAppStore((s) => s.settings.axis);
-  const tz = useAppStore((s) => s.settings.displayTz);
-  const landingMs = useAppStore((s) => s.scenarios[0]?.t0Ms ?? 0);
 
   useEffect(
     () =>
@@ -80,10 +74,7 @@ export function AppFrame() {
         }
         footer={
           <LayoutFooter hasDivider data-testid="time-bar-slot">
-            <HStack gap={2} vAlign="center">
-              <Text color="secondary">Cursor</Text>
-              <MissionClock ms={axis === "cal" ? landingMs + cursorH * HOUR_MS : cursorH * HOUR_MS} axis={axis} tz={tz} />
-            </HStack>
+            <TimeBar />
           </LayoutFooter>
         }
       />
