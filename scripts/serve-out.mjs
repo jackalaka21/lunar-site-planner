@@ -16,6 +16,8 @@ const TYPES = {
   ".ico": "image/x-icon",
   ".woff2": "font/woff2",
   ".bin": "application/octet-stream",
+  ".webp": "image/webp",
+  ".mp4": "video/mp4",
 };
 
 createServer((req, res) => {

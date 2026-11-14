@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { nodeFetchers } from "../../../lib/data/nodeFetchers";
-import { SHOWCASE_FACTS as F } from "../../../lib/landing/copy";
+import { CALLOUTS, JPL_AGREEMENT, REPLAYS, SHOWCASE_FACTS as F, SITE_LAT_TEXT } from "../../../lib/landing/copy";
 import { computeComparisonFacts, computeLandingFacts } from "../../../lib/landing/facts";
 import { pinsFromCatalog } from "../../../components/landing/MoonHeroCanvas";
 import { createEngineHandlers } from "../../../workers/engineHandlers";
@@ -43,6 +43,7 @@ describe("landing wording", () => {
   const files = [
     "components/landing/LandingPage.tsx",
     "components/landing/MoonHeroCanvas.tsx",
+    "components/landing/choreography.ts",
     "lib/landing/copy.ts",
   ];
   it.each(files)("%s has no telemetry or atmosphere claims", (file) => {
@@ -65,5 +66,34 @@ describe("hero pins", () => {
     expect(shack.lat).toBe(site.lat);
     expect(shack.lon).toBe(site.lon);
     expect(shack.label).toContain("89.7\u00b0S");
+  });
+});
+
+describe("landing callouts", () => {
+  const doc = JSON.parse(read("public/data/v1/sites.json")) as {
+    sites: Array<{ id: string; lat: number; actual_landing_utc?: string }>;
+  };
+  const site = (id: string) => doc.sites.find((s) => s.id === id)!;
+
+  it("latitudes match the catalogue", () => {
+    const text = (lat: number) => `${Math.abs(lat).toFixed(1)}° ${lat < 0 ? "S" : "N"}`;
+    expect(SITE_LAT_TEXT.monsMouton).toBe(text(site("im-2").lat));
+    expect(SITE_LAT_TEXT.shackleton).toBe(text(site("shackleton-rim").lat));
+  });
+
+  it("hour callouts use the engine-checked values", () => {
+    expect(CALLOUTS.monsMouton.fact).toBe(`${F.bothH} h Sun + Earth`);
+    expect(CALLOUTS.shackleton.fact).toBe(`${F.shackletonBothH} h Sun + Earth`);
+  });
+
+  it("JPL agreement is the README's 1e-5 / 1e-4 degrees", () => {
+    const readme = read("README.md");
+    expect(readme).toMatch(/Sun direction agrees to about 1e-5 degrees and Earth to about 1e-4 degrees/);
+    expect(JPL_AGREEMENT).toContain("0.00001° Sun");
+    expect(JPL_AGREEMENT).toContain("0.0001° Earth");
+  });
+
+  it("replay buttons use the catalogue's actual landing times", () => {
+    for (const r of REPLAYS) expect(site(r.id).actual_landing_utc).toBe(r.iso);
   });
 });

@@ -36,7 +36,7 @@ export const MONS_MOUTON_COPY = {
 } as const;
 
 export const RIDGE_COPY = {
-  badge: `${F.shackletonBothH} h vs ${F.bothH} h`,
+  badge: `${F.shackletonBothH} h, ${F.bothH - F.shackletonBothH} h less than Mons Mouton`,
   title: "Shackleton rim vs Mons Mouton: same date, very different window",
   summary: `At 89.7° S on the same landing date, the Shackleton rim has Sun and Earth up together for ${F.shackletonBothH} h, against ${F.bothH} h at Mons Mouton. Terrain first blocks the Sun at the rim ${F.shackletonFirstSunsetH} h in (about 6 days).`,
   detail:
@@ -44,6 +44,7 @@ export const RIDGE_COPY = {
 } as const;
 
 export const SLIP_COPY = {
+  badge: `+14 d: ${F.bothH} h → ${F.slipBothH} h`,
   title: "What happens when a launch slips by 14 days?",
   summary: `Fourteen days is about half a lunar day, so the Sun is on the other side of the sky. At the same site, Sun-plus-Earth time falls from ${F.bothH} h to ${F.slipBothH} h: the Sun sets within the first hour and does not return in the window.`,
   detail:
@@ -51,9 +52,56 @@ export const SLIP_COPY = {
 } as const;
 
 export const REPLAY_COPY = {
+  badge: "IM-2 / CH-3 / SLIM",
   title: "Replay real landings with NASA/JPL ephemerides",
   summary:
     "Replay Intuitive Machines IM-2 Athena at Mons Mouton, ISRO Chandrayaan-3 at 69.4° S, or JAXA SLIM near Shioli crater using JPL ephemerides and LOLA terrain horizons.",
   detail:
     "Sun and Earth directions agree with JPL Horizons to better than 0.001° in the published validation on the About page.",
 } as const;
+
+/** Latitudes as printed in the copy above; the facts test checks them against public/data/v1/sites.json. */
+export const SITE_LAT_TEXT = { monsMouton: "84.8° S", shackleton: "89.7° S" } as const;
+
+export const LANDING_HEADLINE = "Beyond the lunar horizon";
+export const LANDING_HOOK =
+  "For any landing site and date, Ridgeline answers one question: will the lander have sunlight for power and Earth in view for communications? Then it shows what changes if the date slips.";
+
+/** README.md, Validation section: "about 1e-5 degrees" (Sun) and "about 1e-4 degrees" (Earth). */
+export const JPL_AGREEMENT = "≈0.00001° Sun, ≈0.0001° Earth vs JPL Horizons";
+
+export const CALLOUTS = {
+  monsMouton: { title: `Mons Mouton · ${SITE_LAT_TEXT.monsMouton}`, fact: `${F.bothH} h Sun + Earth` },
+  shackleton: {
+    title: `Shackleton rim · ${SITE_LAT_TEXT.shackleton}`,
+    fact: `${F.shackletonBothH} h Sun + Earth`,
+  },
+  jpl: { title: "JPL DE440 ephemeris", fact: JPL_AGREEMENT },
+  replays: { title: "Historical replays", fact: "IM-2 · Chandrayaan-3 · SLIM" },
+} as const;
+
+/** Catalogue ids and actual landing times (sites.json `actual_landing_utc`); the facts test compares them. */
+export const REPLAYS = [
+  { id: "im-2", label: "IM-2 Athena", iso: "2025-03-06T17:30Z" },
+  { id: "chandrayaan-3", label: "Chandrayaan-3", iso: "2023-08-23T00:00Z" },
+  { id: "slim", label: "JAXA SLIM", iso: "2024-01-19T15:20Z" },
+] as const;
+
+export const CAPABILITIES = [
+  {
+    title: "3D LOLA terrain & sky",
+    text: "Terrain patches built from NASA LOLA elevation, viewed from orbit or from the lander, with Sun and Earth sightlines and the ridges that block them.",
+  },
+  {
+    title: "Direct-to-Earth & DSN handovers",
+    text: "When Earth is above the local horizon, and which Deep Space Network station (Goldstone, Madrid or Canberra) has the Moon in view.",
+  },
+  {
+    title: "4-site & slip compare",
+    text: "Put up to four sites or launch dates side by side and read the change in hours of Sun plus Earth.",
+  },
+  {
+    title: "Landing robustness",
+    text: "Shift the horizon and nearby landing points within the landing ellipse to see how far the headline hours move.",
+  },
+] as const;

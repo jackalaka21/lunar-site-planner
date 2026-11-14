@@ -1,10 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import type { PointerEvent as ReactPointerEvent } from "react";
-import { useTheme } from "@astryxdesign/core/theme";
-import { withAlpha } from "../panorama/layout";
-import { panoramaPalette } from "../panorama/palette";
+import { useEffect, useRef } from "react";
+import type { RefObject } from "react";
 
 interface SitePin {
   id: string;
@@ -50,533 +47,252 @@ export function pinsFromCatalog(sites: CatalogSite[]): SitePin[] {
   return out;
 }
 
+/** Values the landing's scroll loop writes every frame and the HUD canvases read. */
+export interface HudDrive {
+  /** Smoothed scroll progress 0..1. */
+  p: number;
+  /** Stage size in CSS px. */
+  w: number;
+  h: number;
+  /** Moon centre and radius on screen, CSS px. */
+  mx: number;
+  my: number;
+  mr: number;
+  /** Layer opacities 0..1: orbital HUD and showcase HUD. */
+  heroVis: number;
+  showVis: number;
+  /** Sun direction of the active showcase stage, degrees. */
+  phaseDeg: number;
+  wide: boolean;
+}
+
+export const INITIAL_DRIVE: HudDrive = {
+  p: 0,
+  w: 0,
+  h: 0,
+  mx: 0,
+  my: 0,
+  mr: 0,
+  heroVis: 1,
+  showVis: 0,
+  phaseDeg: -34,
+  wide: true,
+};
+
 const STARS: Array<{ x: number; y: number; r: number; phase: number; depth: number }> = Array.from(
-  { length: 124 },
+  { length: 90 },
   (_, i) => ({
     x: ((i * 73 + 19) % 1000) / 1000,
     y: ((i * 41 + 7) % 1000) / 1000,
-    r: (i % 4) * 0.42 + 0.48,
+    r: (i % 4) * 0.3 + 0.5,
     phase: i * 0.67,
     depth: 0.35 + ((i * 29) % 65) / 100,
   }),
 );
 
-function projectSphere(
-  latDeg: number,
-  lonDeg: number,
-  centerLatDeg: number,
-  centerLonDeg: number,
-  cx: number,
-  cy: number,
-  rPx: number,
-): { x: number; y: number; z: number; visible: boolean } {
-  const phi = (latDeg * Math.PI) / 180;
-  const phi0 = (centerLatDeg * Math.PI) / 180;
-  const dLam = ((lonDeg - centerLonDeg) * Math.PI) / 180;
-
-  const cosPhi = Math.cos(phi);
-  const sinPhi = Math.sin(phi);
-  const cosPhi0 = Math.cos(phi0);
-  const sinPhi0 = Math.sin(phi0);
-  const cosLam = Math.cos(dLam);
-  const sinLam = Math.sin(dLam);
-
-  const nx = cosPhi * sinLam;
-  const ny = cosPhi0 * sinPhi - sinPhi0 * cosPhi * cosLam;
-  const nz = sinPhi0 * sinPhi + cosPhi0 * cosPhi * cosLam;
-
-  return {
-    x: cx + nx * rPx,
-    y: cy - ny * rPx,
-    z: nz,
-    visible: nz >= -0.02,
-  };
-}
+const AMBER = "255,180,84";
+const CYAN = "94,200,255";
+const MONO = '500 11px var(--font-family-code), "IBM Plex Mono", monospace';
 
 export interface MoonHeroCanvasProps {
-  height?: number;
-  /** Solar illumination phase angle in degrees (-75 to +75) for smooth lighting transitions. */
-  phaseDeg?: number;
-  /** Target camera latitude in degrees. */
-  focusLatDeg?: number;
-  /** Target camera longitude in degrees. */
-  focusLonDeg?: number;
-  /**
-   * "hero": centerpiece 3D Moon (airless: no halo) with LOLA relief, and scroll parallax;
-   * "showcase": focused interactive stage preview;
-   * "horizon": wide closing lunar horizon arc at the bottom of the landing page.
-   */
-  variant?: "hero" | "showcase" | "horizon";
+  /** "hero": orbital HUD over the video. "showcase": lighting HUD over the low-altitude frames. */
+  variant: "hero" | "showcase";
+  drive: RefObject<HudDrive>;
+  reducedMotion?: boolean;
 }
 
-export function MoonHeroCanvas({
-  height,
-  phaseDeg = -28,
-  focusLatDeg = -42,
-  focusLonDeg = 28,
-  variant = "hero",
-}: MoonHeroCanvasProps) {
-  const resolvedHeight =
-    height ?? (variant === "horizon" ? 150 : variant === "showcase" ? 260 : 440);
-  const wrapRef = useRef<HTMLDivElement>(null);
+/**
+ * Transparent HUD canvases drawn over the landing media. The Moon itself is the video / descent frames;
+ * everything drawn here is labelled illustrative and carries no engine numbers.
+ */
+export function MoonHeroCanvas({ variant, drive, reducedMotion = false }: MoonHeroCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [width, setWidth] = useState(0);
-  const rotRef = useRef({
-    baseLon: focusLonDeg,
-    autoLon: 0,
-    lat: focusLatDeg,
-    phase: phaseDeg,
-    targetLonOffset: 0,
-    targetLatOffset: 0,
-    dragLonOffset: 0,
-    dragLatOffset: 0,
-    dragging: false,
-    dragStartX: 0,
-    dragStartY: 0,
-    scrollOffset: 0,
-  });
-  const basemapRef = useRef<HTMLImageElement | null>(null);
-  const pinsRef = useRef<SitePin[]>([]);
-  const { mode } = useTheme();
+  const pointerRef = useRef(0);
 
   useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    setWidth(el.clientWidth);
-    const ro = new ResizeObserver((entries) => {
-      for (const e of entries) setWidth(Math.round(e.contentRect.width));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (typeof Image === "undefined") return;
-    const img = new Image();
-    img.src = "/data/v1/basemaps/global-2048.webp";
-    img.onload = () => {
-      basemapRef.current = img;
+    if (variant !== "showcase") return;
+    const onMove = (e: PointerEvent) => {
+      pointerRef.current = (e.clientX / Math.max(1, window.innerWidth)) * 2 - 1;
     };
-  }, []);
-
-  useEffect(() => {
-    if (typeof fetch === "undefined") return;
-    let cancelled = false;
-    fetch("/data/v1/sites.json")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((doc: { sites: CatalogSite[] }) => {
-        if (!cancelled) pinsRef.current = pinsFromCatalog(doc.sites);
-      })
-      .catch(() => {
-        /* pins are decorative: draw none if the catalogue cannot be read */
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || variant !== "hero") return;
-    const onScroll = () => {
-      const y = window.scrollY || 0;
-      rotRef.current.scrollOffset = Math.min(1, Math.max(0, y / 750));
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onMove);
   }, [variant]);
 
   useEffect(() => {
-    if (width <= 0) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    let raf = 0;
+    let bufW = 0;
+    let bufH = 0;
+    let phase = drive.current.phaseDeg;
 
-    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-    canvas.width = Math.round(width * dpr);
-    canvas.height = Math.round(resolvedHeight * dpr);
-
-    let animId = 0;
-    let t0 = performance.now();
-
-    const renderFrame = (now: number) => {
-      const dt = Math.min(0.05, (now - t0) / 1000);
-      t0 = now;
-      const st = rotRef.current;
-      const spinSpeed = variant === "showcase" ? 1.4 : 3.4;
-      if (!st.dragging) {
-        st.autoLon = (st.autoLon + dt * spinSpeed) % 360;
+    const draw = (now: number) => {
+      raf = window.requestAnimationFrame(draw);
+      const d = drive.current;
+      const vis = variant === "hero" ? d.heroVis : d.showVis;
+      canvas.style.opacity = String(vis);
+      if (vis < 0.01 || d.w <= 0) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const bw = Math.round(d.w * dpr);
+      const bh = Math.round(d.h * dpr);
+      if (bw !== bufW || bh !== bufH) {
+        canvas.width = bw;
+        canvas.height = bh;
+        bufW = bw;
+        bufH = bh;
       }
-      const lonDelta = ((focusLonDeg - st.baseLon + 540) % 360) - 180;
-      st.baseLon = (st.baseLon + lonDelta * 0.08 + 360) % 360;
-      st.phase += (phaseDeg - st.phase) * 0.08;
-      st.lat += (focusLatDeg - st.lat) * 0.07;
-
-      const cLon =
-        (variant === "showcase" ? st.baseLon + st.autoLon * 0.35 : st.baseLon + st.autoLon) +
-        st.targetLonOffset +
-        st.dragLonOffset;
-      const cLat = Math.max(
-        -78,
-        Math.min(-8, st.lat + st.targetLatOffset + st.dragLatOffset),
-      );
-      const pal = panoramaPalette(mode);
-
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, width, resolvedHeight);
-
-      // Deep space background with subtle radial depth
-      const bgGrad = ctx.createRadialGradient(
-        width * 0.5,
-        variant === "horizon" ? resolvedHeight * 1.35 : resolvedHeight * 0.5,
-        12,
-        width * 0.5,
-        resolvedHeight * 0.5,
-        Math.max(width, resolvedHeight) * 0.85,
-      );
-      bgGrad.addColorStop(0, pal.sky);
-      bgGrad.addColorStop(1, pal.deepest);
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, width, resolvedHeight);
-
-      // Deep-space twinkling starfield with parallax depth
-      const scrollShiftY = variant === "hero" ? st.scrollOffset * 18 : 0;
-      for (const s of STARS) {
-        const twinkle = 0.25 + 0.5 * Math.sin(now * 0.0015 + s.phase);
-        const sy = (s.y * resolvedHeight - scrollShiftY * s.depth + resolvedHeight) % resolvedHeight;
-        ctx.fillStyle = withAlpha(pal.rim, Math.max(0.1, Math.min(0.8, twinkle * s.depth)));
-        ctx.beginPath();
-        ctx.arc(s.x * width, sy, s.r, 0, Math.PI * 2);
-        ctx.fill();
+      ctx.clearRect(0, 0, d.w, d.h);
+      ctx.font = MONO;
+      if (variant === "hero") drawHero(ctx, d, now, reducedMotion);
+      else {
+        phase += (d.phaseDeg + pointerRef.current * 5 - phase) * 0.08;
+        drawShowcase(ctx, d, phase);
       }
-
-      if (variant === "horizon") {
-        // Wide closing lunar horizon arc at the bottom of the landing page
-        const arcR = Math.max(width * 0.96, 560);
-        const arcCx = width * 0.5;
-        const arcCy = resolvedHeight + arcR - 52;
-
-        ctx.fillStyle = pal.near;
-        ctx.beginPath();
-        ctx.arc(arcCx, arcCy, arcR, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Subtle illuminated limb
-        ctx.strokeStyle = withAlpha(pal.sun, 0.72);
-        ctx.lineWidth = 1.8;
-        ctx.beginPath();
-        ctx.arc(arcCx, arcCy, arcR, Math.PI * 1.18, Math.PI * 1.82);
-        ctx.stroke();
-
-        ctx.font = "500 11px var(--font-family-code), monospace";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillStyle = pal.rim;
-        ctx.fillText(
-          "84°S–90°S Lunar South Pole · NASA LOLA DEM & JPL DE440 Ephemeris",
-          width * 0.5,
-          resolvedHeight - 12,
-        );
-        animId = window.requestAnimationFrame(renderFrame);
-        return;
-      }
-
-      const parallaxScale = variant === "hero" ? 1 - st.scrollOffset * 0.08 : 1;
-      const parallaxY = variant === "hero" ? st.scrollOffset * 16 : 0;
-      const cx = width * 0.5;
-      const cy = resolvedHeight * 0.5 + parallaxY;
-      const radiusRatio = variant === "showcase" ? 0.37 : 0.39;
-      const rPx = Math.max(
-        76,
-        Math.min(width * 0.38, resolvedHeight * radiusRatio) * parallaxScale,
-      );
-
-      const phaseRad = (st.phase * Math.PI) / 180;
-      const sunShiftX = Math.sin(phaseRad) * rPx * 0.62;
-      const sunShiftY = Math.cos(phaseRad) * rPx * 0.16;
-
-      // Lunar sphere clip
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
-      ctx.clip();
-
-      // Base illuminated sphere gradient controlled by phaseDeg
-      const litGrad = ctx.createRadialGradient(
-        cx + sunShiftX - rPx * 0.2,
-        cy + sunShiftY + rPx * 0.16,
-        rPx * 0.06,
-        cx,
-        cy,
-        rPx * 1.2,
-      );
-      litGrad.addColorStop(0, withAlpha(pal.rim, 0.46));
-      litGrad.addColorStop(0.56, pal.near);
-      litGrad.addColorStop(1, pal.deepest);
-      ctx.fillStyle = litGrad;
-      ctx.fillRect(cx - rPx, cy - rPx, rPx * 2, rPx * 2);
-
-      // Real NASA LOLA global relief texture scrolling across the sphere
-      const img = basemapRef.current;
-      if (img && img.width > 0) {
-        ctx.save();
-        ctx.globalAlpha = 0.52;
-        const shiftPx = (((cLon % 360) + 360) % 360) * ((rPx * 2) / 180);
-        const drawW = rPx * 4;
-        const drawH = rPx * 2;
-        ctx.drawImage(img, cx - rPx - shiftPx, cy - rPx, drawW, drawH);
-        ctx.drawImage(img, cx - rPx - shiftPx + drawW, cy - rPx, drawW, drawH);
-        ctx.restore();
-      }
-
-      // Dynamic 3D terminator shadow driven by phaseDeg
-      const termGrad = ctx.createLinearGradient(
-        cx + sunShiftX - rPx,
-        cy + rPx * 0.28,
-        cx + sunShiftX + rPx,
-        cy - rPx * 0.28,
-      );
-      if (st.phase <= 0) {
-        termGrad.addColorStop(0, withAlpha(pal.sun, 0.16));
-        termGrad.addColorStop(0.5, withAlpha(pal.deepest, 0.08));
-        termGrad.addColorStop(1, withAlpha(pal.deepest, 0.88));
-      } else {
-        termGrad.addColorStop(0, withAlpha(pal.deepest, 0.86));
-        termGrad.addColorStop(0.5, withAlpha(pal.deepest, 0.08));
-        termGrad.addColorStop(1, withAlpha(pal.sun, 0.18));
-      }
-      ctx.fillStyle = termGrad;
-      ctx.fillRect(cx - rPx, cy - rPx, rPx * 2, rPx * 2);
-
-      // Selenographic latitude/longitude graticule
-      ctx.strokeStyle = withAlpha(pal.rim, 0.24);
-      ctx.lineWidth = 0.8;
-      for (const lat of [-80, -60, -30, 0, 30]) {
-        ctx.beginPath();
-        let open = false;
-        for (let lon = -180; lon <= 180; lon += 6) {
-          const p = projectSphere(lat, lon, cLat, cLon, cx, cy, rPx);
-          if (!p.visible) {
-            open = false;
-            continue;
-          }
-          if (!open) {
-            ctx.moveTo(p.x, p.y);
-            open = true;
-          } else {
-            ctx.lineTo(p.x, p.y);
-          }
-        }
-        ctx.stroke();
-      }
-      for (let lon = -150; lon <= 180; lon += 30) {
-        ctx.beginPath();
-        let open = false;
-        for (let lat = -85; lat <= 85; lat += 5) {
-          const p = projectSphere(lat, lon, cLat, cLon, cx, cy, rPx);
-          if (!p.visible) {
-            open = false;
-            continue;
-          }
-          if (!open) {
-            ctx.moveTo(p.x, p.y);
-            open = true;
-          } else {
-            ctx.lineTo(p.x, p.y);
-          }
-        }
-        ctx.stroke();
-      }
-
-      // Highlighted 84°S South-Polar Grazing Sunlight Zone ring
-      ctx.strokeStyle = pal.sun;
-      ctx.lineWidth = 1.7;
-      ctx.setLineDash([4, 3]);
-      ctx.beginPath();
-      let polarOpen = false;
-      for (let lon = -180; lon <= 180; lon += 5) {
-        const p = projectSphere(-84, lon, cLat, cLon, cx, cy, rPx);
-        if (!p.visible) {
-          polarOpen = false;
-          continue;
-        }
-        if (!polarOpen) {
-          ctx.moveTo(p.x, p.y);
-          polarOpen = true;
-        } else {
-          ctx.lineTo(p.x, p.y);
-        }
-      }
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.restore();
-
-      // Limb outline (airless body, no halo)
-      ctx.strokeStyle = pal.rim;
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.arc(cx, cy, rPx, 0, Math.PI * 2);
-      ctx.stroke();
-
-      // Grazing Sun ray & Earth communication sightline vectors at the South Pole
-      const polePt = projectSphere(-90, 0, cLat, cLon, cx, cy, rPx);
-      if (polePt.visible) {
-        ctx.save();
-        ctx.strokeStyle = withAlpha(pal.sun, 0.86);
-        ctx.lineWidth = 1.7;
-        ctx.beginPath();
-        ctx.moveTo(16, polePt.y + 10);
-        ctx.lineTo(polePt.x, polePt.y);
-        ctx.stroke();
-
-        ctx.strokeStyle = withAlpha(pal.earth, 0.86);
-        ctx.setLineDash([4, 3]);
-        ctx.beginPath();
-        ctx.moveTo(polePt.x, polePt.y);
-        ctx.lineTo(width - 16, polePt.y - 18);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      // Plot mission site beacons on the rotating globe
-      ctx.save();
-      ctx.font = "500 11px var(--font-family-code), monospace";
-      for (const site of pinsRef.current) {
-        const p = projectSphere(site.lat, site.lon, cLat, cLon, cx, cy, rPx);
-        if (!p.visible) continue;
-
-        const isActiveFocus =
-          Math.abs(site.lon - focusLonDeg) < 25 && Math.abs(site.lat - focusLatDeg) < 45;
-        const emphasized = site.highlight || isActiveFocus;
-
-        if (emphasized) {
-          ctx.strokeStyle = withAlpha(pal.sun, 0.45);
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 7.5, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-
-        ctx.fillStyle = emphasized ? pal.sun : pal.earth;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, emphasized ? 4.2 : 3.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.strokeStyle = pal.deepest;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        if (emphasized || p.z > 0.35) {
-          const isSouthPole = site.lat < -88;
-          const alignRight = isSouthPole ? false : emphasized ? true : p.x > cx;
-          ctx.textAlign = alignRight ? "left" : "right";
-          ctx.textBaseline = "middle";
-          const lx = alignRight ? p.x + 9 : p.x - 9;
-          const ly = isSouthPole ? p.y + 7 : emphasized ? p.y - 5 : p.y;
-          ctx.fillStyle = emphasized ? pal.sun : pal.rim;
-          ctx.fillText(site.label, lx, ly);
-        }
-      }
-
-      // Technical callouts on the globe canvas
-      ctx.font = "500 11px var(--font-family-code), monospace";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      ctx.fillStyle = pal.sun;
-      ctx.fillText("Sun about 1.5° up at the pole (illustrative)", 14, 12);
-
-      ctx.textAlign = "right";
-      ctx.fillStyle = pal.earth;
-      ctx.fillText("Earth direction (illustrative)", width - 14, 12);
-
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillStyle = pal.rim;
-      ctx.fillText(
-        variant === "showcase"
-          ? "Interactive lighting stage · NASA LOLA DEM & JPL DE440"
-          : "Drag or hover globe · NASA LOLA DEM & JPL DE440 Ephemeris",
-        width / 2,
-        resolvedHeight - 10,
-      );
-      ctx.restore();
-
-      animId = window.requestAnimationFrame(renderFrame);
     };
-
-    animId = window.requestAnimationFrame(renderFrame);
-    return () => window.cancelAnimationFrame(animId);
-  }, [width, resolvedHeight, mode, phaseDeg, focusLatDeg, focusLonDeg, variant]);
-
-  const onPointerDown = (ev: ReactPointerEvent<HTMLDivElement>) => {
-    if (variant === "horizon") return;
-    rotRef.current.dragging = true;
-    rotRef.current.dragStartX = ev.clientX - rotRef.current.dragLonOffset * 3;
-    rotRef.current.dragStartY = ev.clientY - rotRef.current.dragLatOffset * 4;
-  };
-
-  const onPointerMove = (ev: ReactPointerEvent<HTMLDivElement>) => {
-    if (variant === "horizon") return;
-    const rect = ev.currentTarget.getBoundingClientRect();
-    if (rotRef.current.dragging) {
-      rotRef.current.dragLonOffset = (ev.clientX - rotRef.current.dragStartX) / 3;
-      rotRef.current.dragLatOffset = Math.max(
-        -24,
-        Math.min(24, -(ev.clientY - rotRef.current.dragStartY) / 4),
-      );
-      return;
-    }
-    const nx = ((ev.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1;
-    const ny = ((ev.clientY - rect.top) / Math.max(rect.height, 1)) * 2 - 1;
-    rotRef.current.targetLonOffset = nx * 28;
-    rotRef.current.targetLatOffset = -ny * 14;
-  };
-
-  const onPointerUpOrLeave = () => {
-    rotRef.current.dragging = false;
-    rotRef.current.targetLonOffset = 0;
-    rotRef.current.targetLatOffset = 0;
-  };
-
-  const testId =
-    variant === "horizon"
-      ? "moon-horizon"
-      : variant === "showcase"
-        ? "moon-showcase-canvas"
-        : "moon-hero-canvas";
+    raf = window.requestAnimationFrame(draw);
+    return () => window.cancelAnimationFrame(raf);
+  }, [drive, variant, reducedMotion]);
 
   return (
-    <div
-      ref={wrapRef}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUpOrLeave}
-      onPointerLeave={onPointerUpOrLeave}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: resolvedHeight,
-        borderRadius: 12,
-        overflow: "hidden",
-        cursor: variant === "horizon" ? "default" : "grab",
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        data-testid={testId}
-        aria-label={
-          variant === "horizon"
-            ? "Lunar south-polar horizon arc"
-            : variant === "showcase"
-              ? "Interactive 3D lunar lighting showcase"
-              : "Interactive 3D lunar globe showing south-polar grazing sunlight and mission landing sites"
-        }
-        style={{
-          display: "block",
-          width: "100%",
-          height: resolvedHeight,
-        }}
-      />
-    </div>
+    <canvas
+      ref={canvasRef}
+      data-testid={variant === "hero" ? "moon-hero-canvas" : "moon-showcase-canvas"}
+      aria-label={
+        variant === "hero"
+          ? "Illustrative orbital view: grazing Sun ray and a direct-to-Earth line"
+          : "Illustrative lighting angle for the selected stage"
+      }
+      role="img"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+    />
   );
+}
+
+function drawHero(ctx: CanvasRenderingContext2D, d: HudDrive, now: number, reduced: boolean) {
+  const { w, h, mx, my, mr } = d;
+  // Parallax starfield, drawn faintly so it reads as depth rather than content.
+  for (const s of STARS) {
+    const tw = reduced ? 0.5 : 0.5 + 0.5 * Math.sin(now * 0.0012 + s.phase);
+    const y = (((s.y * h - d.p * 140 * s.depth) % h) + h) % h;
+    const x = s.x * w;
+    if (Math.hypot(x - mx, y - my) < mr * 1.02) continue;
+    ctx.fillStyle = `rgba(235,232,224,${(0.12 + 0.3 * tw) * s.depth})`;
+    ctx.beginPath();
+    ctx.arc(x, y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const small = !d.wide;
+  // Grazing Sun ray: arrives from the lit (right) side just under the south limb.
+  const sy = my + mr * 0.9;
+  const sx = mx + mr * 0.42;
+  const sun = ctx.createLinearGradient(w, sy - mr * 0.1, sx, sy);
+  sun.addColorStop(0, `rgba(${AMBER},0)`);
+  sun.addColorStop(1, `rgba(${AMBER},0.85)`);
+  ctx.strokeStyle = sun;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(w, sy - mr * 0.1);
+  ctx.lineTo(sx, sy);
+  ctx.stroke();
+  ctx.fillStyle = `rgba(${AMBER},0.95)`;
+  ctx.beginPath();
+  ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.textAlign = "right";
+  ctx.textBaseline = small ? "top" : "bottom";
+  ctx.fillStyle = `rgba(${AMBER},0.9)`;
+  ctx.fillText(
+    small ? "Sun ray (illustrative)" : "Sun, grazing ray (illustrative)",
+    w - (small ? 12 : 24),
+    small ? sy + 4 : sy - mr * 0.1 - 6,
+  );
+
+  // Direct-to-Earth line from the upper limb to an Earth marker.
+  const ex = small ? 22 : w * 0.92;
+  const ey = small ? my - mr * 0.88 : Math.max(88, my - mr * 1.18);
+  const lx = small ? mx - mr * 0.45 : mx + mr * 0.5;
+  const ly = my - mr * 0.86;
+  ctx.strokeStyle = `rgba(${CYAN},0.8)`;
+  ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  ctx.moveTo(lx, ly);
+  ctx.lineTo(ex, ey);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = `rgba(${CYAN},0.95)`;
+  ctx.beginPath();
+  ctx.arc(ex, ey, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.textAlign = small ? "left" : "right";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(
+    small ? "Earth (illustrative)" : "Direct-to-Earth line (illustrative)",
+    small ? ex - 6 : ex + 4,
+    ey - 10,
+  );
+}
+
+function drawShowcase(ctx: CanvasRenderingContext2D, d: HudDrive, phaseDeg: number) {
+  const { w, h } = d;
+  const th = (phaseDeg * Math.PI) / 180;
+  // Sun marker rides an arc across the upper frame.
+  const sx = w * (0.5 + Math.sin(th) * 0.4);
+  const sy = h * 0.2 - Math.cos(th) * h * 0.06;
+
+  // Lighting: warm the sun side and let the far side fall away.
+  const shade = ctx.createLinearGradient(sx, 0, w - sx > sx ? w : 0, 0);
+  shade.addColorStop(0, `rgba(${AMBER},0.1)`);
+  shade.addColorStop(0.5, "rgba(3,3,5,0.06)");
+  shade.addColorStop(1, "rgba(3,3,5,0.5)");
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, w, h);
+
+  // Arc and ticks (1 px hairlines).
+  ctx.strokeStyle = "rgba(235,232,224,0.28)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let a = -75; a <= 75; a += 3) {
+    const r = (a * Math.PI) / 180;
+    const x = w * (0.5 + Math.sin(r) * 0.4);
+    const y = h * 0.2 - Math.cos(r) * h * 0.06;
+    if (a === -75) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Ray from the Sun marker down toward the surface.
+  const ray = ctx.createLinearGradient(sx, sy, w * 0.5, h * 0.62);
+  ray.addColorStop(0, `rgba(${AMBER},0.7)`);
+  ray.addColorStop(1, `rgba(${AMBER},0)`);
+  ctx.strokeStyle = ray;
+  ctx.beginPath();
+  ctx.moveTo(sx, sy);
+  ctx.lineTo(w * 0.5, h * 0.62);
+  ctx.stroke();
+
+  ctx.fillStyle = `rgba(${AMBER},1)`;
+  ctx.beginPath();
+  ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${AMBER},0.5)`;
+  ctx.beginPath();
+  ctx.arc(sx, sy, 10, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "bottom";
+  ctx.fillStyle = `rgba(${AMBER},0.95)`;
+  const lbl = "Sun direction (illustrative)";
+  const lx = Math.min(w - 110, Math.max(110, sx));
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(3,3,5,0.85)";
+  ctx.strokeText(lbl, lx, sy - 16);
+  ctx.fillText(lbl, lx, sy - 16);
 }
