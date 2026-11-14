@@ -14,7 +14,7 @@ interface SwipeDeckProps {
  */
 export function SwipeDeck({ label, children }: SwipeDeckProps) {
   return (
-    <Carousel aria-label={label} hasSnap hasEdgeFade={false} gap={3}>
+    <Carousel aria-label={label} hasButtons={false} hasSnap hasEdgeFade={false} gap={3}>
       {children}
     </Carousel>
   );

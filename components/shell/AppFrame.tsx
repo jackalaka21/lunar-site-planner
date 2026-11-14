@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Drawer, DrawerHeader } from "@astryxdesign/core/Drawer";
-import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { useMediaQuery } from "@astryxdesign/core/hooks";
 import {
   Layout,
@@ -12,14 +11,17 @@ import {
   LayoutPanel,
 } from "@astryxdesign/core/Layout";
 import { Stack } from "@astryxdesign/core/Stack";
+import { CompareView } from "../compare/CompareView";
+import { loadCatalogOnce } from "../../lib/useCatalog";
 import { bindUrlSync, useAppStore } from "../../lib/state/store";
 import { SettingsPanel } from "../settings/SettingsPanel";
 import { TimeBar } from "../time/TimeBar";
-import { LeftPanel } from "./LeftPanel";
+import { dateFieldId, LeftPanel } from "./LeftPanel";
 import { Notice } from "./Notice";
 import { StatStrip } from "./StatStrip";
 import { TopBar } from "./TopBar";
 
+const NO_WORKER_NOTICE = "This browser can't run the calculator (Web Workers unavailable).";
 const HEADER_HEIGHT = 56;
 const PANEL_WIDTH = 280;
 const CONTENT_MAX_WIDTH = 1600;
@@ -32,16 +34,39 @@ export function AppFrame() {
   const [navOpen, setNavOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  useEffect(
-    () =>
-      bindUrlSync(useAppStore, {
-        location: window.location,
-        history: window.history,
-        // Task 19 supplies the catalogue ids; until then any catalogue id is accepted.
-        knownSiteIds: null,
-      }),
-    [],
-  );
+  const [ready, setReady] = useState(false);
+
+  // Read the catalogue first so a link with an unknown site id is corrected (with a notice) on load.
+  useEffect(() => {
+    let cancelled = false;
+    let unbind: (() => void) | null = null;
+    (async () => {
+      let ids: Set<string> | null = null;
+      try {
+        ids = new Set((await loadCatalogOnce()).sites.map((x) => x.id));
+      } catch {
+        // Without the catalogue every card shows its own error with Retry; accept any id meanwhile.
+      }
+      if (cancelled) return;
+      unbind = bindUrlSync(useAppStore, { location: window.location, history: window.history, knownSiteIds: ids });
+      if (typeof Worker === "undefined") {
+        useAppStore.setState((st) => ({ notices: [...st.notices, NO_WORKER_NOTICE] }));
+      }
+      setReady(true);
+    })();
+    return () => {
+      cancelled = true;
+      unbind?.();
+    };
+  }, []);
+
+  const editScenario = (key: string) => {
+    if (!isWide) {
+      setNavOpen(true);
+      return;
+    }
+    document.getElementById(dateFieldId(key))?.focus();
+  };
 
   return (
     <Stack height="100dvh">
@@ -64,10 +89,7 @@ export function AppFrame() {
               <Notice />
               <StatStrip />
               <Stack data-testid="cards">
-                <EmptyState
-                  title="No results yet"
-                  description="Scenario cards appear here once a site and date are set."
-                />
+                {ready && typeof Worker !== "undefined" ? <CompareView onEdit={editScenario} /> : null}
               </Stack>
             </Stack>
           </LayoutContent>

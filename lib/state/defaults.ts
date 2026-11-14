@@ -12,8 +12,10 @@ export const MAX_T0_MS = Date.UTC(2035, 11, 31, 23);
 export const DEFAULT_SCENARIOS: Scenario[] = [
   {
     key: "a",
-    site: { kind: "catalog", id: "mons-mouton" },
-    // TODO(Task 19): replace with picked Good date
-    t0Ms: Date.UTC(2027, 0, 1, 0, 0),
+    // The plain mons-mouton point is never Good at default settings (84.3 S, 2 m mast), so the demo uses the
+    // Mons Mouton-area Artemis III site. First Good landing from 2027-01-01 (npx tsx scripts/pick-default-date.ts):
+    // 2027-01-14 06:00 UTC, Good, 317 h sun and Earth, 94% lit, no dark spell.
+    site: { kind: "catalog", id: "artemis3-mons-mouton" },
+    t0Ms: Date.UTC(2027, 0, 14, 6, 0),
   },
 ];
