@@ -46,6 +46,7 @@ export interface ScenarioCardProps {
 
 const POLE_LAT = 89.9;
 const NONE_WITHIN = "> 60 d";
+const PENDING = "…";
 
 export function ScenarioCard(p: ScenarioCardProps) {
   const { scenario, result, cursorIndex, axis, tz, countdowns, deltaVsA, robust } = p;
@@ -62,13 +63,23 @@ export function ScenarioCard(p: ScenarioCardProps) {
     [series, p.flickerMergeMin],
   );
 
-  const countdown = (at: number | null) => (at === null ? NONE_WITHIN : formatSpan(at - cursorMs));
+  // Next transition AFTER the cursor, from this card's merged series (R18); past the window, the prop (R24).
+  const nextInWindow = (state: Uint8Array): number | null => {
+    for (let i = idx + 1; i < series.n; i++) if (state[i] !== state[idx]) return series.t0Ms + i * series.stepMs;
+    return null;
+  };
+  const countdown = (state: Uint8Array, fallback: number | null | undefined) => {
+    const inWindow = nextInWindow(state);
+    if (inWindow !== null) return formatSpan(inWindow - cursorMs);
+    if (fallback === null) return NONE_WITHIN;
+    if (fallback === undefined || fallback <= cursorMs) return PENDING;
+    return formatSpan(fallback - cursorMs);
+  };
   const sunLit = merged.lit[idx] === 1;
   const earthUp = merged.earth[idx] === 1;
-  const earthValue =
-    metrics.earthH === 0
-      ? "Earth never in view"
-      : countdown(earthUp ? countdowns.earthset : countdowns.earthrise);
+  const sunValue = countdown(merged.lit, sunLit ? countdowns.sunset : countdowns.sunrise);
+  const earthNever = metrics.earthH === 0;
+  const earthValue = countdown(merged.earth, earthUp ? countdowns.earthset : countdowns.earthrise);
 
   const robustRange = robust
     ? `${Math.round(robust.bothH.min)} to ${Math.round(robust.bothH.max)} h`
@@ -122,13 +133,17 @@ export function ScenarioCard(p: ScenarioCardProps) {
           bothDelta={deltaVsA ? formatDelta(deltaVsA.bothH) : undefined}
           robustRange={robustRange}
           sun={{
-            label: <Term id="sunset">{sunLit ? "Sunset in" : "Sunrise in"}</Term>,
-            value: countdown(sunLit ? countdowns.sunset : countdowns.sunrise),
+            label: <Term id={sunLit ? "sunset" : "sunrise"}>{sunLit ? "Sunset in" : "Sunrise in"}</Term>,
+            value: sunValue,
           }}
-          earth={{
-            label: <Term id={earthUp ? "earthset" : "earthrise"}>{earthUp ? "Earthset in" : "Earthrise in"}</Term>,
-            value: earthValue,
-          }}
+          earth={
+            earthNever
+              ? { value: "Earth never in view" }
+              : {
+                  label: <Term id={earthUp ? "earthset" : "earthrise"}>{earthUp ? "Earthset in" : "Earthrise in"}</Term>,
+                  value: earthValue,
+                }
+          }
           sunEl={{
             label: <Term id="elevation">Sun elevation now</Term>,
             value: `${series.sunEl[idx].toFixed(1)}°`,

@@ -12,9 +12,9 @@ export interface MetricsBarProps {
   bothDelta?: string;
   /** Range across the robustness variants, e.g. "88 to 104 h". */
   robustRange?: string;
-  sun: { label: ReactNode; value: string };
-  earth: { label: ReactNode; value: string };
-  sunEl: { label: ReactNode; value: string };
+  sun: { label?: ReactNode; value: string };
+  earth: { label?: ReactNode; value: string };
+  sunEl: { label?: ReactNode; value: string };
 }
 
 /** Label, figure and delta only: no sparklines, no icons. */
@@ -40,7 +40,7 @@ export function MetricsBar({ both, bothDelta, robustRange, sun, earth, sunEl }: 
       <HStack gap={5} wrap="wrap">
         {[sun, earth, sunEl].map((m, i) => (
           <VStack key={i} gap={0.5}>
-            <Text type="supporting">{m.label}</Text>
+            {m.label && <Text type="supporting">{m.label}</Text>}
             <Text type="large" weight="medium" hasTabularNumbers>
               {m.value}
             </Text>

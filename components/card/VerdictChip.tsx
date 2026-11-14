@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Minus, X } from "lucide-react";
+import { Check, CircleAlert, X } from "lucide-react";
 import { HStack } from "@astryxdesign/core/HStack";
 import { Icon } from "@astryxdesign/core/Icon";
 import { StatusDot } from "@astryxdesign/core/StatusDot";
@@ -10,7 +10,7 @@ import type { Verdict } from "../../lib/engine/metrics";
 
 const LOOK = {
   good: { text: "Good", variant: "success", glyph: Check },
-  marginal: { text: "Marginal", variant: "neutral", glyph: Minus },
+  marginal: { text: "Marginal", variant: "neutral", glyph: CircleAlert },
   poor: { text: "Poor", variant: "error", glyph: X },
 } as const;
 

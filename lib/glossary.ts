@@ -32,6 +32,10 @@ export const GLOSSARY = {
     term: "Earthrise",
     text: "Earth climbs above the terrain horizon, starting a period of Earth contact.",
   },
+  sunrise: {
+    term: "Sunrise",
+    text: "The Sun climbs above the terrain horizon. Sunlight returns until the next sunset.",
+  },
   sunset: {
     term: "Sunset",
     text: "The Sun drops below the terrain horizon. Sunlight stops until the next sunrise.",

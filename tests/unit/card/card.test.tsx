@@ -57,6 +57,7 @@ const countdowns = {
   earthset: series.t0Ms + 40 * H,
   earthrise: null,
 };
+// lit: 30 h on, 10 h off per 40 h; window is 49 h so a sunset at 30 h, sunrise at 40 h, sunset at 70 h (outside).
 const base: ScenarioCardProps = {
   scenario: { key: "a", name: "Mons Mouton", lat: -89.5, lon: 0, t0Ms: series.t0Ms },
   result: { ctx, series, metrics },
@@ -79,11 +80,11 @@ describe("ScenarioCard", () => {
   it("shows Sunset in with the countdown", () => {
     render(<ScenarioCard {...base} />);
     expect(screen.getByText("Sunset in")).toBeTruthy();
-    expect(screen.getByText("1 d 6 h")).toBeTruthy();
+    expect(screen.getAllByText("1 d 6 h").length).toBeGreaterThan(0);
   });
   it("shows '> 60 d' for a null countdown", () => {
-    render(<ScenarioCard {...base} countdowns={{ ...countdowns, sunset: null }} />);
-    expect(screen.getByText("> 60 d")).toBeTruthy();
+    render(<ScenarioCard {...base} cursorIndex={45} countdowns={{ ...countdowns, sunset: null }} />);
+    expect(screen.getAllByText("> 60 d").length).toBeGreaterThan(0);
   });
   it("shows 'Earth never in view' when earthH = 0", () => {
     render(<ScenarioCard {...base} result={{ ctx, series, metrics: { ...metrics, earthH: 0 } }} />);
@@ -120,12 +121,42 @@ describe("ScenarioCard", () => {
   });
 });
 
+describe("countdowns follow the cursor (R24)", () => {
+  it("before the first sunset counts down to it", () => {
+    render(<ScenarioCard {...base} cursorIndex={10} />);
+    expect(screen.getByText("Sunset in")).toBeTruthy();
+    expect(screen.getAllByText("20 h").length).toBeGreaterThan(0);
+  });
+  it("just past the sunset reads Sunrise in with a positive value", () => {
+    render(<ScenarioCard {...base} cursorIndex={31} />);
+    expect(screen.getByText("Sunrise in")).toBeTruthy();
+    expect(screen.getAllByText("9 h").length).toBeGreaterThan(0);
+    expect(screen.queryByText("0 h")).toBeNull();
+  });
+  it("past the last in-window transition uses the fallback prop", () => {
+    const cd = { ...countdowns, sunset: series.t0Ms + 70 * H };
+    render(<ScenarioCard {...base} cursorIndex={45} countdowns={cd} />);
+    expect(screen.getByText("Sunset in")).toBeTruthy();
+    expect(screen.getAllByText("1 d 1 h").length).toBeGreaterThan(0);
+  });
+  it("shows an ellipsis rather than a stale value when the fallback is behind the cursor", () => {
+    render(<ScenarioCard {...base} cursorIndex={45} countdowns={{ ...countdowns, sunset: series.t0Ms + 30 * H }} />);
+    expect(screen.getByText("…")).toBeTruthy();
+  });
+  it("Earth never in view is one message with no Earthrise label", () => {
+    render(<ScenarioCard {...base} result={{ ctx, series, metrics: { ...metrics, earthH: 0 } }} />);
+    expect(screen.queryByText(/Earthrise in|Earthset in/)).toBeNull();
+  });
+});
+
 describe("VerdictChip", () => {
   it("has icon and text, not colour alone", () => {
     for (const [v, t] of [["good", "Good"], ["marginal", "Marginal"], ["poor", "Poor"]] as const) {
       const { container, unmount } = render(<VerdictChip verdict={v} reason="r" />);
       expect(screen.getByText(t)).toBeTruthy();
-      expect(container.querySelector("svg")).toBeTruthy();
+      const cls = { good: "lucide-check", marginal: "lucide-circle-alert", poor: "lucide-x" }[v];
+      expect(container.querySelector(`svg.${cls}`)).toBeTruthy();
+      expect(container.querySelectorAll("svg.lucide").length).toBe(1);
       unmount();
     }
   });
