@@ -1,14 +1,19 @@
 "use client";
 
+import { X } from "lucide-react";
 import { Drawer, DrawerHeader } from "@astryxdesign/core/Drawer";
+import { Icon } from "@astryxdesign/core/Icon";
+import { IconButton } from "@astryxdesign/core/IconButton";
 import { Field } from "@astryxdesign/core/Field";
 import { FormLayout } from "@astryxdesign/core/FormLayout";
 import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
 import { NumberInput } from "@astryxdesign/core/NumberInput";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
+import { Stack } from "@astryxdesign/core/Stack";
 import { Switch } from "@astryxdesign/core/Switch";
 import { SETTINGS_RANGES, type Settings } from "../../lib/engine/settings";
 import { GLOSSARY, type GlossaryId } from "../../lib/glossary";
+import { Term } from "../ui/Term";
 import { useAppStore } from "../../lib/state/store";
 
 interface SettingsPanelProps {
@@ -45,25 +50,31 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
     isDisabled = false,
     disabledMessage?: string,
   ) => (
-    <NumberInput
-      label={GLOSSARY[glossaryId].term}
-      labelTooltip={GLOSSARY[glossaryId].text}
-      value={settings[key]}
-      min={SETTINGS_RANGES[key].min}
-      max={SETTINGS_RANGES[key].max}
-      step={step}
-      units={units}
-      isIntegerOnly={isIntegerOnly}
-      isDisabled={isDisabled}
-      disabledMessage={disabledMessage}
-      onChange={(v) => setSettings({ [key]: clampSetting(key, v) } as Partial<Settings>)}
-    />
+    <Stack gap={0}>
+      <Term id={glossaryId} />
+      <NumberInput
+        label={GLOSSARY[glossaryId].term}
+        isLabelHidden
+        value={settings[key]}
+        min={SETTINGS_RANGES[key].min}
+        max={SETTINGS_RANGES[key].max}
+        step={step}
+        units={units}
+        isIntegerOnly={isIntegerOnly}
+        isDisabled={isDisabled}
+        disabledMessage={disabledMessage}
+        onChange={(v) => setSettings({ [key]: clampSetting(key, v) } as Partial<Settings>)}
+      />
+    </Stack>
   );
 
   const group = (id: GlossaryId, control: React.ReactNode) => (
-    <Field label={GLOSSARY[id].term} labelTooltip={GLOSSARY[id].text} inputID={`setting-${id}`} isGroupLabel>
-      {control}
-    </Field>
+    <Stack gap={0}>
+      <Term id={id} />
+      <Field label={GLOSSARY[id].term} isLabelHidden inputID={`setting-${id}`} isGroupLabel>
+        {control}
+      </Field>
+    </Stack>
   );
 
   const zoneItems = TIME_ZONES.some((z) => z.value === settings.displayTz)
@@ -73,7 +84,20 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
   return (
     <Drawer isOpen={isOpen} onOpenChange={onOpenChange} label="Settings" purpose="form" width={400}>
       <Layout
-        header={<DrawerHeader title="Settings" onOpenChange={onOpenChange} />}
+        header={
+          <DrawerHeader
+            title="Settings"
+            endContent={
+              <IconButton
+                label="Close"
+                size="lg"
+                variant="ghost"
+                icon={<Icon icon={X} />}
+                onClick={() => onOpenChange(false)}
+              />
+            }
+          />
+        }
         content={
           <LayoutContent>
             <FormLayout>
@@ -82,7 +106,8 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 <SegmentedControl
                   label={GLOSSARY.litThreshold.term}
                   value={settings.litThreshold}
-                  onChange={(v) => setSettings({ litThreshold: v as Settings["litThreshold"] })}>
+                  onChange={(v) => setSettings({ litThreshold: v as Settings["litThreshold"] })}
+                >
                   <SegmentedControlItem value="any" label="Any" />
                   <SegmentedControlItem value="half" label="Half" />
                   <SegmentedControlItem value="full" label="Full" />
@@ -93,12 +118,15 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
               {ranged("batteryH", "batteryReserve", "h", 1, true)}
               {ranged("flickerMergeMin", "flicker", "min", 5, true)}
               {ranged("interferenceDeg", "solarInterference", "°", 0.5)}
-              <Switch
-                label={GLOSSARY.dsn.term}
-                labelTooltip={GLOSSARY.dsn.text}
-                value={settings.dsnEnabled}
-                onChange={(v) => setSettings({ dsnEnabled: v })}
-              />
+              <Stack gap={0}>
+                <Term id="dsn" />
+                <Switch
+                  label={GLOSSARY.dsn.term}
+                  isLabelHidden
+                  value={settings.dsnEnabled}
+                  onChange={(v) => setSettings({ dsnEnabled: v })}
+                />
+              </Stack>
               {ranged(
                 "dsnMaskDeg",
                 "dsnMask",
@@ -115,7 +143,8 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 <SegmentedControl
                   label={GLOSSARY.mastHeight.term}
                   value={String(settings.mastM)}
-                  onChange={(v) => setSettings({ mastM: Number(v) as Settings["mastM"] })}>
+                  onChange={(v) => setSettings({ mastM: Number(v) as Settings["mastM"] })}
+                >
                   <SegmentedControlItem value="2" label="2 m" />
                   <SegmentedControlItem value="10" label="10 m" />
                   <SegmentedControlItem value="50" label="50 m" />
@@ -127,36 +156,46 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                   label={GLOSSARY.panelMode.term}
                   value={settings.panel.mode}
                   onChange={(v) =>
-                    setSettings({ panel: v === "fixed" ? { mode: "fixed", azDeg: 0 } : { mode: "tracking" } })
-                  }>
+                    setSettings({
+                      panel: v === "fixed" ? { mode: "fixed", azDeg: 0 } : { mode: "tracking" },
+                    })
+                  }
+                >
                   <SegmentedControlItem value="tracking" label="Tracking" />
                   <SegmentedControlItem value="fixed" label="Fixed" />
                 </SegmentedControl>,
               )}
               {settings.panel.mode === "fixed" ? (
-                <NumberInput
-                  label={GLOSSARY.azimuth.term}
-                  labelTooltip={GLOSSARY.azimuth.text}
-                  value={settings.panel.azDeg}
-                  min={PANEL_AZ_RANGE.min}
-                  max={PANEL_AZ_RANGE.max}
-                  units="°"
-                  onChange={(v) =>
-                    setSettings({
-                      panel: {
-                        mode: "fixed",
-                        azDeg: Math.min(PANEL_AZ_RANGE.max, Math.max(PANEL_AZ_RANGE.min, Number.isFinite(v) ? v : 0)),
-                      },
-                    })
-                  }
-                />
+                <Stack gap={0}>
+                  <Term id="azimuth" />
+                  <NumberInput
+                    label={GLOSSARY.azimuth.term}
+                    isLabelHidden
+                    value={settings.panel.azDeg}
+                    min={PANEL_AZ_RANGE.min}
+                    max={PANEL_AZ_RANGE.max}
+                    units="°"
+                    onChange={(v) =>
+                      setSettings({
+                        panel: {
+                          mode: "fixed",
+                          azDeg: Math.min(
+                            PANEL_AZ_RANGE.max,
+                            Math.max(PANEL_AZ_RANGE.min, Number.isFinite(v) ? v : 0),
+                          ),
+                        },
+                      })
+                    }
+                  />
+                </Stack>
               ) : null}
               {group(
                 "timeAxis",
                 <SegmentedControl
                   label={GLOSSARY.timeAxis.term}
                   value={settings.axis}
-                  onChange={(v) => setSettings({ axis: v as Settings["axis"] })}>
+                  onChange={(v) => setSettings({ axis: v as Settings["axis"] })}
+                >
                   <SegmentedControlItem value="met" label="Mission clock" />
                   <SegmentedControlItem value="cal" label="Calendar" />
                 </SegmentedControl>,
@@ -166,7 +205,8 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 <SegmentedControl
                   label={GLOSSARY.displayTz.term}
                   value={settings.displayTz}
-                  onChange={(v) => setSettings({ displayTz: v })}>
+                  onChange={(v) => setSettings({ displayTz: v })}
+                >
                   {zoneItems.map((z) => (
                     <SegmentedControlItem key={z.value} value={z.value} label={z.label} />
                   ))}

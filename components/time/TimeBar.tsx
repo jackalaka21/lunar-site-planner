@@ -6,7 +6,8 @@ import { IconButton } from "@astryxdesign/core/IconButton";
 import { Kbd } from "@astryxdesign/core/Kbd";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { Slider } from "@astryxdesign/core/Slider";
-import { HStack, Stack } from "@astryxdesign/core/Stack";
+import { useMediaQuery } from "@astryxdesign/core/hooks";
+import { HStack, Stack, StackItem } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Toolbar } from "@astryxdesign/core/Toolbar";
 import { Tooltip } from "@astryxdesign/core/Tooltip";
@@ -17,6 +18,7 @@ import { togglePlaying, usePlayback, useTimeKeyboard } from "./usePlayback";
 
 const HOURS_PER_DAY = 24;
 const MS_PER_HOUR = 3_600_000;
+const PHONE_QUERY = "(max-width: 47.99rem)";
 const SPEEDS = [
   { value: "1", label: "1 h/s" },
   { value: "6", label: "6 h/s" },
@@ -49,6 +51,7 @@ function Shortcuts() {
 /** The one global time control: every scenario card reads the same cursor. */
 export function TimeBar() {
   usePlayback();
+  const isPhone = useMediaQuery(PHONE_QUERY);
   useTimeKeyboard();
 
   const cursorH = useAppStore((s) => s.cursorH);
@@ -64,6 +67,57 @@ export function TimeBar() {
   const end = durationDays * HOURS_PER_DAY;
   const toMs = (h: number) => (axis === "cal" ? landingMs + h * MS_PER_HOUR : h * MS_PER_HOUR);
   const format = (h: number) => (axis === "cal" ? formatCalendar(toMs(h), tz) : formatMet(toMs(h)));
+
+  const playButton = (
+    <IconButton
+      label={playing ? "Pause" : "Play"}
+      size="lg"
+      variant="primary"
+      icon={<Icon icon={playing ? Pause : Play} />}
+      onClick={togglePlaying}
+    />
+  );
+  const speedControl = (
+    <SegmentedControl
+      label="Playback speed"
+      size="lg"
+      value={String(speed)}
+      onChange={(v: string) => setSpeed(Number(v) as 1 | 6 | 24)}
+    >
+      {SPEEDS.map((s) => (
+        <SegmentedControlItem key={s.value} value={s.value} label={s.label} />
+      ))}
+    </SegmentedControl>
+  );
+  const scrubber = (
+    <Slider
+      label="Mission time"
+      isLabelHidden
+      min={0}
+      max={end}
+      step={1}
+      value={Math.min(Math.round(cursorH), end)}
+      onChange={(v: number) => setCursorH(v)}
+      formatValue={() => format(cursorH)}
+      valueDisplay="none"
+    />
+  );
+
+  // Phone: two rows (play and scrubber, then speed and clock). The shortcut hint is for keyboards, so it is left out.
+  if (isPhone) {
+    return (
+      <Stack gap={1} data-testid="time-bar-phone">
+        <HStack gap={2} vAlign="center">
+          {playButton}
+          <StackItem size="fill">{scrubber}</StackItem>
+        </HStack>
+        <HStack gap={2} vAlign="center" hAlign="between">
+          {speedControl}
+          <MissionClock ms={toMs(cursorH)} axis={axis} tz={tz} />
+        </HStack>
+      </Stack>
+    );
+  }
 
   return (
     <Toolbar
@@ -108,7 +162,12 @@ export function TimeBar() {
         <HStack gap={3} vAlign="center">
           <MissionClock ms={toMs(cursorH)} axis={axis} tz={tz} />
           <Tooltip content={<Shortcuts />} placement="above">
-            <IconButton label="Keyboard shortcuts" size="lg" variant="ghost" icon={<Icon icon={Keyboard} />} />
+            <IconButton
+              label="Keyboard shortcuts"
+              size="lg"
+              variant="ghost"
+              icon={<Icon icon={Keyboard} />}
+            />
           </Tooltip>
         </HStack>
       }

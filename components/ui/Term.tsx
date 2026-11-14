@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { InfoTip } from "@astryxdesign/core/InfoTip";
-import { HStack } from "@astryxdesign/core/Stack";
-import { Text } from "@astryxdesign/core/Text";
+import { Info } from "lucide-react";
+import { Button } from "@astryxdesign/core/Button";
+import { Icon } from "@astryxdesign/core/Icon";
+import { Tooltip } from "@astryxdesign/core/Tooltip";
 import { GLOSSARY, type GlossaryId } from "../../lib/glossary";
 
 interface TermProps {
@@ -12,15 +13,16 @@ interface TermProps {
 }
 
 /**
- * A technical term with its glossary definition. The label is followed by an Astryx InfoTip: a real,
- * focusable button whose tooltip opens on hover, keyboard focus and tap, and is linked by aria-describedby.
+ * A technical term with its glossary definition. The label and an info icon are one ghost Button (44 px
+ * target) wrapped in an Astryx Tooltip: the definition opens on hover, keyboard focus and tap, and is
+ * linked by aria-describedby.
  */
 export function Term({ id, children }: TermProps) {
   const entry = GLOSSARY[id];
+  const label = typeof children === "string" ? children : entry.term;
   return (
-    <HStack gap={1} vAlign="center">
-      <Text>{children ?? entry.term}</Text>
-      <InfoTip label={`About ${entry.term}`} content={entry.text} />
-    </HStack>
+    <Tooltip content={entry.text} touchTrigger="tap" hasHoverIndication={false}>
+      <Button label={label} size="lg" variant="ghost" endContent={<Icon icon={Info} />} />
+    </Tooltip>
   );
 }

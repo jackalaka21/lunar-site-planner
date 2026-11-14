@@ -20,7 +20,7 @@ export interface MetricsBarProps {
 /** Label, figure and delta only: no sparklines, no icons. */
 export function MetricsBar({ both, bothDelta, robustRange, sun, earth, sunEl }: MetricsBarProps) {
   return (
-    <VStack gap={3}>
+    <VStack gap={3} data-testid="metrics-bar">
       <VStack gap={0.5}>
         <Text type="supporting">Both hours</Text>
         <Text size="3xl" weight="medium" hasTabularNumbers>

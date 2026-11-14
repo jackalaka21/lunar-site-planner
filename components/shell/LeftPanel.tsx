@@ -11,14 +11,12 @@ import { MAX_SCENARIOS, MAX_T0_MS, MIN_T0_MS } from "../../lib/state/defaults";
 import { useAppStore } from "../../lib/state/store";
 import type { SiteRef } from "../../lib/state/url";
 import { useCatalog } from "../../lib/useCatalog";
+import { dateFieldId } from "./ids";
 import { LandingTime } from "../picker/LandingTime";
 import { SitePicker } from "../picker/SitePicker";
 
 const MS_PER_DAY = 86_400_000;
 const ADD_STEP_DAYS = 14;
-
-/** Id of the date field for a scenario, so a card's Edit button can focus it. */
-export const dateFieldId = (key: string) => `scenario-date-${key}`;
 
 function fallbackLabel(site: SiteRef): string {
   if (site.kind === "custom") return `${site.lat.toFixed(2)}°, ${site.lon.toFixed(2)}°`;
@@ -46,7 +44,9 @@ export function LeftPanel() {
           Landing date and time are UTC
         </Text>
         {scenarios.map((sc) => {
-          const name = (sc.site.kind === "catalog" ? catalog?.byId.get(sc.site.id)?.name : undefined) ?? fallbackLabel(sc.site);
+          const name =
+            (sc.site.kind === "catalog" ? catalog?.byId.get(sc.site.id)?.name : undefined) ??
+            fallbackLabel(sc.site);
           return (
             <Stack key={sc.key} gap={1}>
               <Button

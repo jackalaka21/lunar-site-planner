@@ -32,3 +32,11 @@
     stroke-width: 1.5;
   }
 }
+
+/* Before hydration the page cannot tell its width, so the scenario panel is in the server HTML. Hide it below
+   1024 (64rem) so a phone never paints it, and nothing jumps when the real layout takes over. */
+@media (max-width: 63.99rem) {
+  [data-testid="left-panel"] {
+    display: none;
+  }
+}

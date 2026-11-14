@@ -7,6 +7,7 @@ import { HStack } from "@astryxdesign/core/HStack";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Text } from "@astryxdesign/core/Text";
+import { Token } from "@astryxdesign/core/Token";
 import { VStack } from "@astryxdesign/core/VStack";
 import type { EventKind } from "../../lib/engine/events";
 import { fmtHours } from "../../lib/engine/format";
@@ -25,7 +26,14 @@ import { VerdictChip } from "./VerdictChip";
 import { formatDelta, formatSpan } from "./delta";
 
 export interface ScenarioCardProps {
-  scenario: { key: string; name: string; groupTag?: string; lat: number; lon: number; t0Ms: number };
+  scenario: {
+    key: string;
+    name: string;
+    groupTag?: string;
+    lat: number;
+    lon: number;
+    t0Ms: number;
+  };
   result: { ctx: SiteContext; series: TimeSeries; metrics: Metrics };
   cursorIndex: number;
   axis: "met" | "cal";
@@ -65,7 +73,8 @@ export function ScenarioCard(p: ScenarioCardProps) {
 
   // Next transition AFTER the cursor, from this card's merged series (R18); past the window, the prop (R24).
   const nextInWindow = (state: Uint8Array): number | null => {
-    for (let i = idx + 1; i < series.n; i++) if (state[i] !== state[idx]) return series.t0Ms + i * series.stepMs;
+    for (let i = idx + 1; i < series.n; i++)
+      if (state[i] !== state[idx]) return series.t0Ms + i * series.stepMs;
     return null;
   };
   const countdown = (state: Uint8Array, fallback: number | null | undefined) => {
@@ -88,11 +97,12 @@ export function ScenarioCard(p: ScenarioCardProps) {
   return (
     <Card padding={5} data-testid={`scenario-card-${scenario.key}`}>
       <VStack gap={5}>
-        <HStack gap={2} vAlign="center" hAlign="between">
+        <HStack gap={2} vAlign="center" hAlign="between" wrap="wrap">
           <VStack gap={0.5}>
             <HStack gap={2} vAlign="center" wrap="wrap">
+              <Token label={letter} size="sm" color="gray" description={`Scenario ${letter}`} />
               <Text type="label" weight="medium">
-                {`${letter} ${scenario.name}`}
+                {scenario.name}
               </Text>
               {scenario.groupTag && <Text type="supporting">{scenario.groupTag}</Text>}
             </HStack>
@@ -104,7 +114,11 @@ export function ScenarioCard(p: ScenarioCardProps) {
               <Text type="supporting" size="xsm">
                 Cursor
               </Text>
-              <MissionClock ms={axis === "met" ? idx * series.stepMs : cursorMs} axis={axis} tz={tz} />
+              <MissionClock
+                ms={axis === "met" ? idx * series.stepMs : cursorMs}
+                axis={axis}
+                tz={tz}
+              />
             </HStack>
           </VStack>
           <HStack gap={1} vAlign="center">
@@ -133,14 +147,20 @@ export function ScenarioCard(p: ScenarioCardProps) {
           bothDelta={deltaVsA ? formatDelta(deltaVsA.bothH) : undefined}
           robustRange={robustRange}
           sun={{
-            label: <Term id={sunLit ? "sunset" : "sunrise"}>{sunLit ? "Sunset in" : "Sunrise in"}</Term>,
+            label: (
+              <Term id={sunLit ? "sunset" : "sunrise"}>{sunLit ? "Sunset in" : "Sunrise in"}</Term>
+            ),
             value: sunValue,
           }}
           earth={
             earthNever
               ? { value: "Earth never in view" }
               : {
-                  label: <Term id={earthUp ? "earthset" : "earthrise"}>{earthUp ? "Earthset in" : "Earthrise in"}</Term>,
+                  label: (
+                    <Term id={earthUp ? "earthset" : "earthrise"}>
+                      {earthUp ? "Earthset in" : "Earthrise in"}
+                    </Term>
+                  ),
                   value: earthValue,
                 }
           }

@@ -40,6 +40,11 @@ const TICK_PX = 4;
 const NEAR_ERODE_DEG = 2;
 const OFFSCREEN_DEG = 1;
 const LABEL_GAP_PX = 4;
+/** Day labels closer than this (px) to a kept one are dropped; the ticks stay. */
+const LABEL_MIN_DX_PX = 44;
+const LABEL_MIN_DY_PX = 14;
+/** Compass letters keep this far from the canvas edges so the seam never clips them. */
+const EDGE_INSET_PX = 12;
 const POLE_NORTH = "At the pole, north = toward 0° longitude";
 const COMPASS: Array<{ az: number; label: string }> = [
   { az: 0, label: "N" },
@@ -100,7 +105,11 @@ export function HorizonPanorama({
     const out: Array<{ day: number; az: number; el: number }> = [];
     if (perDay < 1) return out;
     for (let i = 0; i < series.n; i += perDay) {
-      out.push({ day: Math.round((i * series.stepMs) / (24 * MS_PER_HOUR)), az: series.sunAz[i], el: series.sunEl[i] });
+      out.push({
+        day: Math.round((i * series.stepMs) / (24 * MS_PER_HOUR)),
+        az: series.sunAz[i],
+        el: series.sunEl[i],
+      });
     }
     return out;
   }, [series]);
@@ -147,7 +156,8 @@ export function HorizonPanorama({
         const a = azAt(px);
         let e = horizonAt(horizon, a);
         if (erode > 0) {
-          for (let d = -erode; d <= erode; d += erode / 2) e = Math.min(e, horizonAt(horizon, a + d));
+          for (let d = -erode; d <= erode; d += erode / 2)
+            e = Math.min(e, horizonAt(horizon, a + d));
         }
         ctx.lineTo(px, y(e));
       }
@@ -187,7 +197,9 @@ export function HorizonPanorama({
       for (const run of runs) {
         for (const seg of splitAtWrap(run, center)) {
           ctx.beginPath();
-          seg.forEach((p, k) => (k === 0 ? ctx.moveTo(X(p.az), y(p.el)) : ctx.lineTo(X(p.az), y(p.el))));
+          seg.forEach((p, k) =>
+            k === 0 ? ctx.moveTo(X(p.az), y(p.el)) : ctx.lineTo(X(p.az), y(p.el)),
+          );
           ctx.stroke();
         }
       }
@@ -252,7 +264,24 @@ export function HorizonPanorama({
     ctx.arc(0, 0, 1, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-  }, [width, height, elDomain, lo, hi, center, horizon, series, dayTicks, sunAz, sunEl, earthAz, earthEl, sunRDeg, earthRDeg, mode]);
+  }, [
+    width,
+    height,
+    elDomain,
+    lo,
+    hi,
+    center,
+    horizon,
+    series,
+    dayTicks,
+    sunAz,
+    sunEl,
+    earthAz,
+    earthEl,
+    sunRDeg,
+    earthRDeg,
+    mode,
+  ]);
 
   // Redraw on any data, size or theme-mode change.
   useEffect(() => {
@@ -281,6 +310,19 @@ export function HorizonPanorama({
     `elevation ${fmt(sunEl)}°; Earth is at azimuth ${fmt(earthAz)}°, elevation ${fmt(earthEl)}°.`;
 
   const y = elScale(elDomain, height);
+  const dayLabels: Array<{ day: number; x: number; y: number }> = [];
+  for (const t of dayTicks) {
+    if (!(t.el >= lo - OFFSCREEN_DEG)) continue;
+    const lx = Math.min(
+      width - EDGE_INSET_PX * 2,
+      Math.max(EDGE_INSET_PX * 2, azToX(t.az, width, center)),
+    );
+    const ly = y(t.el) - TICK_PX - LABEL_GAP_PX;
+    const clash = dayLabels.some(
+      (k) => Math.abs(k.x - lx) < LABEL_MIN_DX_PX && Math.abs(k.y - ly) < LABEL_MIN_DY_PX,
+    );
+    if (!clash) dayLabels.push({ day: t.day, x: lx, y: ly });
+  }
   const gridStep = Math.max(1, Math.ceil((hi - lo) / 24));
   const gridLabels: number[] = [];
   for (let e = Math.ceil(lo / gridStep) * gridStep; e <= hi; e += gridStep) gridLabels.push(e);
@@ -326,28 +368,23 @@ export function HorizonPanorama({
             {e}°
           </text>
         ))}
-        {dayTicks.map((t) =>
-          t.el >= lo - OFFSCREEN_DEG ? (
-            <text
-              key={t.day}
-              x={azToX(t.az, width, center)}
-              y={y(t.el) - TICK_PX - LABEL_GAP_PX}
-              textAnchor="middle"
-              aria-hidden="true"
-            >
-              {`T+${t.day} d`}
-            </text>
-          ) : null,
-        )}
+        {dayLabels.map((t) => (
+          <text key={t.day} x={t.x} y={t.y} textAnchor="middle" aria-hidden="true">
+            {`T+${t.day} d`}
+          </text>
+        ))}
         {COMPASS.map((c) => (
           <text
             key={c.label}
             ref={c.label === "N" ? northRef : undefined}
-            x={azToX(c.az, width, center)}
+            x={Math.min(width - EDGE_INSET_PX, Math.max(EDGE_INSET_PX, azToX(c.az, width, center)))}
             y={height - LABEL_GAP_PX * 2}
             textAnchor="middle"
             tabIndex={c.label === "N" && pole ? 0 : undefined}
-            style={{ fill: "var(--color-text-secondary)", pointerEvents: c.label === "N" && pole ? "auto" : "none" }}
+            style={{
+              fill: "var(--color-text-secondary)",
+              pointerEvents: c.label === "N" && pole ? "auto" : "none",
+            }}
           >
             {c.label}
           </text>
@@ -356,7 +393,12 @@ export function HorizonPanorama({
           {`vertical ×${exag}`}
         </text>
       </svg>
-      <Tooltip anchorRef={northRef as never} content={POLE_NORTH} isEnabled={pole} placement="above" />
+      <Tooltip
+        anchorRef={northRef as never}
+        content={POLE_NORTH}
+        isEnabled={pole}
+        placement="above"
+      />
     </div>
   );
 }

@@ -38,6 +38,14 @@ export function luminance(color: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+/** Linear blend of two colours, as an rgb() string (t = 0 gives a, t = 1 gives b). */
+function mix(a: string, b: string, t: number): string {
+  const ca = channels(a);
+  const cb = channels(b);
+  const c = ca.map((v, i) => Math.round(v + (cb[i] - v) * t));
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
+}
+
 /** Resolve every colour the canvas needs for one mode, from the theme and never from literals. */
 export function panoramaPalette(mode: PanoramaMode): Palette {
   const t = resolveThemeTokens(ridgelineTheme, { mode }) as Record<string, string>;
@@ -52,6 +60,22 @@ export function panoramaPalette(mode: PanoramaMode): Palette {
   const card = get("--color-background-card");
   const raised = get("--surface-raised");
   const cardLighter = luminance(card) > luminance(raised);
+  if (mode === "light") {
+    // The light surfaces are within a few percent of each other, so the terrain steps are taken further down
+    // the graphite ramp (deepest surface toward the emphasised border). Dark mode keeps the plain surfaces.
+    const deepest = get("--surface-deepest");
+    const rim = get("--color-border-emphasized");
+    return {
+      sun: get("--color-data-categorical-orange"),
+      earth: get("--color-data-categorical-blue"),
+      sky: get("--color-background-body"),
+      far: mix(deepest, rim, 0.25),
+      near: deepest,
+      deepest: mix(deepest, rim, 0.6),
+      hairline: get("--color-border"),
+      rim,
+    };
+  }
   return {
     sun: get("--color-data-categorical-orange"),
     earth: get("--color-data-categorical-blue"),

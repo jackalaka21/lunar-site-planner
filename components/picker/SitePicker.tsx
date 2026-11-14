@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { Button } from "@astryxdesign/core/Button";
@@ -17,9 +18,18 @@ import { MAX_T0_MS, MIN_T0_MS } from "../../lib/state/defaults";
 import { useAppStore } from "../../lib/state/store";
 import { useCatalog } from "../../lib/useCatalog";
 import { CoordInput } from "./CoordInput";
-import { MapPicker, type MapMode } from "./MapPicker";
 
-export const GROUP_ORDER: Site["group"][] = ["apollo", "clps", "international", "artemis3", "polar"];
+// The map (d3-geo, projection maths) is not part of the first view.
+const MapPicker = dynamic(() => import("./MapPicker").then((m) => m.MapPicker), { ssr: false });
+import type { MapMode } from "./MapPicker";
+
+export const GROUP_ORDER: Site["group"][] = [
+  "apollo",
+  "clps",
+  "international",
+  "artemis3",
+  "polar",
+];
 export const GROUP_HEADING: Record<Site["group"], string> = {
   apollo: "Apollo",
   clps: "Commercial (CLPS)",
@@ -122,7 +132,11 @@ export function SitePicker({ scenarioKey }: SitePickerProps) {
           {coords}
           <SiteList catalog={catalog} currentId={chosen?.id ?? null} onChoose={choose} />
           {catalog ? (
-            <Text type="code" size="xsm" color="secondary">{`Last checked ${catalog.checkedUtc}`}</Text>
+            <Text
+              type="code"
+              size="xsm"
+              color="secondary"
+            >{`Last checked ${catalog.checkedUtc}`}</Text>
           ) : null}
         </Stack>
       ) : (
@@ -145,7 +159,15 @@ export function SitePicker({ scenarioKey }: SitePickerProps) {
   );
 }
 
-function SiteDetail({ site, canUseActual, onUseActual }: { site: Site; canUseActual: boolean; onUseActual: () => void }) {
+function SiteDetail({
+  site,
+  canUseActual,
+  onUseActual,
+}: {
+  site: Site;
+  canUseActual: boolean;
+  onUseActual: () => void;
+}) {
   return (
     <Stack gap={2}>
       <Text type="code" size="xsm" color="secondary">
