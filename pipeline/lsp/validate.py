@@ -17,7 +17,7 @@ import numpy as np
 
 from . import ps
 from .constants import OBS_HEIGHT_M, R_EARTH_KM, R_SUN_KM
-from .geometry import site_frame, topocentric
+from .geometry import disc_fraction, horizon_at, site_frame, topocentric
 from .paths import RAW_DIR, REPO_ROOT, WORK_DIR
 from .reference import (
     DEFAULT_SETTINGS,
@@ -301,6 +301,8 @@ def _pixel_avg_percentages(cx: float, cy: float, step_h: int = 6):
     prof, hd = raycast.horizon_profiles(lat, lon, 2.0, 3600, fine, coarse)
     t = np.arange(parse_iso("2025-01-01T00:00:00Z"), parse_iso("2033-01-01T00:00:00Z"), step_h * HOUR_MS, dtype=np.int64)
     sun, earth = [], []
+    sun_f, earth_f, earth_any = [], [], []
+    eph = ephemeris_at(t)
     for k in range(len(xs)):
         case = {"lat": float(lat[k]), "lon": float(lon[k]), "hDemM": float(hd[k]),
                 "horizon": {"stepDeg": 0.1, "values": prof[k]},
@@ -308,7 +310,24 @@ def _pixel_avg_percentages(cx: float, cy: float, step_h: int = 6):
         s = sample_at(case, t)
         sun.append(100.0 * float(s["lit"].mean()))
         earth.append(100.0 * float(s["earthIn"].mean()))
-    return float(np.mean(sun)), float(np.mean(earth)), (min(sun), max(sun)), (min(earth), max(earth))
+        # visible disc fraction over the terrain horizon (no eclipse term), as in PGDA's finite-disc model
+        frame = site_frame(float(lat[k]), float(lon[k]), float(hd[k]), 2.0)
+        sf = np.empty(len(t))
+        ef = np.empty(len(t))
+        for i in range(len(t)):
+            saz, sel, sr, _ = topocentric(eph[i, 0:3], frame, R_SUN_KM)
+            eaz, eel, er, _ = topocentric(eph[i, 3:6], frame, R_EARTH_KM)
+            sf[i] = disc_fraction(sel, horizon_at(prof[k], 0.1, saz), sr)
+            ef[i] = disc_fraction(eel, horizon_at(prof[k], 0.1, eaz), er)
+        sun_f.append(100.0 * float(sf.mean()))
+        earth_f.append(100.0 * float(ef.mean()))
+        earth_any.append(100.0 * float((ef > 0).mean()))
+    rng = lambda a: (min(a), max(a))  # noqa: E731
+    return {
+        "binary": (float(np.mean(sun)), float(np.mean(earth)), rng(sun), rng(earth)),
+        "fraction": (float(np.mean(sun_f)), float(np.mean(earth_f)), rng(sun_f), rng(earth_f)),
+        "earthAny": (float(np.mean(earth_any)), rng(earth_any)),
+    }
 
 
 NOT_LIKE_FOR_LIKE = "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
@@ -341,7 +360,7 @@ def illumination_checks() -> list[dict]:
                        ("malapert-massif", "Malapert massif"), ("mons-mouton", "Mons Mouton")):
         s = sites[sid]
         x, y = ps.to_xy(s["lat"], s["lon"])
-        pix = _pixel_avg_percentages(*_read_pgda(sun_r, x, y)[1:])
+        pix = _pixel_avg_percentages(*_read_pgda(sun_r, x, y)[1:])  # one pass gives binary, fraction and any-part stats
         for kind, path, idx, what in (("Sun", sun_r, 0, "sunlit"), ("Earth", earth_r, 1, "Earth in view")):
             ref, cx, cy = _read_pgda(path, x, y)
             mine = avg[sid][idx]
@@ -361,15 +380,43 @@ def illumination_checks() -> list[dict]:
                 base + f"Single-point result would be {'PASS' if abs(mine - ref_pct) <= ILLUM_TOL_PCT else 'FAIL'}"
                 f" at 10 points (difference {mine - ref_pct:+.1f}). " + NOT_LIKE_FOR_LIKE, "%",
                 note=NOT_LIKE_FOR_LIKE))
-            pv = pix[idx]
-            lo, hi = pix[2 + idx]
+            sub = ("Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre"
+                   " (range across points {lo:.1f} to {hi:.1f}), horizons from the reviewed raycast on the 40 m/120 m DEMs. ")
+            pv = pix["binary"][idx]
+            lo, hi = pix["binary"][2 + idx]
+            DIFF_STAT = "Different statistic: binary centre/any vs PGDA mean visible disc fraction."
             out.append(entry(
-                f"Average {what} %, {label}, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+                f"Average {what} %, {label}, binary, 3x3 points in the 120 m pixel, vs PGDA",
+                round(pv, 1), round(ref_pct, 1), ILLUM_TOL_PCT, None, PGDA_URL,
+                base + sub.format(lo=lo, hi=hi) + f"Would be {'PASS' if abs(pv - ref_pct) <= ILLUM_TOL_PCT else 'FAIL'}"
+                f" at 10 points (difference {pv - ref_pct:+.1f}). " + DIFF_STAT, "%",
+                note=DIFF_STAT))
+            pv = pix["fraction"][idx]
+            lo, hi = pix["fraction"][2 + idx]
+            fbase = ("Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA"
+                     " visibility data shown in LROC Quickmap (PGDA models the source as a finite disc, averaged hourly over"
+                     " about 18.6 yr, surface-level observer; the page does not say whether eclipses are included, so the"
+                     " Sun term is terrain only). Ours: time-mean visible fraction of the "
+                     + kind + " disc over the terrain horizon (disc_fraction with the body's angular radius), 6 h sampling"
+                     " 2025-2032, 2 m mast, 0.1 deg horizon. ")
+            out.append(entry(
+                f"Average {what} %, {label}, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
                 round(pv, 1), round(ref_pct, 1), ILLUM_TOL_PCT, abs(pv - ref_pct) <= ILLUM_TOL_PCT, PGDA_URL,
-                base + f"Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre"
-                f" (range across points {lo:.1f} to {hi:.1f}), horizons from the reviewed raycast on the 40 m/120 m"
-                " DEMs. Differences come from averaging period, observer height and horizon resolution.", "%",
-                note="Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value."))
+                fbase + sub.format(lo=lo, hi=hi) + "Differences come from averaging period, observer height (PGDA is"
+                " surface level, ours 2 m), DEM resolution and sub-pixel spread.", "%",
+                note="Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value."
+                + ("" if abs(pv - ref_pct) <= ILLUM_TOL_PCT else
+                   f" Not met: the nine sub-points range {lo:.1f} to {hi:.1f}% on this steep rim, and PGDA is surface level"
+                   " on a 120 m DEM while ours is 2 m on a 40 m DEM, so the pixel is not reproduced at this resolution.")))
+            if kind == "Earth":
+                pv, (lo, hi) = pix["earthAny"]
+                out.append(entry(
+                    f"Average Earth in view %, {label}, any part of the disc visible, 3x3 points, vs PGDA",
+                    round(pv, 1), round(ref_pct, 1), ILLUM_TOL_PCT, None, PGDA_URL,
+                    "Informational: PGDA's page states Earth is visible if any part of its disc is not obscured. Ours is the"
+                    f" fraction of time the Earth disc is at least partly above the terrain horizon (range across points"
+                    f" {lo:.1f} to {hi:.1f}; difference {pv - ref_pct:+.1f}).", "%",
+                    note="Information only: share of time any part of the Earth disc is above the horizon, the definition PGDA states for Earth."))
     return out
 
 

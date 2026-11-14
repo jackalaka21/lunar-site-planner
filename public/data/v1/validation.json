@@ -1,5 +1,5 @@
 {
- "generatedUtc": "2026-11-14T07:28:21Z",
+ "generatedUtc": "2026-11-14T07:32:19Z",
  "horizons": [
   {
    "name": "Horizons sun az/el, south pole (-89.9, 0)",
@@ -129,15 +129,26 @@
    "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Single-point result would be FAIL at 10 points (difference +13.7). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
   },
   {
-   "name": "Average sunlit %, Shackleton rim, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "name": "Average sunlit %, Shackleton rim, binary, 3x3 points in the 120 m pixel, vs PGDA",
    "value": 65.5,
+   "reference": 65.9,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Different statistic: binary centre/any vs PGDA mean visible disc fraction.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 55.7 to 86.9), horizons from the reviewed raycast on the 40 m/120 m DEMs. Would be PASS at 10 points (difference -0.4). Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+  },
+  {
+   "name": "Average sunlit %, Shackleton rim, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
+   "value": 62.8,
    "reference": 65.9,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 55.7 to 86.9), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
+   "note": "Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap (PGDA models the source as a finite disc, averaged hourly over about 18.6 yr, surface-level observer; the page does not say whether eclipses are included, so the Sun term is terrain only). Ours: time-mean visible fraction of the Sun disc over the terrain horizon (disc_fraction with the body's angular radius), 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 53.8 to 82.6), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height (PGDA is surface level, ours 2 m), DEM resolution and sub-pixel spread."
   },
   {
    "name": "Average Earth in view %, Shackleton rim, single point vs PGDA pixel (Quickmap layer)",
@@ -151,15 +162,37 @@
    "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Single-point result would be PASS at 10 points (difference -5.8). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
   },
   {
-   "name": "Average Earth in view %, Shackleton rim, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "name": "Average Earth in view %, Shackleton rim, binary, 3x3 points in the 120 m pixel, vs PGDA",
    "value": 32.0,
+   "reference": 51.9,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Different statistic: binary centre/any vs PGDA mean visible disc fraction.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 0.0 to 48.8), horizons from the reviewed raycast on the 40 m/120 m DEMs. Would be FAIL at 10 points (difference -19.9). Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+  },
+  {
+   "name": "Average Earth in view %, Shackleton rim, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
+   "value": 32.1,
    "reference": 51.9,
    "tolerance": 10.0,
    "pass": false,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 0.0 to 48.8), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
+   "note": "Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value. Not met: the nine sub-points range 0.0 to 48.8% on this steep rim, and PGDA is surface level on a 120 m DEM while ours is 2 m on a 40 m DEM, so the pixel is not reproduced at this resolution.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap (PGDA models the source as a finite disc, averaged hourly over about 18.6 yr, surface-level observer; the page does not say whether eclipses are included, so the Sun term is terrain only). Ours: time-mean visible fraction of the Earth disc over the terrain horizon (disc_fraction with the body's angular radius), 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 0.0 to 48.8), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height (PGDA is surface level, ours 2 m), DEM resolution and sub-pixel spread."
+  },
+  {
+   "name": "Average Earth in view %, Shackleton rim, any part of the disc visible, 3x3 points, vs PGDA",
+   "value": 35.9,
+   "reference": 51.9,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Information only: share of time any part of the Earth disc is above the horizon, the definition PGDA states for Earth.",
+   "detail": "Informational: PGDA's page states Earth is visible if any part of its disc is not obscured. Ours is the fraction of time the Earth disc is at least partly above the terrain horizon (range across points 0.1 to 53.3; difference -16.1)."
   },
   {
    "name": "Average sunlit %, connecting ridge, single point vs PGDA pixel (Quickmap layer)",
@@ -173,15 +206,26 @@
    "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Single-point result would be PASS at 10 points (difference +0.0). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
   },
   {
-   "name": "Average sunlit %, connecting ridge, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "name": "Average sunlit %, connecting ridge, binary, 3x3 points in the 120 m pixel, vs PGDA",
    "value": 45.4,
+   "reference": 46.2,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Different statistic: binary centre/any vs PGDA mean visible disc fraction.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 43.8 to 46.3), horizons from the reviewed raycast on the 40 m/120 m DEMs. Would be PASS at 10 points (difference -0.8). Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+  },
+  {
+   "name": "Average sunlit %, connecting ridge, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
+   "value": 42.3,
    "reference": 46.2,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 43.8 to 46.3), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
+   "note": "Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap (PGDA models the source as a finite disc, averaged hourly over about 18.6 yr, surface-level observer; the page does not say whether eclipses are included, so the Sun term is terrain only). Ours: time-mean visible fraction of the Sun disc over the terrain horizon (disc_fraction with the body's angular radius), 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 40.8 to 43.1), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height (PGDA is surface level, ours 2 m), DEM resolution and sub-pixel spread."
   },
   {
    "name": "Average Earth in view %, connecting ridge, single point vs PGDA pixel (Quickmap layer)",
@@ -195,15 +239,37 @@
    "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Single-point result would be PASS at 10 points (difference -5.2). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
   },
   {
-   "name": "Average Earth in view %, connecting ridge, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "name": "Average Earth in view %, connecting ridge, binary, 3x3 points in the 120 m pixel, vs PGDA",
+   "value": 52.6,
+   "reference": 57.8,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Different statistic: binary centre/any vs PGDA mean visible disc fraction.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 52.6 to 52.6), horizons from the reviewed raycast on the 40 m/120 m DEMs. Would be PASS at 10 points (difference -5.2). Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+  },
+  {
+   "name": "Average Earth in view %, connecting ridge, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
    "value": 52.6,
    "reference": 57.8,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 52.6 to 52.6), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
+   "note": "Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap (PGDA models the source as a finite disc, averaged hourly over about 18.6 yr, surface-level observer; the page does not say whether eclipses are included, so the Sun term is terrain only). Ours: time-mean visible fraction of the Earth disc over the terrain horizon (disc_fraction with the body's angular radius), 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 52.6 to 52.6), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height (PGDA is surface level, ours 2 m), DEM resolution and sub-pixel spread."
+  },
+  {
+   "name": "Average Earth in view %, connecting ridge, any part of the disc visible, 3x3 points, vs PGDA",
+   "value": 57.2,
+   "reference": 57.8,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Information only: share of time any part of the Earth disc is above the horizon, the definition PGDA states for Earth.",
+   "detail": "Informational: PGDA's page states Earth is visible if any part of its disc is not obscured. Ours is the fraction of time the Earth disc is at least partly above the terrain horizon (range across points 57.2 to 57.2; difference -0.6)."
   },
   {
    "name": "Average sunlit %, Malapert massif, single point vs PGDA pixel (Quickmap layer)",
@@ -217,15 +283,26 @@
    "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Single-point result would be PASS at 10 points (difference -0.6). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
   },
   {
-   "name": "Average sunlit %, Malapert massif, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "name": "Average sunlit %, Malapert massif, binary, 3x3 points in the 120 m pixel, vs PGDA",
    "value": 42.4,
+   "reference": 42.9,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Different statistic: binary centre/any vs PGDA mean visible disc fraction.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 26.2 to 46.7), horizons from the reviewed raycast on the 40 m/120 m DEMs. Would be PASS at 10 points (difference -0.5). Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+  },
+  {
+   "name": "Average sunlit %, Malapert massif, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
+   "value": 38.2,
    "reference": 42.9,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 26.2 to 46.7), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
+   "note": "Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap (PGDA models the source as a finite disc, averaged hourly over about 18.6 yr, surface-level observer; the page does not say whether eclipses are included, so the Sun term is terrain only). Ours: time-mean visible fraction of the Sun disc over the terrain horizon (disc_fraction with the body's angular radius), 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 23.1 to 42.4), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height (PGDA is surface level, ours 2 m), DEM resolution and sub-pixel spread."
   },
   {
    "name": "Average Earth in view %, Malapert massif, single point vs PGDA pixel (Quickmap layer)",
@@ -239,15 +316,37 @@
    "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Single-point result would be PASS at 10 points (difference -5.5). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
   },
   {
-   "name": "Average Earth in view %, Malapert massif, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "name": "Average Earth in view %, Malapert massif, binary, 3x3 points in the 120 m pixel, vs PGDA",
    "value": 36.6,
+   "reference": 41.2,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Different statistic: binary centre/any vs PGDA mean visible disc fraction.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 23.4 to 43.1), horizons from the reviewed raycast on the 40 m/120 m DEMs. Would be PASS at 10 points (difference -4.6). Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+  },
+  {
+   "name": "Average Earth in view %, Malapert massif, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
+   "value": 36.5,
    "reference": 41.2,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 23.4 to 43.1), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
+   "note": "Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap (PGDA models the source as a finite disc, averaged hourly over about 18.6 yr, surface-level observer; the page does not say whether eclipses are included, so the Sun term is terrain only). Ours: time-mean visible fraction of the Earth disc over the terrain horizon (disc_fraction with the body's angular radius), 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 23.2 to 43.0), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height (PGDA is surface level, ours 2 m), DEM resolution and sub-pixel spread."
+  },
+  {
+   "name": "Average Earth in view %, Malapert massif, any part of the disc visible, 3x3 points, vs PGDA",
+   "value": 41.5,
+   "reference": 41.2,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Information only: share of time any part of the Earth disc is above the horizon, the definition PGDA states for Earth.",
+   "detail": "Informational: PGDA's page states Earth is visible if any part of its disc is not obscured. Ours is the fraction of time the Earth disc is at least partly above the terrain horizon (range across points 29.5 to 47.7; difference +0.3)."
   },
   {
    "name": "Average sunlit %, Mons Mouton, single point vs PGDA pixel (Quickmap layer)",
@@ -261,15 +360,26 @@
    "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Single-point result would be PASS at 10 points (difference +1.4). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
   },
   {
-   "name": "Average sunlit %, Mons Mouton, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "name": "Average sunlit %, Mons Mouton, binary, 3x3 points in the 120 m pixel, vs PGDA",
    "value": 26.1,
+   "reference": 26.0,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Different statistic: binary centre/any vs PGDA mean visible disc fraction.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 24.6 to 27.5), horizons from the reviewed raycast on the 40 m/120 m DEMs. Would be PASS at 10 points (difference +0.1). Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+  },
+  {
+   "name": "Average sunlit %, Mons Mouton, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
+   "value": 24.7,
    "reference": 26.0,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 24.6 to 27.5), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
+   "note": "Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap (PGDA models the source as a finite disc, averaged hourly over about 18.6 yr, surface-level observer; the page does not say whether eclipses are included, so the Sun term is terrain only). Ours: time-mean visible fraction of the Sun disc over the terrain horizon (disc_fraction with the body's angular radius), 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 23.3 to 26.0), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height (PGDA is surface level, ours 2 m), DEM resolution and sub-pixel spread."
   },
   {
    "name": "Average Earth in view %, Mons Mouton, single point vs PGDA pixel (Quickmap layer)",
@@ -283,15 +393,37 @@
    "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Single-point result would be PASS at 10 points (difference -4.2). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
   },
   {
-   "name": "Average Earth in view %, Mons Mouton, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "name": "Average Earth in view %, Mons Mouton, binary, 3x3 points in the 120 m pixel, vs PGDA",
    "value": 67.1,
+   "reference": 72.4,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Different statistic: binary centre/any vs PGDA mean visible disc fraction.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 65.8 to 68.5), horizons from the reviewed raycast on the 40 m/120 m DEMs. Would be PASS at 10 points (difference -5.3). Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+  },
+  {
+   "name": "Average Earth in view %, Mons Mouton, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
+   "value": 67.2,
    "reference": 72.4,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 65.8 to 68.5), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
+   "note": "Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap (PGDA models the source as a finite disc, averaged hourly over about 18.6 yr, surface-level observer; the page does not say whether eclipses are included, so the Sun term is terrain only). Ours: time-mean visible fraction of the Earth disc over the terrain horizon (disc_fraction with the body's angular radius), 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 65.8 to 68.6), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height (PGDA is surface level, ours 2 m), DEM resolution and sub-pixel spread."
+  },
+  {
+   "name": "Average Earth in view %, Mons Mouton, any part of the disc visible, 3x3 points, vs PGDA",
+   "value": 72.8,
+   "reference": 72.4,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Information only: share of time any part of the Earth disc is above the horizon, the definition PGDA states for Earth.",
+   "detail": "Informational: PGDA's page states Earth is visible if any part of its disc is not obscured. Ours is the fraction of time the Earth disc is at least partly above the terrain horizon (range across points 71.3 to 74.4; difference +0.4)."
   }
  ],
  "eclipses": [
