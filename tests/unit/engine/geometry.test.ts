@@ -16,6 +16,8 @@ import {
   type Topo,
   type Vec3,
 } from "../../../lib/engine";
+import { Ephemeris } from "../../../lib/data/ephemeris";
+import { nodeFetchers } from "../../../lib/data/nodeFetchers";
 
 const norm = (v: Vec3) => Math.hypot(v[0], v[1], v[2]);
 const dot = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -146,8 +148,15 @@ describe("subsolarLatitude", () => {
     expect(subsolarLatitude([Math.sqrt(3), 0, 1])).toBeCloseTo(30, 10);
   });
 
-  // TODO(Task 11): enable once nodeFetchers lands; sample 2025-2027 hourly and assert |lat| <= 1.6.
-  it.skip("stays within +-1.6 deg for 2025-2027 hourly samples", () => {});
+  it("stays within +-1.6 deg for 2025-2027 hourly samples", async () => {
+    const eph = await Ephemeris.open(nodeFetchers);
+    const from = Date.UTC(2025, 0, 1);
+    const to = Date.UTC(2027, 11, 31, 23);
+    await eph.ensure(from, to);
+    let worst = 0;
+    for (let t = from; t <= to; t += 3_600_000) worst = Math.max(worst, Math.abs(subsolarLatitude(eph.bodyAt("sun", t))));
+    expect(worst).toBeLessThanOrEqual(1.6);
+  });
 });
 
 describe("earthPhase", () => {
