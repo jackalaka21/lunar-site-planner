@@ -108,12 +108,12 @@ One known discrepancy: Earth visibility at the Shackleton rim. We compute 35.9% 
 
 Also reported: a literal comparison of totality at a single surface point differs from NASA's U2/U3 by 30 to 42 minutes, because a surface point sees the Earth cover the Sun for longer than the Moon as a whole does. We show that result for information and report the Moon-centre match above.
 
-Lighthouse 13, static export served locally (`node scripts/serve-out.mjs`), 14 Nov 2026:
+Lighthouse 13, 14 Nov 2026, on the static export served locally (`node scripts/serve-out.mjs`) and on the production URL (desktop 86, mobile 51):
 
 | Run | Performance | Accessibility | Best practices | SEO |
 |---|---|---|---|---|
-| Desktop preset | 83 to 85 | 98 | 100 | 100 |
-| Mobile (simulated slow 4G, 4x CPU) | 48 | 98 | 100 | 100 |
+| Desktop preset | 83 to 86 | 98 | 96 to 100 | 100 |
+| Mobile (simulated slow 4G, 4x CPU) | 48 to 51 | 98 | 96 to 100 | 100 |
 
 Installable PWA: manifest, icons (including maskable), service worker with offline shell. First-view JavaScript is 298 KB gzipped against the 250 KB target; React and Next account for about 130 KB of it and Astryx for most of the rest. Mobile performance is the weak spot: under Lighthouse's 4x CPU throttle, hydrating the shell takes about 1.6 s of scripting and the first card waits for it.
 
