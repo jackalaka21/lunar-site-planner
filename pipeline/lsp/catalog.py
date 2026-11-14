@@ -18,7 +18,7 @@ SOURCE_PATH = Path(__file__).resolve().parents[1] / "catalog" / "sites_source.js
 OUT_PATH = REPO_ROOT / "public" / "data" / "v1" / "sites.json"
 
 FIELDS = ("id", "name", "group", "lat", "lon")
-OPTIONAL = ("actual_landing_utc", "outcome")
+OPTIONAL = ("actual_landing_utc", "actual_landing_source_url", "outcome")
 
 
 def sample_height(lat, lon, fine=None, coarse=None, glob=None):

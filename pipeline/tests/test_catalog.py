@@ -74,3 +74,16 @@ def test_build_adds_hdem_and_schema(tmp_path):
     assert -3000 < by["apollo-11"]["hDemM"] < 0
     # Mons Mouton is a high plateau.
     assert by["mons-mouton"]["hDemM"] > 1000
+
+
+def test_landing_time_has_non_wikipedia_source():
+    for s in SRC:
+        if "actual_landing_utc" in s:
+            u = s.get("actual_landing_source_url", "")
+            assert u.startswith("https://"), s["id"]
+            assert "wikipedia.org" not in u, s["id"]
+
+
+def test_no_wikipedia_anywhere():
+    for s in SRC:
+        assert "wikipedia" not in (s["source_url"] + s["notes"]).lower(), s["id"]
