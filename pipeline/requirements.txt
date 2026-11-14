@@ -1,0 +1,8 @@
+spiceypy
+numpy
+numba
+rasterio
+pyproj
+pillow
+requests
+pytest

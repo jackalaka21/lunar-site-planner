@@ -1,1 +1,36 @@
 .superpowers/
+
+# dependencies
+node_modules
+/.pnp
+.pnp.*
+
+# next.js
+.next
+out
+next-env.d.ts
+
+# env, tooling
+.env*
+.vercel
+*.tsbuildinfo
+.DS_Store
+npm-debug.log*
+
+# pipeline data and large binaries (raw data lives outside the repo, see pipeline/lsp/paths.py)
+pipeline/data/raw
+pipeline/data/work
+*.bsp
+*.bpc
+*.tls
+*.tpc
+*.tf
+.venv
+__pycache__
+.pytest_cache
+
+# test output
+playwright-report
+test-results
+coverage
+

@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+theme/ridgeline.css
+theme/ridgeline.js
+theme/*.d.ts
+package-lock.json
+public/data
+.superpowers
+docs
