@@ -4,10 +4,10 @@ import pytest
 
 from lsp import validate
 
-# The only accepted failure: ruling R25. Shackleton rim Earth visible-disc fraction vs the PGDA pixel misses by about 20
+# The only accepted failure (R25/R26): Shackleton rim Earth, any-part-visible (PGDA definition) vs the PGDA pixel misses by about 16
 # points (sub-pixel spread of the 3x3 points 0 to 49 %, PGDA surface level vs our 2 m mast, DEM resolution). Published as pass: false.
 KNOWN_FAILURES = {
-    "Average Earth in view %, Shackleton rim, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
+    "Average Earth in view %, Shackleton rim, any part of the disc visible, 3x3 points, vs PGDA",
 }
 
 KEYS = {"name", "value", "reference", "tolerance", "pass", "source_url", "note"}

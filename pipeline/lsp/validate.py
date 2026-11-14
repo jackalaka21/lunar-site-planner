@@ -330,6 +330,9 @@ def _pixel_avg_percentages(cx: float, cy: float, step_h: int = 6):
     }
 
 
+EARTH_DIFF_STAT = "Different statistic: mean visible disc fraction vs PGDA 'any part visible' definition."
+PGDA_EARTH_QUOTE = ('PGDA product 69 states "the Earth is considered visible if any part of its disc is not obscured"'
+                    " (same finite-disc model as the Sun maps, hourly over about 18.6 yr, surface level).")
 NOT_LIKE_FOR_LIKE = "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
 
 
@@ -379,12 +382,14 @@ def illumination_checks() -> list[dict]:
                 round(mine, 1), round(ref_pct, 1), ILLUM_TOL_PCT, None, PGDA_URL,
                 base + f"Single-point result would be {'PASS' if abs(mine - ref_pct) <= ILLUM_TOL_PCT else 'FAIL'}"
                 f" at 10 points (difference {mine - ref_pct:+.1f}). " + NOT_LIKE_FOR_LIKE, "%",
-                note=NOT_LIKE_FOR_LIKE))
+                note=NOT_LIKE_FOR_LIKE + (" " + PGDA_EARTH_QUOTE if kind == "Earth" else "")))
             sub = ("Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre"
                    " (range across points {lo:.1f} to {hi:.1f}), horizons from the reviewed raycast on the 40 m/120 m DEMs. ")
             pv = pix["binary"][idx]
             lo, hi = pix["binary"][2 + idx]
-            DIFF_STAT = "Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+            DIFF_STAT = ("Different statistic: binary centre/any vs PGDA mean visible disc fraction."
+                         if kind == "Sun" else "Different statistic: binary Earth centre above the horizon vs PGDA 'any part visible' definition. "
+                         + PGDA_EARTH_QUOTE)
             out.append(entry(
                 f"Average {what} %, {label}, binary, 3x3 points in the 120 m pixel, vs PGDA",
                 round(pv, 1), round(ref_pct, 1), ILLUM_TOL_PCT, None, PGDA_URL,
@@ -401,22 +406,24 @@ def illumination_checks() -> list[dict]:
                      " 2025-2032, 2 m mast, 0.1 deg horizon. ")
             out.append(entry(
                 f"Average {what} %, {label}, visible disc fraction, 3x3 points in the 120 m pixel, vs PGDA",
-                round(pv, 1), round(ref_pct, 1), ILLUM_TOL_PCT, abs(pv - ref_pct) <= ILLUM_TOL_PCT, PGDA_URL,
+                round(pv, 1), round(ref_pct, 1), ILLUM_TOL_PCT,
+                (abs(pv - ref_pct) <= ILLUM_TOL_PCT) if kind == "Sun" else None, PGDA_URL,
                 fbase + sub.format(lo=lo, hi=hi) + "Differences come from averaging period, observer height (PGDA is"
                 " surface level, ours 2 m), DEM resolution and sub-pixel spread.", "%",
-                note="Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value."
-                + ("" if abs(pv - ref_pct) <= ILLUM_TOL_PCT else
-                   f" Not met: the nine sub-points range {lo:.1f} to {hi:.1f}% on this steep rim, and PGDA is surface level"
-                   " on a 120 m DEM while ours is 2 m on a 40 m DEM, so the pixel is not reproduced at this resolution.")))
+                note=("Our 2025-2032 mean visible fraction of the disc over nine observer points inside the 120 m pixel against the PGDA pixel value."
+                      if kind == "Sun" else EARTH_DIFF_STAT + " " + PGDA_EARTH_QUOTE)))
             if kind == "Earth":
                 pv, (lo, hi) = pix["earthAny"]
+                ok = abs(pv - ref_pct) <= ILLUM_TOL_PCT
                 out.append(entry(
                     f"Average Earth in view %, {label}, any part of the disc visible, 3x3 points, vs PGDA",
-                    round(pv, 1), round(ref_pct, 1), ILLUM_TOL_PCT, None, PGDA_URL,
-                    "Informational: PGDA's page states Earth is visible if any part of its disc is not obscured. Ours is the"
-                    f" fraction of time the Earth disc is at least partly above the terrain horizon (range across points"
-                    f" {lo:.1f} to {hi:.1f}; difference {pv - ref_pct:+.1f}).", "%",
-                    note="Information only: share of time any part of the Earth disc is above the horizon, the definition PGDA states for Earth."))
+                    round(pv, 1), round(ref_pct, 1), ILLUM_TOL_PCT, ok, PGDA_URL,
+                    PGDA_EARTH_QUOTE + " Ours: fraction of time any part of the Earth disc is above the terrain horizon,"
+                    f" mean over 9 observer points at -40/0/+40 m around the pixel centre (range across points {lo:.1f} to"
+                    f" {hi:.1f}), 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon, raycast on the 40 m/120 m DEMs.", "%",
+                    note=PGDA_EARTH_QUOTE + " Ours is the share of 2025-2032 with any part of the Earth disc above the horizon, averaged over nine points in the pixel."
+                    + ("" if ok else f" Not met: the nine sub-points range {lo:.1f} to {hi:.1f}% on this steep rim, PGDA is surface"
+                       " level on a 120 m DEM while ours is 2 m on a 40 m DEM, so the pixel is not reproduced at this resolution.")))
     return out
 
 
