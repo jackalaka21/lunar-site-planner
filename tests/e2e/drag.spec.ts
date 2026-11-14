@@ -32,7 +32,7 @@ test("dragging pin updates card metrics within one frame-throttled cycle", async
   await expect(page.getByRole("textbox", { name: "Latitude (°)" })).toHaveValue(/^-8\d/);
 });
 
-test("standalone landing page transitions into 3D terrain planner and back", async ({ page }) => {
+test("standalone landing page transitions into the planner, opens the 3D terrain view and back", async ({ page }) => {
   await page.goto("/?landing=1");
   const landing = page.getByTestId("landing-page");
   await expect(landing).toBeVisible({ timeout: 30_000 });
@@ -49,6 +49,8 @@ test("standalone landing page transitions into 3D terrain planner and back", asy
   await expect(cardA).toBeVisible({ timeout: 30_000 });
   await expect(cardB).toBeVisible({ timeout: 30_000 });
   await expect(cardB).toContainText("Shackleton");
+  await expect(cardA.getByTestId("lunar-terrain-3d")).toHaveCount(0);
+  await cardA.getByRole("radio", { name: "3D terrain" }).click();
   await expect(cardA.getByTestId("lunar-terrain-3d")).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole("button", { name: "Landing page" }).click();

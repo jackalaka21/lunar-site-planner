@@ -26,7 +26,6 @@ export interface LunarTerrain3DProps {
   cursorIndex: number;
   lat: number;
   lon: number;
-  hDemM?: number;
   /** Catalogue site id; its real LOLA patch is loaded. Omit for a custom point. */
   siteId?: string;
   obsHeightM: number;
@@ -687,7 +686,7 @@ export function LunarTerrain3D({
     return (
       <EmptyState
         isCompact
-        title="3D terrain is available for catalog sites and south-polar points"
+        title="3D terrain is available for catalog sites and south-polar points within about 190 km of the pole"
         description="The 2D skyline works for every location."
       />
     );

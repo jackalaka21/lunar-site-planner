@@ -78,7 +78,7 @@ describe("LunarTerrain3D", () => {
     );
     await waitFor(() =>
       expect(
-        screen.getByText("3D terrain is available for catalog sites and south-polar points"),
+        screen.getByText(/^3D terrain is available for catalog sites and south-polar points/),
       ).toBeTruthy(),
     );
     expect(screen.queryByRole("img")).toBeNull();
