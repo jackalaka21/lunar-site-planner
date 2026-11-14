@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play } from "lucide-react";
+import { Keyboard, Pause, Play } from "lucide-react";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
 import { Kbd } from "@astryxdesign/core/Kbd";
@@ -100,7 +100,7 @@ export function TimeBar() {
           step={1}
           value={Math.min(Math.round(cursorH), end)}
           onChange={(v: number) => setCursorH(v)}
-          formatValue={format}
+          formatValue={() => format(cursorH)}
           valueDisplay="none"
         />
       }
@@ -108,9 +108,7 @@ export function TimeBar() {
         <HStack gap={3} vAlign="center">
           <MissionClock ms={toMs(cursorH)} axis={axis} tz={tz} />
           <Tooltip content={<Shortcuts />} placement="above">
-            <Text color="secondary" tabIndex={0}>
-              Shortcuts
-            </Text>
+            <IconButton label="Keyboard shortcuts" size="lg" variant="ghost" icon={<Icon icon={Keyboard} />} />
           </Tooltip>
         </HStack>
       }

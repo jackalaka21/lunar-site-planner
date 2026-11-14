@@ -128,3 +128,17 @@ describe("useTimeKeyboard", () => {
     input.remove();
   });
 });
+
+describe("TimeBar label", () => {
+  it("slider label formats the exact cursor, matching MissionClock", async () => {
+    const { render, screen } = await import("@testing-library/react");
+    const { createElement } = await import("react");
+    const { TimeBar } = await import("../../../components/time/TimeBar");
+    const { formatMet } = await import("../../../lib/format");
+    useAppStore.setState({ cursorH: 10.6 });
+    render(createElement(TimeBar));
+    const expected = formatMet(10.6 * 3_600_000);
+    expect(screen.getByRole("slider").getAttribute("aria-valuetext")).toBe(expected);
+    expect(screen.getAllByText(expected).length).toBeGreaterThan(0);
+  });
+});

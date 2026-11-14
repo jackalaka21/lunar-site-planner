@@ -29,6 +29,8 @@ for (const width of [375, 1440]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
     await expect(page.getByTestId("stat-strip")).toBeVisible();
+    // The time bar shortcut trigger must be a real button, so the loop below covers it.
+    await expect(page.getByRole("button", { name: "Keyboard shortcuts" })).toBeVisible();
     const buttons = page.getByRole("button");
     const count = await buttons.count();
     expect(count).toBeGreaterThan(2);
