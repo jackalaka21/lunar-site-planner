@@ -1,0 +1,181 @@
+"use client";
+
+import { Drawer, DrawerHeader } from "@astryxdesign/core/Drawer";
+import { Field } from "@astryxdesign/core/Field";
+import { FormLayout } from "@astryxdesign/core/FormLayout";
+import { Layout, LayoutContent } from "@astryxdesign/core/Layout";
+import { NumberInput } from "@astryxdesign/core/NumberInput";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
+import { Switch } from "@astryxdesign/core/Switch";
+import { SETTINGS_RANGES, type Settings } from "../../lib/engine/settings";
+import { GLOSSARY, type GlossaryId } from "../../lib/glossary";
+import { useAppStore } from "../../lib/state/store";
+
+interface SettingsPanelProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}
+
+type RangedKey = keyof typeof SETTINGS_RANGES;
+
+/** Clamp to the Global Constraints range; non-finite input falls back to the lower bound. */
+export function clampSetting(key: RangedKey, value: number): number {
+  const { min, max } = SETTINGS_RANGES[key];
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, value));
+}
+
+const TIME_ZONES = [
+  { value: "UTC", label: "UTC" },
+  { value: "Asia/Singapore", label: "Singapore" },
+];
+
+const PANEL_AZ_RANGE = { min: 0, max: 359 };
+
+export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
+  const settings = useAppStore((s) => s.settings);
+  const setSettings = useAppStore((s) => s.setSettings);
+
+  const ranged = (
+    key: RangedKey,
+    glossaryId: GlossaryId,
+    units: string,
+    step: number,
+    isIntegerOnly = false,
+    isDisabled = false,
+    disabledMessage?: string,
+  ) => (
+    <NumberInput
+      label={GLOSSARY[glossaryId].term}
+      labelTooltip={GLOSSARY[glossaryId].text}
+      value={settings[key]}
+      min={SETTINGS_RANGES[key].min}
+      max={SETTINGS_RANGES[key].max}
+      step={step}
+      units={units}
+      isIntegerOnly={isIntegerOnly}
+      isDisabled={isDisabled}
+      disabledMessage={disabledMessage}
+      onChange={(v) => setSettings({ [key]: clampSetting(key, v) } as Partial<Settings>)}
+    />
+  );
+
+  const group = (id: GlossaryId, control: React.ReactNode) => (
+    <Field label={GLOSSARY[id].term} labelTooltip={GLOSSARY[id].text} inputID={`setting-${id}`} isGroupLabel>
+      {control}
+    </Field>
+  );
+
+  const zoneItems = TIME_ZONES.some((z) => z.value === settings.displayTz)
+    ? TIME_ZONES
+    : [...TIME_ZONES, { value: settings.displayTz, label: settings.displayTz }];
+
+  return (
+    <Drawer isOpen={isOpen} onOpenChange={onOpenChange} label="Settings" purpose="form" width={400}>
+      <Layout
+        header={<DrawerHeader title="Settings" onOpenChange={onOpenChange} />}
+        content={
+          <LayoutContent>
+            <FormLayout>
+              {group(
+                "litThreshold",
+                <SegmentedControl
+                  label={GLOSSARY.litThreshold.term}
+                  value={settings.litThreshold}
+                  onChange={(v) => setSettings({ litThreshold: v as Settings["litThreshold"] })}>
+                  <SegmentedControlItem value="any" label="Any" />
+                  <SegmentedControlItem value="half" label="Half" />
+                  <SegmentedControlItem value="full" label="Full" />
+                </SegmentedControl>,
+              )}
+              {ranged("earthMarginDeg", "earthMargin", "°", 0.5)}
+              {ranged("durationDays", "duration", "d", 1, true)}
+              {ranged("batteryH", "batteryReserve", "h", 1, true)}
+              {ranged("flickerMergeMin", "flicker", "min", 5, true)}
+              {ranged("interferenceDeg", "solarInterference", "°", 0.5)}
+              <Switch
+                label={GLOSSARY.dsn.term}
+                labelTooltip={GLOSSARY.dsn.text}
+                value={settings.dsnEnabled}
+                onChange={(v) => setSettings({ dsnEnabled: v })}
+              />
+              {ranged(
+                "dsnMaskDeg",
+                "dsnMask",
+                "°",
+                1,
+                false,
+                !settings.dsnEnabled,
+                "Turn on DSN to set the mask angle",
+              )}
+              {ranged("horizonUncertDeg", "horizonUncertainty", "°", 0.1)}
+              {ranged("ellipseKm", "landingEllipse", "km", 0.5)}
+              {group(
+                "mastHeight",
+                <SegmentedControl
+                  label={GLOSSARY.mastHeight.term}
+                  value={String(settings.mastM)}
+                  onChange={(v) => setSettings({ mastM: Number(v) as Settings["mastM"] })}>
+                  <SegmentedControlItem value="2" label="2 m" />
+                  <SegmentedControlItem value="10" label="10 m" />
+                  <SegmentedControlItem value="50" label="50 m" />
+                </SegmentedControl>,
+              )}
+              {group(
+                "panelMode",
+                <SegmentedControl
+                  label={GLOSSARY.panelMode.term}
+                  value={settings.panel.mode}
+                  onChange={(v) =>
+                    setSettings({ panel: v === "fixed" ? { mode: "fixed", azDeg: 0 } : { mode: "tracking" } })
+                  }>
+                  <SegmentedControlItem value="tracking" label="Tracking" />
+                  <SegmentedControlItem value="fixed" label="Fixed" />
+                </SegmentedControl>,
+              )}
+              {settings.panel.mode === "fixed" ? (
+                <NumberInput
+                  label={GLOSSARY.azimuth.term}
+                  labelTooltip={GLOSSARY.azimuth.text}
+                  value={settings.panel.azDeg}
+                  min={PANEL_AZ_RANGE.min}
+                  max={PANEL_AZ_RANGE.max}
+                  units="°"
+                  onChange={(v) =>
+                    setSettings({
+                      panel: {
+                        mode: "fixed",
+                        azDeg: Math.min(PANEL_AZ_RANGE.max, Math.max(PANEL_AZ_RANGE.min, Number.isFinite(v) ? v : 0)),
+                      },
+                    })
+                  }
+                />
+              ) : null}
+              {group(
+                "timeAxis",
+                <SegmentedControl
+                  label={GLOSSARY.timeAxis.term}
+                  value={settings.axis}
+                  onChange={(v) => setSettings({ axis: v as Settings["axis"] })}>
+                  <SegmentedControlItem value="met" label="Mission clock" />
+                  <SegmentedControlItem value="cal" label="Calendar" />
+                </SegmentedControl>,
+              )}
+              {group(
+                "displayTz",
+                <SegmentedControl
+                  label={GLOSSARY.displayTz.term}
+                  value={settings.displayTz}
+                  onChange={(v) => setSettings({ displayTz: v })}>
+                  {zoneItems.map((z) => (
+                    <SegmentedControlItem key={z.value} value={z.value} label={z.label} />
+                  ))}
+                </SegmentedControl>,
+              )}
+            </FormLayout>
+          </LayoutContent>
+        }
+      />
+    </Drawer>
+  );
+}
