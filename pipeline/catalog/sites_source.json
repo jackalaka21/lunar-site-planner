@@ -1,0 +1,293 @@
+[
+  {
+    "id": "apollo-11",
+    "name": "Apollo 11 Eagle",
+    "group": "apollo",
+    "lat": 0.67416,
+    "lon": 23.47314,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured LM position, uncertainty 0.3 m (Wagner et al. 2016, Icarus; the LROC table gives east longitude 0-360). Touchdown 20:17:40 UTC from https://en.wikipedia.org/wiki/Apollo_11, truncated to the minute.",
+    "actual_landing_utc": "1969-07-20T20:17Z",
+    "outcome": "Landed; crewed mission"
+  },
+  {
+    "id": "apollo-12",
+    "name": "Apollo 12 Intrepid",
+    "group": "apollo",
+    "lat": -3.0128,
+    "lon": -23.4219,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured LM position, uncertainty 2.2 m (table longitude 336.5781 east, converted). NSSDC lists the same point as -23.4219. Touchdown about 06:54:35 UTC from https://en.wikipedia.org/wiki/Apollo_12, truncated to the minute.",
+    "actual_landing_utc": "1969-11-19T06:54Z",
+    "outcome": "Landed; crewed mission"
+  },
+  {
+    "id": "apollo-14",
+    "name": "Apollo 14 Antares",
+    "group": "apollo",
+    "lat": -3.64589,
+    "lon": -17.47194,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured LM position, uncertainty 0.4 m (table longitude 342.52806 east, converted). Touchdown 09:18:11 UTC from https://en.wikipedia.org/wiki/Apollo_14, truncated to the minute.",
+    "actual_landing_utc": "1971-02-05T09:18Z",
+    "outcome": "Landed; crewed mission"
+  },
+  {
+    "id": "apollo-15",
+    "name": "Apollo 15 Falcon",
+    "group": "apollo",
+    "lat": 26.13239,
+    "lon": 3.6333,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured LM position, uncertainty 1.0 m. Touchdown 22:16:29 UTC from https://en.wikipedia.org/wiki/Apollo_15, truncated to the minute.",
+    "actual_landing_utc": "1971-07-30T22:16Z",
+    "outcome": "Landed; crewed mission"
+  },
+  {
+    "id": "apollo-16",
+    "name": "Apollo 16 Orion",
+    "group": "apollo",
+    "lat": -8.9734,
+    "lon": 15.5011,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured LM position, uncertainty 3.0 m. Touchdown 02:23:35 UTC from https://en.wikipedia.org/wiki/Apollo_16, truncated to the minute.",
+    "actual_landing_utc": "1972-04-21T02:23Z",
+    "outcome": "Landed; crewed mission"
+  },
+  {
+    "id": "apollo-17",
+    "name": "Apollo 17 Challenger",
+    "group": "apollo",
+    "lat": 20.1911,
+    "lon": 30.7723,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured LM position, uncertainty 3.5 m. Touchdown 19:54:58 UTC from https://en.wikipedia.org/wiki/Apollo_17, truncated to the minute.",
+    "actual_landing_utc": "1972-12-11T19:54Z",
+    "outcome": "Landed; crewed mission"
+  },
+  {
+    "id": "im-1",
+    "name": "IM-1 Odysseus",
+    "group": "clps",
+    "lat": -80.13,
+    "lon": 1.44,
+    "source_url": "https://www.nasa.gov/missions/lro/nasas-lro-images-intuitive-machines-odysseus-lander/",
+    "notes": "Position from NASA's caption of the LRO LROC image of the lander taken 24 Feb 2024; the page states no uncertainty. Near Malapert A, about 1.5 km from the intended target. Touchdown 6:24 p.m. EST (23:24 UTC) per the same NASA page.",
+    "actual_landing_utc": "2024-02-22T23:24Z",
+    "outcome": "Landed and came to rest in a degraded crater on a 12 degree slope"
+  },
+  {
+    "id": "im-2",
+    "name": "IM-2 Athena",
+    "group": "clps",
+    "lat": -84.7906,
+    "lon": 29.1957,
+    "source_url": "https://lroc.im-ldi.com/images/1408",
+    "notes": "Position as published on the LROC page for the post-landing oblique image (near the centre of Mons Mouton); the page states no uncertainty. Touchdown 17:28:50 UTC from https://en.wikipedia.org/wiki/IM-2 (its narrative says 17:27), truncated to the minute.",
+    "actual_landing_utc": "2025-03-06T17:28Z",
+    "outcome": "Landed; tipped over into a crater, operations ended after less than 13 hours"
+  },
+  {
+    "id": "blue-ghost-1",
+    "name": "Blue Ghost Mission 1",
+    "group": "clps",
+    "lat": 18.5623,
+    "lon": 61.8103,
+    "source_url": "https://lroc.im-ldi.com/images/1407",
+    "notes": "Position as published on the LROC page for the lander image (elevation -3650 m); no uncertainty stated. Near Mons Latreille in Mare Crisium. Touchdown 3:34 a.m. EST on 2 March 2025 (08:34 UTC) per NASA's release https://www.nasa.gov/news-release/touchdown-carrying-nasa-science-fireflys-blue-ghost-lands-on-moon/ .",
+    "actual_landing_utc": "2025-03-02T08:34Z",
+    "outcome": "Landed in Mare Crisium"
+  },
+  {
+    "id": "slim",
+    "name": "SLIM Moon Sniper",
+    "group": "international",
+    "lat": -13.316,
+    "lon": 25.251,
+    "source_url": "https://www.nasa.gov/missions/lro/nasas-lro-spots-japans-moon-lander",
+    "notes": "Position from NASA's caption of the LRO LROC image of the lander taken 24 Jan 2024; no uncertainty stated. Targeted a small crater (Shioli) on a slope. Touchdown 10:20 a.m. EST (15:20 UTC) on 19 Jan 2024 per the same NASA page.",
+    "actual_landing_utc": "2024-01-19T15:20Z",
+    "outcome": "Landed"
+  },
+  {
+    "id": "chandrayaan-3",
+    "name": "Chandrayaan-3 Vikram (Statio Shiv Shakti)",
+    "group": "international",
+    "lat": -69.3741,
+    "lon": 32.32,
+    "source_url": "https://lroc.im-ldi.com/posts/1314",
+    "notes": "Position from the LROC featured-image page (elevation 532 m); no uncertainty stated. The IAU gazetteer centre for Statio Shiv Shakti is -69.37, 32.32 (https://planetarynames.wr.usgs.gov/Feature/16272); the ISRO-derived value quoted on Wikipedia (-69.373, 32.319) differs by under 0.01 degrees. LROC value used. Touchdown 12:33 UTC per https://en.wikipedia.org/wiki/Chandrayaan-3 (its lead says 12:34).",
+    "actual_landing_utc": "2023-08-23T12:33Z",
+    "outcome": "Landed; lander and rover operated for about one lunar day"
+  },
+  {
+    "id": "change-3",
+    "name": "Chang'e 3",
+    "group": "international",
+    "lat": 44.1214,
+    "lon": -19.5117,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured lander position, uncertainty 9.1 m (table longitude 340.4883 east, converted). Touchdown 13:11 UTC on 14 Dec 2013 from https://en.wikipedia.org/wiki/Chang%27e_3.",
+    "actual_landing_utc": "2013-12-14T13:11Z",
+    "outcome": "Landed in Mare Imbrium; Yutu rover operated until March 2015"
+  },
+  {
+    "id": "change-4",
+    "name": "Chang'e 4 (Statio Tianhe)",
+    "group": "international",
+    "lat": -45.4562,
+    "lon": 177.5885,
+    "source_url": "https://lroc.im-ldi.com/images/1168",
+    "notes": "LROC-refined lander position, uncertainty 13 m (95% confidence). Touchdown 02:26 UTC on 3 Jan 2019 as stated on the same LROC page. Von Karman crater, South Pole-Aitken basin.",
+    "actual_landing_utc": "2019-01-03T02:26Z",
+    "outcome": "Landed on the far side; Yutu-2 rover deployed"
+  },
+  {
+    "id": "change-5",
+    "name": "Chang'e 5 (Statio Tianchuan)",
+    "group": "international",
+    "lat": 43.0576,
+    "lon": -51.9161,
+    "source_url": "https://www.lroc.im-ldi.com/images/1172",
+    "notes": "LROC-computed lander position, estimated accuracy 20 m, elevation -2570 m (published longitude 308.0839 east, converted). Touchdown 10:11 EST (15:11 UTC) on 1 Dec 2020 as stated on the same LROC page.",
+    "actual_landing_utc": "2020-12-01T15:11Z",
+    "outcome": "Landed in Oceanus Procellarum"
+  },
+  {
+    "id": "change-6",
+    "name": "Chang'e 6",
+    "group": "international",
+    "lat": -41.6385,
+    "lon": -153.9852,
+    "source_url": "https://lroc.im-ldi.com/images/1374",
+    "notes": "LROC-computed lander position, estimated horizontal accuracy 30 m (published longitude 206.0148 east, converted; elevation -5256 m). Touchdown 22:23:16 UTC on 1 June 2024 from https://en.wikipedia.org/wiki/Chang%27e_6, truncated to the minute. Apollo basin, inside South Pole-Aitken.",
+    "actual_landing_utc": "2024-06-01T22:23Z",
+    "outcome": "Landed on the far side; about 1,935 g of samples collected, ascender lifted off 3 June 2024"
+  },
+  {
+    "id": "luna-16",
+    "name": "Luna 16",
+    "group": "international",
+    "lat": -0.5137,
+    "lon": 56.3638,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured lander position, uncertainty 3.7 m. Landing date not recorded in this catalogue."
+  },
+  {
+    "id": "luna-17",
+    "name": "Luna 17 (Lunokhod 1 carrier)",
+    "group": "international",
+    "lat": 38.23764,
+    "lon": -35.00163,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured lander position, uncertainty 0.5 m (table longitude 324.99837 east, converted). Landing date not recorded in this catalogue."
+  },
+  {
+    "id": "luna-21",
+    "name": "Luna 21 (Lunokhod 2 carrier)",
+    "group": "international",
+    "lat": 25.9994,
+    "lon": 30.4076,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured lander position, uncertainty 13.4 m. Landing date not recorded in this catalogue."
+  },
+  {
+    "id": "luna-24",
+    "name": "Luna 24",
+    "group": "international",
+    "lat": 12.7142,
+    "lon": 62.2129,
+    "source_url": "https://lroc.im-ldi.com/images/938",
+    "notes": "LROC-measured lander position, uncertainty 3.7 m. Landing date not recorded in this catalogue."
+  },
+  {
+    "id": "shackleton-rim",
+    "name": "Shackleton rim at the connecting ridge junction",
+    "group": "polar",
+    "lat": -89.684,
+    "lon": -163.261,
+    "source_url": "https://lroc.im-ldi.com/images/1247",
+    "notes": "LROC-published point where the Shackleton-de Gerlache ridge meets the Shackleton crater rim (longitude 196.739 east, converted); no uncertainty stated. Shackleton is about 21 km across (IAU centre -89.67, 129.78, https://planetarynames.wr.usgs.gov/Feature/5450). An analysis point on the rim, not a landing target."
+  },
+  {
+    "id": "connecting-ridge",
+    "name": "Shackleton-de Gerlache connecting ridge",
+    "group": "polar",
+    "lat": -89.5,
+    "lon": -135.54,
+    "source_url": "https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_DTM_SHACKRDGE02_CLRGRAD",
+    "notes": "Midpoint of the bounds of the LROC NAC DTM of the connecting ridge (latitude -89.63 to -89.37, longitude 209.81 to 239.10 east, converted). A representative point on the ridge, not a measured landing position. The ridge is about 12-14 km long per https://lroc.im-ldi.com/images/1247 ."
+  },
+  {
+    "id": "malapert-massif",
+    "name": "Malapert Massif",
+    "group": "polar",
+    "lat": -86.0,
+    "lon": 0.0,
+    "source_url": "https://lroc.im-ldi.com/images/1294",
+    "notes": "LROC states that the relatively flat area at 86 S, 0 E is the heart of the candidate landing region on the massif. The LROC NAC mosaic centre for the same region is -86.0, 0.3 (see artemis3-malapert-massif). Representative point only."
+  },
+  {
+    "id": "mons-mouton",
+    "name": "Mons Mouton",
+    "group": "polar",
+    "lat": -84.6,
+    "lon": 31.0,
+    "source_url": "https://en.wikipedia.org/wiki/Mons_Mouton",
+    "notes": "Approximate centre of the flat-topped massif (about 100 km across, 6 km high) as given on Wikipedia, which names no primary source for it. The LROC Mons Mouton Plateau mosaic centre is -84.3, 30.6 and the IM-2 landing position is -84.7906, 29.1957, both within a few tens of kilometres. Representative point only."
+  },
+  {
+    "id": "artemis3-peak-near-cabeus-b",
+    "name": "Artemis crewed landing candidate: Peak near Cabeus B",
+    "group": "artemis3",
+    "lat": -83.6,
+    "lon": -68.8,
+    "source_url": "https://data.lroc.im-ldi.com/lroc/view_rdr_product/NAC_ROI_CABEUSPKLOC_P836S2912",
+    "notes": "NASA's October 2024 list of nine candidate regions is still the current set: NASA's Artemis IV page (updated 16 Mar 2026, https://www.nasa.gov/mission/artemis-iv/) lists nine regions near the south pole. Artemis III is now a 2027 low Earth orbit test (NASA, 27 Feb 2026, https://www.nasa.gov/directorates/esdmd/nasa-strengthens-artemis-adds-mission-refines-overall-architecture/); the first crewed landing is planned for Artemis IV, early 2028. Checked 14 Nov 2026. NASA publishes no region coordinates; this is a representative point within a region of about 15 x 15 km. Point is the centre of the LROC NAC low-Sun mosaic for this region, encoded in product id P836S2912 (83.6 S, 291.2 E, converted)."
+  },
+  {
+    "id": "artemis3-haworth",
+    "name": "Artemis crewed landing candidate: Haworth",
+    "group": "artemis3",
+    "lat": -86.7,
+    "lon": -23.7,
+    "source_url": "https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_HAWORTH_LOB",
+    "notes": "NASA's October 2024 list of nine candidate regions is still the current set: NASA's Artemis IV page (updated 16 Mar 2026, https://www.nasa.gov/mission/artemis-iv/) lists nine regions near the south pole. Artemis III is now a 2027 low Earth orbit test (NASA, 27 Feb 2026, https://www.nasa.gov/directorates/esdmd/nasa-strengthens-artemis-adds-mission-refines-overall-architecture/); the first crewed landing is planned for Artemis IV, early 2028. Checked 14 Nov 2026. NASA publishes no region coordinates; this is a representative point within a region of about 15 x 15 km. Point is the centre of the LROC NAC low-Sun mosaic for this region (product NAC_ROI_HAWORTH_LOB_P867S3363: 86.7 S, 336.3 E, converted)."
+  },
+  {
+    "id": "artemis3-malapert-massif",
+    "name": "Artemis crewed landing candidate: Malapert Massif",
+    "group": "artemis3",
+    "lat": -86.0,
+    "lon": 0.3,
+    "source_url": "https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_MALAPERTLOB",
+    "notes": "NASA's October 2024 list of nine candidate regions is still the current set: NASA's Artemis IV page (updated 16 Mar 2026, https://www.nasa.gov/mission/artemis-iv/) lists nine regions near the south pole. Artemis III is now a 2027 low Earth orbit test (NASA, 27 Feb 2026, https://www.nasa.gov/directorates/esdmd/nasa-strengthens-artemis-adds-mission-refines-overall-architecture/); the first crewed landing is planned for Artemis IV, early 2028. Checked 14 Nov 2026. NASA publishes no region coordinates; this is a representative point within a region of about 15 x 15 km. Point is the centre of the LROC NAC low-Sun mosaic for this region (product P860S0003). LROC's own prose point for the region heart is 86 S, 0 E (https://lroc.im-ldi.com/images/1294)."
+  },
+  {
+    "id": "artemis3-mons-mouton-plateau",
+    "name": "Artemis crewed landing candidate: Mons Mouton Plateau",
+    "group": "artemis3",
+    "lat": -84.3,
+    "lon": 30.6,
+    "source_url": "https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_MOUTNPLTLO1",
+    "notes": "NASA's October 2024 list of nine candidate regions is still the current set: NASA's Artemis IV page (updated 16 Mar 2026, https://www.nasa.gov/mission/artemis-iv/) lists nine regions near the south pole. Artemis III is now a 2027 low Earth orbit test (NASA, 27 Feb 2026, https://www.nasa.gov/directorates/esdmd/nasa-strengthens-artemis-adds-mission-refines-overall-architecture/); the first crewed landing is planned for Artemis IV, early 2028. Checked 14 Nov 2026. NASA publishes no region coordinates; this is a representative point within a region of about 15 x 15 km. Point is the centre of the LROC NAC combined mosaic for the plateau; that mosaic covers a wider area than the region (latitude -85.76 to -82.85), so the centre is only a rough representative point."
+  },
+  {
+    "id": "artemis3-mons-mouton",
+    "name": "Artemis crewed landing candidate: Mons Mouton",
+    "group": "artemis3",
+    "lat": -84.78,
+    "lon": 29.13,
+    "source_url": "https://lroc.im-ldi.com/images/1401",
+    "notes": "NASA's October 2024 list of nine candidate regions is still the current set: NASA's Artemis IV page (updated 16 Mar 2026, https://www.nasa.gov/mission/artemis-iv/) lists nine regions near the south pole. Artemis III is now a 2027 low Earth orbit test (NASA, 27 Feb 2026, https://www.nasa.gov/directorates/esdmd/nasa-strengthens-artemis-adds-mission-refines-overall-architecture/); the first crewed landing is planned for Artemis IV, early 2028. Checked 14 Nov 2026. NASA publishes no region coordinates; this is a representative point within a region of about 15 x 15 km. Point is the IM-2 intended landing site, which LROC describes as the central portion of one of NASA's Artemis 3 potential landing regions (Mons Mouton)."
+  },
+  {
+    "id": "artemis3-nobile-rim-2",
+    "name": "Artemis crewed landing candidate: Nobile Rim 2",
+    "group": "artemis3",
+    "lat": -83.9,
+    "lon": 58.7,
+    "source_url": "https://data.lroc.im-ldi.com/lroc/view_rdr/NAC_ROI_NOBILE02LOC",
+    "notes": "NASA's October 2024 list of nine candidate regions is still the current set: NASA's Artemis IV page (updated 16 Mar 2026, https://www.nasa.gov/mission/artemis-iv/) lists nine regions near the south pole. Artemis III is now a 2027 low Earth orbit test (NASA, 27 Feb 2026, https://www.nasa.gov/directorates/esdmd/nasa-strengthens-artemis-adds-mission-refines-overall-architecture/); the first crewed landing is planned for Artemis IV, early 2028. Checked 14 Nov 2026. NASA publishes no region coordinates; this is a representative point within a region of about 15 x 15 km. Point is the centre of the LROC NAC low-Sun mosaic for this region (product P839S0587). A peer-reviewed multi-criteria study (Pena-Asensio et al., arXiv 2406.19863) gives its best point in the region as -84.20156, 60.69989, about 10 km from the mosaic centre and inside the mosaic extent; LROC centre used."
+  }
+]
