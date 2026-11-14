@@ -48,4 +48,9 @@ export const SETTINGS_RANGES = {
   batteryH: { min: 0, max: 200 },
   flickerMergeMin: { min: 0, max: 120 },
   interferenceDeg: { min: 0, max: 10 },
+  // The Global Constraints table gives no bounds for these; chosen as physically sensible
+  // limits so hand-edited share links cannot request nonsense (Task 14).
+  dsnMaskDeg: { min: 0, max: 90 },
+  horizonUncertDeg: { min: 0, max: 5 },
+  ellipseKm: { min: 0, max: 50 },
 } as const satisfies Partial<Record<keyof Settings, NumericRange>>;
