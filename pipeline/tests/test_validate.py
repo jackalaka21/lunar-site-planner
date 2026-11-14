@@ -4,20 +4,21 @@ import pytest
 
 from lsp import validate
 
-KEYS = {"name", "value", "reference", "tolerance", "pass", "source_url"}
+KEYS = {"name", "value", "reference", "tolerance", "pass", "source_url", "note"}
 
 
 def check_shape(e):
     assert KEYS <= set(e), e
     assert isinstance(e["name"], str) and e["name"]
     assert e["pass"] in (True, False, None)
+    assert isinstance(e["note"], str) and e["note"]
     assert e["source_url"].startswith("https://")
     if e["pass"] is not None:
         assert e["tolerance"] is not None
 
 
 def test_entry_helper_shape():
-    check_shape(validate.entry("x", 1, 0, 0.05, True, "https://example.org"))
+    check_shape(validate.entry("x", 1, 0, 0.05, True, "https://example.org", note="n"))
 
 
 @pytest.mark.needs_data
@@ -36,5 +37,5 @@ def test_committed_report_shape_and_no_failures():
     assert {"generatedUtc", "horizons", "interp", "illumination", "eclipses", "replays"} <= set(rep)
     for e in validate.all_entries(rep):
         check_shape(e)
-        assert e["pass"] is not False, e["name"]
+        assert e["pass"] is not False, e["name"]  # fails on any failed check; null (info) entries are allowed
     assert any(e["pass"] is None for e in rep["replays"])  # IM-2 informational

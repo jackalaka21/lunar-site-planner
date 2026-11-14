@@ -58,7 +58,7 @@ HORIZONS_SITES = [  # (label, lat, lon_east)
 ]
 
 
-def entry(name, value, reference, tolerance, passed, source_url, detail="", unit=None) -> dict:
+def entry(name, value, reference, tolerance, passed, source_url, detail="", unit=None, note="") -> dict:
     return {
         "name": name,
         "value": value,
@@ -67,6 +67,7 @@ def entry(name, value, reference, tolerance, passed, source_url, detail="", unit
         "pass": passed,
         "source_url": source_url,
         "unit": unit,
+        "note": note,
         "detail": detail,
     }
 
@@ -178,6 +179,7 @@ def horizons_check() -> list[dict]:
                     f" max raw |d az| {max(daz):.5f} deg, max sky separation {max(sep):.5f} deg."
                     " Horizons: CENTER coord@301, MEAN_ME frame, apparent az/el, airless, observer 2 m above the 1737.4 km sphere.",
                     "deg",
+                    note="Our hourly-interpolated Sun/Earth direction at 20 dates in 2026-2027 against JPL Horizons apparent azimuth and elevation for the same surface point.",
                 )
             )
             raw.append({"site": label, "body": body, "times": [to_iso(int(x)) for x in t],
@@ -216,6 +218,7 @@ def interp_check(n: int = 300) -> dict:
         f"{len(t_ms)} random off-grid times 2025-2032; max angle between the hourly-linear Sun/Earth direction"
         " and a direct SPICE spkpos call (MOON_ME, LT+S), either body.",
         "deg",
+        note="Largest angle between our hourly-linear Sun or Earth direction and a direct SPICE call at random off-grid times.",
     )
 
 
@@ -237,6 +240,7 @@ def pole_sun_check() -> dict:
         f"max |Sun centre elevation| over hourly samples; min {els.min():.3f}, max {els.max():.3f} deg."
         " The lunar spin axis is tilted about 1.54 deg to the ecliptic.",
         "deg",
+        note="On a smooth sphere at the pole the Sun should stay within about 1.6 degrees of the horizon all year, and ours does.",
     )
 
 
@@ -267,15 +271,47 @@ def _avg_percentages(site: dict, step_h: int = 6) -> tuple[float, float]:
     return 100.0 * float(s["lit"].mean()), 100.0 * float(s["earthIn"].mean())
 
 
-def _read_pgda(path: Path, x: float, y: float) -> float | None:
+def _read_pgda(path: Path, x: float, y: float):
+    """(fraction, pixel centre x, pixel centre y) of the PGDA pixel containing (x, y); fraction None if nodata."""
     import rasterio
 
     with rasterio.open(path) as d:
         row, col = d.index(x, y)
         v = d.read(1, window=((row, row + 1), (col, col + 1)))[0, 0]
-        if v == d.nodata:
-            return None
-        return float(v) * d.scales[0]
+        cx, cy = d.xy(row, col)
+        return (None if v == d.nodata else float(v) * d.scales[0]), float(cx), float(cy)
+
+
+_DEMS: tuple | None = None
+SUBGRID_OFFSETS_M = (-40.0, 0.0, 40.0)  # 3 x 3 sub-cell centres inside a 120 m pixel
+
+
+def _pixel_avg_percentages(cx: float, cy: float, step_h: int = 6):
+    """Average sunlit % ('any') and Earth-in-view % over a 3 x 3 sub-grid of observer points inside the 120 m pixel
+    centred at PS metres (cx, cy); horizons from the raycast (2 m mast, 0.1 deg steps) on the fine/coarse DEMs."""
+    global _DEMS
+    from . import dem, raycast
+
+    if _DEMS is None:
+        _DEMS = (dem.load_fine(), dem.load_coarse())
+    fine, coarse = _DEMS
+    xs = np.array([cx + dx for dy in SUBGRID_OFFSETS_M for dx in SUBGRID_OFFSETS_M])
+    ys = np.array([cy + dy for dy in SUBGRID_OFFSETS_M for dx in SUBGRID_OFFSETS_M])
+    lat, lon = ps.to_latlon(xs, ys)
+    prof, hd = raycast.horizon_profiles(lat, lon, 2.0, 3600, fine, coarse)
+    t = np.arange(parse_iso("2025-01-01T00:00:00Z"), parse_iso("2033-01-01T00:00:00Z"), step_h * HOUR_MS, dtype=np.int64)
+    sun, earth = [], []
+    for k in range(len(xs)):
+        case = {"lat": float(lat[k]), "lon": float(lon[k]), "hDemM": float(hd[k]),
+                "horizon": {"stepDeg": 0.1, "values": prof[k]},
+                "settings": dict(DEFAULT_SETTINGS, litThreshold="any", earthMarginDeg=0, mastM=2)}
+        s = sample_at(case, t)
+        sun.append(100.0 * float(s["lit"].mean()))
+        earth.append(100.0 * float(s["earthIn"].mean()))
+    return float(np.mean(sun)), float(np.mean(earth)), (min(sun), max(sun)), (min(earth), max(earth))
+
+
+NOT_LIKE_FOR_LIKE = "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
 
 
 def illumination_checks() -> list[dict]:
@@ -291,78 +327,120 @@ def illumination_checks() -> list[dict]:
         round(v, 1), GLASER_SHACKLETON_PCT, ILLUM_TOL_PCT, abs(v - GLASER_SHACKLETON_PCT) <= ILLUM_TOL_PCT, GLASER_URL,
         f"{GLASER_REF}. Ours: any part of the Sun disc above the site horizon (2 m mast, 0.1 deg horizon),"
         " 6 h sampling 2025-01-01 to 2032-12-31. Differences: averaging period (paper: full 18.6 yr cycle),"
-        " observer height, DEM resolution, and the exact rim point.", "%"))
+        " observer height, DEM resolution, and the exact rim point.", "%",
+        note="Our 2025-2032 average sunlit share at the Shackleton rim point against the published figure of about 85.5 percent."))
     v = avg["connecting-ridge"][0]
     out.append(entry(
         "Average sunlit %, connecting ridge, 2025-2032 (any, 2 m)",
         round(v, 1), None, None, None, GLASER_URL,
         "Informational: Glaeser et al. 2018 give a Shackleton rim figure only (compared above); the connecting ridge"
-        " is checked against the PGDA raster below.", "%"))
+        " is checked against the PGDA raster below.", "%",
+        note="Our 2025-2032 average sunlit share at the connecting ridge point, shown for information."))
 
     for sid, label in (("shackleton-rim", "Shackleton rim"), ("connecting-ridge", "connecting ridge"),
                        ("malapert-massif", "Malapert massif"), ("mons-mouton", "Mons Mouton")):
         s = sites[sid]
         x, y = ps.to_xy(s["lat"], s["lon"])
+        pix = _pixel_avg_percentages(*_read_pgda(sun_r, x, y)[1:])
         for kind, path, idx, what in (("Sun", sun_r, 0, "sunlit"), ("Earth", earth_r, 1, "Earth in view")):
-            ref = _read_pgda(path, x, y)
+            ref, cx, cy = _read_pgda(path, x, y)
             mine = avg[sid][idx]
             if ref is None:
                 out.append(entry(f"PGDA average {kind} visibility, {label}", round(mine, 1), None, ILLUM_TOL_PCT, None,
-                                 PGDA_URL, "Raster has no data at this point.", "%"))
+                                 PGDA_URL, "Raster has no data at this point.", "%",
+                                 note="The PGDA raster has no data at this point."))
                 continue
             ref_pct = 100.0 * ref
+            base = ("Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA"
+                    " visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM)."
+                    " Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; "
+                    + ("'any' = any part of the Sun disc. " if kind == "Sun" else "Earth centre above the horizon, margin 0. "))
             out.append(entry(
-                f"Average {what} %, {label}, ours (2025-2032) vs PGDA/LOLA (Quickmap layer)",
-                round(mine, 1), round(ref_pct, 1), ILLUM_TOL_PCT, abs(mine - ref_pct) <= ILLUM_TOL_PCT, PGDA_URL,
-                "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608, the same LOLA visibility data"
-                " shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling"
-                " 2025-2032, 2 m mast, 0.1 deg horizon; "
-                + ("'any' = any part of the Sun disc." if kind == "Sun" else "Earth centre above the horizon, margin 0.")
-                + " Differences come from the averaging period, observer height, pixel size vs point, and horizon resolution.",
-                "%"))
+                f"Average {what} %, {label}, single point vs PGDA pixel (Quickmap layer)",
+                round(mine, 1), round(ref_pct, 1), ILLUM_TOL_PCT, None, PGDA_URL,
+                base + f"Single-point result would be {'PASS' if abs(mine - ref_pct) <= ILLUM_TOL_PCT else 'FAIL'}"
+                f" at 10 points (difference {mine - ref_pct:+.1f}). " + NOT_LIKE_FOR_LIKE, "%",
+                note=NOT_LIKE_FOR_LIKE))
+            pv = pix[idx]
+            lo, hi = pix[2 + idx]
+            out.append(entry(
+                f"Average {what} %, {label}, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+                round(pv, 1), round(ref_pct, 1), ILLUM_TOL_PCT, abs(pv - ref_pct) <= ILLUM_TOL_PCT, PGDA_URL,
+                base + f"Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre"
+                f" (range across points {lo:.1f} to {hi:.1f}), horizons from the reviewed raycast on the 40 m/120 m"
+                " DEMs. Differences come from averaging period, observer height and horizon resolution.", "%",
+                note="Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value."))
     return out
+
 
 
 # ---------------------------------------------------------------- 5. eclipses
 
-# NASA catalog (TD of greatest eclipse, delta-T 75 s, total duration in minutes)
+# NASA catalog: TD of greatest eclipse, delta-T (s), partial (U1-U4) and total (U2-U3) durations in minutes
 ECLIPSES = [
-    ("2025-03-14", "2025-03-14T06:59:56Z", 75, 65.4),
-    ("2025-09-07", "2025-09-07T18:12:58Z", 75, 82.1),
-    ("2026-03-03", "2026-03-03T11:34:52Z", 75, 58.3),
+    ("2025-03-14", "2025-03-14T06:59:56Z", 75, 218.3, 65.4),
+    ("2025-09-07", "2025-09-07T18:12:58Z", 75, 209.4, 82.1),
+    ("2026-03-03", "2026-03-03T11:34:52Z", 75, 207.2, 58.3),
 ]
+
+
+def _contacts(td, dt_s, par_min, tot_min):
+    """UT ms of greatest, U1..U4 derived from greatest eclipse and the catalogue durations (symmetric)."""
+    g = parse_iso(td) - dt_s * 1000
+    m = lambda x: int(round(x * 60_000))  # noqa: E731
+    return g, g - m(par_min / 2), g - m(tot_min / 2), g + m(tot_min / 2), g + m(par_min / 2)
+
+
+def _site_totality(g: int, lat=0.0, lon=0.0):
+    t = g + np.arange(-240, 241, dtype=np.int64) * 60_000
+    case = {"lat": lat, "lon": lon, "hDemM": 0.0, "horizon": {"stepDeg": 1.0, "values": np.full(360, -1.0)},
+            "settings": dict(DEFAULT_SETTINGS, litThreshold="any")}
+    ecl = sample_at(case, t)["eclipseFrac"]
+    idx = np.where(ecl >= 1.0 - 1e-9)[0]
+    if len(idx) == 0:
+        return None, None, float(ecl.max())
+    return int(t[idx[0]]), int(t[idx[-1]]), 1.0
 
 
 def eclipse_checks() -> list[dict]:
     out = []
-    lat, lon = 0.0, 0.0
-    for name, td, dt_s, tot_min in ECLIPSES:
-        g = parse_iso(td) - dt_s * 1000  # UT of greatest eclipse
-        pub_on = g - int(round(tot_min / 2 * 60_000))
-        pub_off = g + int(round(tot_min / 2 * 60_000))
-        t = g + np.arange(-180, 181, dtype=np.int64) * 60_000
-        case = {"lat": lat, "lon": lon, "hDemM": 0.0,
-                "horizon": {"stepDeg": 1.0, "values": np.full(360, -1.0)},
-                "settings": dict(DEFAULT_SETTINGS, litThreshold="any")}
-        ecl = sample_at(case, t)["eclipseFrac"]
-        total = np.where(ecl >= 1.0 - 1e-9)[0]
-        if len(total) == 0:
-            out.append(entry(f"Lunar eclipse {name} totality at (0, 0)", None, None, ECLIPSE_TOL_MIN, False,
-                             ECLIPSE_CAT_URL, f"no totality found; max eclipse fraction {ecl.max():.4f}", "min"))
+    for name, td, dt_s, par, tot in ECLIPSES:
+        g, u1, u2, u3, u4 = _contacts(td, dt_s, par, tot)
+        on, off, mx = _site_totality(g)
+        if on is None:
+            out.append(entry(f"Lunar eclipse {name}: totality at the site (0, 0)", None, None, ECLIPSE_TOL_MIN, False,
+                             ECLIPSE_CAT_URL, f"no totality found; max eclipse fraction {mx:.4f}", "min",
+                             note="The Sun was never fully covered by Earth at (0, 0) in the search window."))
             continue
-        on, off = int(t[total[0]]), int(t[total[-1]])
-        d_on, d_off = (on - pub_on) / 60_000.0, (off - pub_off) / 60_000.0
-        ok = abs(d_on) <= ECLIPSE_TOL_MIN and abs(d_off) <= ECLIPSE_TOL_MIN
+        mid_on, mid_off = (u1 + u2) // 2, (u3 + u4) // 2
+        d_on, d_off = (on - mid_on) / 60_000.0, (off - mid_off) / 60_000.0
+        src = ("Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere"
+               " enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T"
+               f" {dt_s} s; U1/U4 from the partial duration {par} min and U2/U3 from the total duration {tot} min,"
+               " each split symmetrically about greatest eclipse.")
         out.append(entry(
-            f"Lunar eclipse {name}: Sun fully covered at the site (0, 0) vs NASA U2/U3",
+            f"Lunar eclipse {name}: totality at (0, 0) vs literal NASA U2/U3",
+            {"onsetUtc": to_iso(on), "offsetUtc": to_iso(off), "onsetDiffMin": round((on - u2) / 60_000.0, 1),
+             "offsetDiffMin": round((off - u3) / 60_000.0, 1)},
+            {"onsetUtc": to_iso(u2), "offsetUtc": to_iso(u3)}, ECLIPSE_TOL_MIN, None, ECLIPSE_CAT_URL,
+            src + " Different events: site totality vs whole Moon in umbra.", "min",
+            note="Different events: site totality vs whole Moon in umbra."))
+        out.append(entry(
+            f"Lunar eclipse {name}: site totality at (0, 0) vs Moon-centre umbra entry/exit",
             {"onsetUtc": to_iso(on), "offsetUtc": to_iso(off), "onsetDiffMin": round(d_on, 1),
              "offsetDiffMin": round(d_off, 1)},
-            {"onsetUtc": to_iso(pub_on), "offsetUtc": to_iso(pub_off)},
-            ECLIPSE_TOL_MIN, ok, ECLIPSE_CAT_URL,
-            "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no"
-            " atmosphere enlargement) seen from the near-side point (0, 0). NASA: greatest eclipse"
-            f" {td[11:19]} TD minus delta-T {dt_s} s, and total duration {tot_min} min split symmetrically"
-            " (NASA lunar eclipse catalogue, Espenak/Meeus).", "min"))
+            {"onsetUtc": to_iso(mid_on), "offsetUtc": to_iso(mid_off)}, ECLIPSE_TOL_MIN,
+            abs(d_on) <= ECLIPSE_TOL_MIN and abs(d_off) <= ECLIPSE_TOL_MIN, ECLIPSE_CAT_URL,
+            src + " A site near the Moon's centre is fully shadowed while the Moon's centre is in the umbra, from"
+            " (U1+U2)/2 to (U3+U4)/2.", "min",
+            note="Our onset and offset of full Sun cover at (0, 0) against NASA's (U1+U2)/2 and (U3+U4)/2, when the Moon's centre crosses the umbra edge."))
+        contains = on <= u2 and off >= u3
+        out.append(entry(
+            f"Lunar eclipse {name}: site totality contains NASA U2 to U3",
+            {"onsetUtc": to_iso(on), "offsetUtc": to_iso(off)},
+            {"u2Utc": to_iso(u2), "u3Utc": to_iso(u3)}, "interval must contain [U2, U3]", contains, ECLIPSE_CAT_URL,
+            src, "min",
+            note="Full Sun cover at the site must start no later than U2 and end no earlier than U3, because the whole Moon is in the umbra between those times."))
     return out
 
 
@@ -396,15 +474,14 @@ def _limb_totality_minutes(t: np.ndarray) -> np.ndarray:
 
 def eclipse_disc_checks() -> list[dict]:
     out = []
-    for name, td, dt_s, tot_min in ECLIPSES:
-        g = parse_iso(td) - dt_s * 1000
-        pub_on = g - int(round(tot_min / 2 * 60_000))
-        pub_off = g + int(round(tot_min / 2 * 60_000))
+    for name, td, dt_s, par, tot_min in ECLIPSES:
+        g, _u1, pub_on, pub_off, _u4 = _contacts(td, dt_s, par, tot_min)
         t = g + np.arange(-120, 121, dtype=np.int64) * 60_000
         idx = np.where(_limb_totality_minutes(t))[0]
         if len(idx) == 0:
             out.append(entry(f"Lunar eclipse {name}: whole Moon disc in umbra", None, None, ECLIPSE_TOL_MIN, False,
-                             ECLIPSE_CAT_URL, "never fully inside the modelled umbra", "min"))
+                             ECLIPSE_CAT_URL, "never fully inside the modelled umbra", "min",
+                             note="The whole lunar disc was never inside the modelled umbra."))
             continue
         on, off = int(t[idx[0]]), int(t[idx[-1]])
         d_on, d_off = (on - pub_on) / 60_000.0, (off - pub_off) / 60_000.0
@@ -415,7 +492,8 @@ def eclipse_disc_checks() -> list[dict]:
             {"onsetUtc": to_iso(pub_on), "offsetUtc": to_iso(pub_off)}, ECLIPSE_TOL_MIN,
             abs(d_on) <= ECLIPSE_TOL_MIN and abs(d_off) <= ECLIPSE_TOL_MIN, ECLIPSE_CAT_URL,
             "Same Earth model (sphere R 6371 km, no atmosphere enlargement), but totality is defined as NASA defines"
-            " U2/U3: every point on the lunar limb (as seen from the Sun) has the Sun fully covered by Earth.", "min"))
+            " U2/U3: every point on the lunar limb (as seen from the Sun) has the Sun fully covered by Earth.", "min",
+            note="Our time span in which the whole lunar disc is inside Earth's umbra, against NASA's U2 and U3."))
     return out
 
 
@@ -435,7 +513,8 @@ def replay_checks() -> list[dict]:
         to_iso(t_set), "2023-09-02 to 2023-09-04 (ISRO put Vikram and Pragyan to sleep)",
         "sunset within 2023-09-01 to 2023-09-06", ok, "https://www.isro.gov.in/Chandrayaan3.html",
         "First sunset (flicker-merged lit state, 'half' threshold, 2 m mast, site horizon) after landing"
-        " date 2023-08-23 00:00 UTC at the Statio Shiv Shakti point. Sleep dates are as stated in the project brief."))
+        " date 2023-08-23 00:00 UTC at the Statio Shiv Shakti point. Sleep dates are as stated in the project brief.",
+        note="Our first predicted sunset at the landing site after touchdown against the date ISRO put the lander and rover to sleep."))
 
     sl = sites["slim"]
     case = site_case(sl)
@@ -450,7 +529,8 @@ def replay_checks() -> list[dict]:
          "samplesSunUp": int(up.sum()), "firstSunUpEnd": None}, "azimuth in (180, 360) deg whenever the Sun is up",
         "all Sun-up samples", west, "https://www.nasa.gov/missions/lro/nasas-lro-spots-japans-moon-lander",
         "10-minute samples, 2024-01-28 00:00 to 2024-02-02 00:00 UTC; western half defined as azimuth in (180, 360)"
-        " deg clockwise from north; only samples with the Sun centre above the geometric horizon (elevation > 0).", "deg"))
+        " deg clockwise from north; only samples with the Sun centre above the geometric horizon (elevation > 0).", "deg",
+        note="Whenever the Sun is up at the SLIM site in the days it revived, its azimuth should be in the western half of the sky."))
 
     im = sites["im-2"]
     case = site_case(im)
@@ -464,7 +544,8 @@ def replay_checks() -> list[dict]:
         {"sunAzDeg": round(float(s["sunAz"][0]), 1), "sunElDeg": round(float(s["sunEl"][0]), 2),
          "horizonAtSunAzDeg": round(hz, 2), "sunFrac": round(float(s["sunFrac"][0]), 3)},
         None, None, None, im["actual_landing_source_url"],
-        "Landing time 2025-03-06 17:30 UTC is approximate (NASA: about 11:30 a.m. CST). Site horizon at 2 m mast.", "deg"))
+        "Landing time 2025-03-06 17:30 UTC is approximate (NASA: about 11:30 a.m. CST). Site horizon at 2 m mast.", "deg",
+        note="Sun direction and the horizon height in that direction at IM-2's landing time, shown for information only."))
     return out
 
 

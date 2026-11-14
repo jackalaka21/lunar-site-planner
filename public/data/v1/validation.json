@@ -1,5 +1,5 @@
 {
- "generatedUtc": "2026-11-14T07:24:11Z",
+ "generatedUtc": "2026-11-14T07:28:21Z",
  "horizons": [
   {
    "name": "Horizons sun az/el, south pole (-89.9, 0)",
@@ -9,6 +9,7 @@
    "pass": true,
    "source_url": "https://ssd.jpl.nasa.gov/horizons/",
    "unit": "deg",
+   "note": "Our hourly-interpolated Sun/Earth direction at 20 dates in 2026-2027 against JPL Horizons apparent azimuth and elevation for the same surface point.",
    "detail": "20 times 2026-2027, max |d el| 0.00001 deg, max |d az| x cos(el) 0.00000 deg, max raw |d az| 0.00000 deg, max sky separation 0.00001 deg. Horizons: CENTER coord@301, MEAN_ME frame, apparent az/el, airless, observer 2 m above the 1737.4 km sphere."
   },
   {
@@ -19,6 +20,7 @@
    "pass": true,
    "source_url": "https://ssd.jpl.nasa.gov/horizons/",
    "unit": "deg",
+   "note": "Our hourly-interpolated Sun/Earth direction at 20 dates in 2026-2027 against JPL Horizons apparent azimuth and elevation for the same surface point.",
    "detail": "20 times 2026-2027, max |d el| 0.00011 deg, max |d az| x cos(el) 0.00008 deg, max raw |d az| 0.00008 deg, max sky separation 0.00011 deg. Horizons: CENTER coord@301, MEAN_ME frame, apparent az/el, airless, observer 2 m above the 1737.4 km sphere."
   },
   {
@@ -29,6 +31,7 @@
    "pass": true,
    "source_url": "https://ssd.jpl.nasa.gov/horizons/",
    "unit": "deg",
+   "note": "Our hourly-interpolated Sun/Earth direction at 20 dates in 2026-2027 against JPL Horizons apparent azimuth and elevation for the same surface point.",
    "detail": "20 times 2026-2027, max |d el| 0.00000 deg, max |d az| x cos(el) 0.00001 deg, max raw |d az| 0.00038 deg, max sky separation 0.00001 deg. Horizons: CENTER coord@301, MEAN_ME frame, apparent az/el, airless, observer 2 m above the 1737.4 km sphere."
   },
   {
@@ -39,6 +42,7 @@
    "pass": true,
    "source_url": "https://ssd.jpl.nasa.gov/horizons/",
    "unit": "deg",
+   "note": "Our hourly-interpolated Sun/Earth direction at 20 dates in 2026-2027 against JPL Horizons apparent azimuth and elevation for the same surface point.",
    "detail": "20 times 2026-2027, max |d el| 0.00008 deg, max |d az| x cos(el) 0.00008 deg, max raw |d az| 0.00021 deg, max sky separation 0.00009 deg. Horizons: CENTER coord@301, MEAN_ME frame, apparent az/el, airless, observer 2 m above the 1737.4 km sphere."
   },
   {
@@ -49,6 +53,7 @@
    "pass": true,
    "source_url": "https://ssd.jpl.nasa.gov/horizons/",
    "unit": "deg",
+   "note": "Our hourly-interpolated Sun/Earth direction at 20 dates in 2026-2027 against JPL Horizons apparent azimuth and elevation for the same surface point.",
    "detail": "20 times 2026-2027, max |d el| 0.00001 deg, max |d az| x cos(el) 0.00001 deg, max raw |d az| 0.00001 deg, max sky separation 0.00001 deg. Horizons: CENTER coord@301, MEAN_ME frame, apparent az/el, airless, observer 2 m above the 1737.4 km sphere."
   },
   {
@@ -59,6 +64,7 @@
    "pass": true,
    "source_url": "https://ssd.jpl.nasa.gov/horizons/",
    "unit": "deg",
+   "note": "Our hourly-interpolated Sun/Earth direction at 20 dates in 2026-2027 against JPL Horizons apparent azimuth and elevation for the same surface point.",
    "detail": "20 times 2026-2027, max |d el| 0.00010 deg, max |d az| x cos(el) 0.00008 deg, max raw |d az| 0.00012 deg, max sky separation 0.00011 deg. Horizons: CENTER coord@301, MEAN_ME frame, apparent az/el, airless, observer 2 m above the 1737.4 km sphere."
   }
  ],
@@ -71,6 +77,7 @@
    "pass": true,
    "source_url": "https://naif.jpl.nasa.gov/naif/toolkit.html",
    "unit": "deg",
+   "note": "Largest angle between our hourly-linear Sun or Earth direction and a direct SPICE call at random off-grid times.",
    "detail": "300 random off-grid times 2025-2032; max angle between the hourly-linear Sun/Earth direction and a direct SPICE spkpos call (MOON_ME, LT+S), either body."
   }
  ],
@@ -83,6 +90,7 @@
    "pass": true,
    "source_url": "https://doi.org/10.1016/j.icarus.2010.12.011",
    "unit": "deg",
+   "note": "On a smooth sphere at the pole the Sun should stay within about 1.6 degrees of the horizon all year, and ours does.",
    "detail": "max |Sun centre elevation| over hourly samples; min -1.587, max 1.587 deg. The lunar spin axis is tilted about 1.54 deg to the ecliptic."
   }
  ],
@@ -95,6 +103,7 @@
    "pass": true,
    "source_url": "https://doi.org/10.1016/j.pss.2017.07.006",
    "unit": "%",
+   "note": "Our 2025-2032 average sunlit share at the Shackleton rim point against the published figure of about 85.5 percent.",
    "detail": "Glaeser et al. 2018, Planet. Space Sci. 162, 170-178. Ours: any part of the Sun disc above the site horizon (2 m mast, 0.1 deg horizon), 6 h sampling 2025-01-01 to 2032-12-31. Differences: averaging period (paper: full 18.6 yr cycle), observer height, DEM resolution, and the exact rim point."
   },
   {
@@ -105,92 +114,189 @@
    "pass": null,
    "source_url": "https://doi.org/10.1016/j.pss.2017.07.006",
    "unit": "%",
+   "note": "Our 2025-2032 average sunlit share at the connecting ridge point, shown for information.",
    "detail": "Informational: Glaeser et al. 2018 give a Shackleton rim figure only (compared above); the connecting ridge is checked against the PGDA raster below."
   },
   {
-   "name": "Average sunlit %, Shackleton rim, ours (2025-2032) vs PGDA/LOLA (Quickmap layer)",
+   "name": "Average sunlit %, Shackleton rim, single point vs PGDA pixel (Quickmap layer)",
    "value": 79.6,
    "reference": 65.9,
    "tolerance": 10.0,
-   "pass": false,
+   "pass": null,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Differences come from the averaging period, observer height, pixel size vs point, and horizon resolution."
+   "note": "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Single-point result would be FAIL at 10 points (difference +13.7). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
   },
   {
-   "name": "Average Earth in view %, Shackleton rim, ours (2025-2032) vs PGDA/LOLA (Quickmap layer)",
-   "value": 46.1,
-   "reference": 51.9,
+   "name": "Average sunlit %, Shackleton rim, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "value": 65.5,
+   "reference": 65.9,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Differences come from the averaging period, observer height, pixel size vs point, and horizon resolution."
+   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 55.7 to 86.9), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
   },
   {
-   "name": "Average sunlit %, connecting ridge, ours (2025-2032) vs PGDA/LOLA (Quickmap layer)",
+   "name": "Average Earth in view %, Shackleton rim, single point vs PGDA pixel (Quickmap layer)",
+   "value": 46.1,
+   "reference": 51.9,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Single-point result would be PASS at 10 points (difference -5.8). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
+  },
+  {
+   "name": "Average Earth in view %, Shackleton rim, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "value": 32.0,
+   "reference": 51.9,
+   "tolerance": 10.0,
+   "pass": false,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 0.0 to 48.8), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
+  },
+  {
+   "name": "Average sunlit %, connecting ridge, single point vs PGDA pixel (Quickmap layer)",
    "value": 46.3,
+   "reference": 46.2,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Single-point result would be PASS at 10 points (difference +0.0). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
+  },
+  {
+   "name": "Average sunlit %, connecting ridge, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "value": 45.4,
    "reference": 46.2,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Differences come from the averaging period, observer height, pixel size vs point, and horizon resolution."
+   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 43.8 to 46.3), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
   },
   {
-   "name": "Average Earth in view %, connecting ridge, ours (2025-2032) vs PGDA/LOLA (Quickmap layer)",
+   "name": "Average Earth in view %, connecting ridge, single point vs PGDA pixel (Quickmap layer)",
+   "value": 52.6,
+   "reference": 57.8,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Single-point result would be PASS at 10 points (difference -5.2). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
+  },
+  {
+   "name": "Average Earth in view %, connecting ridge, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
    "value": 52.6,
    "reference": 57.8,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Differences come from the averaging period, observer height, pixel size vs point, and horizon resolution."
+   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 52.6 to 52.6), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
   },
   {
-   "name": "Average sunlit %, Malapert massif, ours (2025-2032) vs PGDA/LOLA (Quickmap layer)",
+   "name": "Average sunlit %, Malapert massif, single point vs PGDA pixel (Quickmap layer)",
    "value": 42.3,
+   "reference": 42.9,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Single-point result would be PASS at 10 points (difference -0.6). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
+  },
+  {
+   "name": "Average sunlit %, Malapert massif, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "value": 42.4,
    "reference": 42.9,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Differences come from the averaging period, observer height, pixel size vs point, and horizon resolution."
+   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 26.2 to 46.7), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
   },
   {
-   "name": "Average Earth in view %, Malapert massif, ours (2025-2032) vs PGDA/LOLA (Quickmap layer)",
+   "name": "Average Earth in view %, Malapert massif, single point vs PGDA pixel (Quickmap layer)",
    "value": 35.7,
+   "reference": 41.2,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Single-point result would be PASS at 10 points (difference -5.5). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
+  },
+  {
+   "name": "Average Earth in view %, Malapert massif, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "value": 36.6,
    "reference": 41.2,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Differences come from the averaging period, observer height, pixel size vs point, and horizon resolution."
+   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 23.4 to 43.1), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
   },
   {
-   "name": "Average sunlit %, Mons Mouton, ours (2025-2032) vs PGDA/LOLA (Quickmap layer)",
+   "name": "Average sunlit %, Mons Mouton, single point vs PGDA pixel (Quickmap layer)",
    "value": 27.3,
+   "reference": 26.0,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Single-point result would be PASS at 10 points (difference +1.4). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
+  },
+  {
+   "name": "Average sunlit %, Mons Mouton, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "value": 26.1,
    "reference": 26.0,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Differences come from the averaging period, observer height, pixel size vs point, and horizon resolution."
+   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; 'any' = any part of the Sun disc. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 24.6 to 27.5), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
   },
   {
-   "name": "Average Earth in view %, Mons Mouton, ours (2025-2032) vs PGDA/LOLA (Quickmap layer)",
+   "name": "Average Earth in view %, Mons Mouton, single point vs PGDA pixel (Quickmap layer)",
    "value": 68.3,
+   "reference": 72.4,
+   "tolerance": 10.0,
+   "pass": null,
+   "source_url": "https://pgda.gsfc.nasa.gov/products/69",
+   "unit": "%",
+   "note": "Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Single-point result would be PASS at 10 points (difference -4.2). Point vs 120 m pixel on a steep rim; not like-for-like; see resolution-matched entry."
+  },
+  {
+   "name": "Average Earth in view %, Mons Mouton, resolution-matched (3x3 points in the 120 m pixel) vs PGDA",
+   "value": 67.1,
    "reference": 72.4,
    "tolerance": 10.0,
    "pass": true,
    "source_url": "https://pgda.gsfc.nasa.gov/products/69",
    "unit": "%",
-   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Differences come from the averaging period, observer height, pixel size vs point, and horizon resolution."
+   "note": "Our 2025-2032 average over nine observer points inside the 120 m pixel against the PGDA pixel value.",
+   "detail": "Reference: NASA/GSFC PGDA (Mazarico et al.) AVGVISIB_75S_120M_201608 (Sun) / _EARTH, the same LOLA visibility data shown in LROC Quickmap; 120 m pixels, long-term average (LOLA 2009-2013 DEM). Ours: 6 h sampling 2025-2032, 2 m mast, 0.1 deg horizon; Earth centre above the horizon, margin 0. Ours is the mean over 9 observer points at -40/0/+40 m offsets around the pixel centre (range across points 65.8 to 68.5), horizons from the reviewed raycast on the 40 m/120 m DEMs. Differences come from averaging period, observer height and horizon resolution."
   }
  ],
  "eclipses": [
   {
-   "name": "Lunar eclipse 2025-03-14: Sun fully covered at the site (0, 0) vs NASA U2/U3",
+   "name": "Lunar eclipse 2025-03-14: totality at (0, 0) vs literal NASA U2/U3",
    "value": {
     "onsetUtc": "2025-03-14T05:44:41Z",
     "offsetUtc": "2025-03-14T08:09:41Z",
@@ -202,13 +308,50 @@
     "offsetUtc": "2025-03-14T07:31:23Z"
    },
    "tolerance": 10.0,
-   "pass": false,
+   "pass": null,
    "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
    "unit": "min",
-   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from the near-side point (0, 0). NASA: greatest eclipse 06:59:56 TD minus delta-T 75 s, and total duration 65.4 min split symmetrically (NASA lunar eclipse catalogue, Espenak/Meeus)."
+   "note": "Different events: site totality vs whole Moon in umbra.",
+   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T 75 s; U1/U4 from the partial duration 218.3 min and U2/U3 from the total duration 65.4 min, each split symmetrically about greatest eclipse. Different events: site totality vs whole Moon in umbra."
   },
   {
-   "name": "Lunar eclipse 2025-09-07: Sun fully covered at the site (0, 0) vs NASA U2/U3",
+   "name": "Lunar eclipse 2025-03-14: site totality at (0, 0) vs Moon-centre umbra entry/exit",
+   "value": {
+    "onsetUtc": "2025-03-14T05:44:41Z",
+    "offsetUtc": "2025-03-14T08:09:41Z",
+    "onsetDiffMin": -3.1,
+    "offsetDiffMin": 0.1
+   },
+   "reference": {
+    "onsetUtc": "2025-03-14T05:47:45Z",
+    "offsetUtc": "2025-03-14T08:09:36Z"
+   },
+   "tolerance": 10.0,
+   "pass": true,
+   "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
+   "unit": "min",
+   "note": "Our onset and offset of full Sun cover at (0, 0) against NASA's (U1+U2)/2 and (U3+U4)/2, when the Moon's centre crosses the umbra edge.",
+   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T 75 s; U1/U4 from the partial duration 218.3 min and U2/U3 from the total duration 65.4 min, each split symmetrically about greatest eclipse. A site near the Moon's centre is fully shadowed while the Moon's centre is in the umbra, from (U1+U2)/2 to (U3+U4)/2."
+  },
+  {
+   "name": "Lunar eclipse 2025-03-14: site totality contains NASA U2 to U3",
+   "value": {
+    "onsetUtc": "2025-03-14T05:44:41Z",
+    "offsetUtc": "2025-03-14T08:09:41Z"
+   },
+   "reference": {
+    "u2Utc": "2025-03-14T06:25:59Z",
+    "u3Utc": "2025-03-14T07:31:23Z"
+   },
+   "tolerance": "interval must contain [U2, U3]",
+   "pass": true,
+   "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
+   "unit": "min",
+   "note": "Full Sun cover at the site must start no later than U2 and end no earlier than U3, because the whole Moon is in the umbra between those times.",
+   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T 75 s; U1/U4 from the partial duration 218.3 min and U2/U3 from the total duration 65.4 min, each split symmetrically about greatest eclipse."
+  },
+  {
+   "name": "Lunar eclipse 2025-09-07: totality at (0, 0) vs literal NASA U2/U3",
    "value": {
     "onsetUtc": "2025-09-07T17:00:43Z",
     "offsetUtc": "2025-09-07T19:26:43Z",
@@ -220,13 +363,50 @@
     "offsetUtc": "2025-09-07T18:52:46Z"
    },
    "tolerance": 10.0,
-   "pass": false,
+   "pass": null,
    "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
    "unit": "min",
-   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from the near-side point (0, 0). NASA: greatest eclipse 18:12:58 TD minus delta-T 75 s, and total duration 82.1 min split symmetrically (NASA lunar eclipse catalogue, Espenak/Meeus)."
+   "note": "Different events: site totality vs whole Moon in umbra.",
+   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T 75 s; U1/U4 from the partial duration 209.4 min and U2/U3 from the total duration 82.1 min, each split symmetrically about greatest eclipse. Different events: site totality vs whole Moon in umbra."
   },
   {
-   "name": "Lunar eclipse 2026-03-03: Sun fully covered at the site (0, 0) vs NASA U2/U3",
+   "name": "Lunar eclipse 2025-09-07: site totality at (0, 0) vs Moon-centre umbra entry/exit",
+   "value": {
+    "onsetUtc": "2025-09-07T17:00:43Z",
+    "offsetUtc": "2025-09-07T19:26:43Z",
+    "onsetDiffMin": 1.9,
+    "offsetDiffMin": 2.1
+   },
+   "reference": {
+    "onsetUtc": "2025-09-07T16:58:50Z",
+    "offsetUtc": "2025-09-07T19:24:35Z"
+   },
+   "tolerance": 10.0,
+   "pass": true,
+   "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
+   "unit": "min",
+   "note": "Our onset and offset of full Sun cover at (0, 0) against NASA's (U1+U2)/2 and (U3+U4)/2, when the Moon's centre crosses the umbra edge.",
+   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T 75 s; U1/U4 from the partial duration 209.4 min and U2/U3 from the total duration 82.1 min, each split symmetrically about greatest eclipse. A site near the Moon's centre is fully shadowed while the Moon's centre is in the umbra, from (U1+U2)/2 to (U3+U4)/2."
+  },
+  {
+   "name": "Lunar eclipse 2025-09-07: site totality contains NASA U2 to U3",
+   "value": {
+    "onsetUtc": "2025-09-07T17:00:43Z",
+    "offsetUtc": "2025-09-07T19:26:43Z"
+   },
+   "reference": {
+    "u2Utc": "2025-09-07T17:30:40Z",
+    "u3Utc": "2025-09-07T18:52:46Z"
+   },
+   "tolerance": "interval must contain [U2, U3]",
+   "pass": true,
+   "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
+   "unit": "min",
+   "note": "Full Sun cover at the site must start no later than U2 and end no earlier than U3, because the whole Moon is in the umbra between those times.",
+   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T 75 s; U1/U4 from the partial duration 209.4 min and U2/U3 from the total duration 82.1 min, each split symmetrically about greatest eclipse."
+  },
+  {
+   "name": "Lunar eclipse 2026-03-03: totality at (0, 0) vs literal NASA U2/U3",
    "value": {
     "onsetUtc": "2026-03-03T10:22:37Z",
     "offsetUtc": "2026-03-03T12:39:37Z",
@@ -238,10 +418,47 @@
     "offsetUtc": "2026-03-03T12:02:46Z"
    },
    "tolerance": 10.0,
-   "pass": false,
+   "pass": null,
    "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
    "unit": "min",
-   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from the near-side point (0, 0). NASA: greatest eclipse 11:34:52 TD minus delta-T 75 s, and total duration 58.3 min split symmetrically (NASA lunar eclipse catalogue, Espenak/Meeus)."
+   "note": "Different events: site totality vs whole Moon in umbra.",
+   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T 75 s; U1/U4 from the partial duration 207.2 min and U2/U3 from the total duration 58.3 min, each split symmetrically about greatest eclipse. Different events: site totality vs whole Moon in umbra."
+  },
+  {
+   "name": "Lunar eclipse 2026-03-03: site totality at (0, 0) vs Moon-centre umbra entry/exit",
+   "value": {
+    "onsetUtc": "2026-03-03T10:22:37Z",
+    "offsetUtc": "2026-03-03T12:39:37Z",
+    "onsetDiffMin": -4.6,
+    "offsetDiffMin": -0.4
+   },
+   "reference": {
+    "onsetUtc": "2026-03-03T10:27:14Z",
+    "offsetUtc": "2026-03-03T12:39:59Z"
+   },
+   "tolerance": 10.0,
+   "pass": true,
+   "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
+   "unit": "min",
+   "note": "Our onset and offset of full Sun cover at (0, 0) against NASA's (U1+U2)/2 and (U3+U4)/2, when the Moon's centre crosses the umbra edge.",
+   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T 75 s; U1/U4 from the partial duration 207.2 min and U2/U3 from the total duration 58.3 min, each split symmetrically about greatest eclipse. A site near the Moon's centre is fully shadowed while the Moon's centre is in the umbra, from (U1+U2)/2 to (U3+U4)/2."
+  },
+  {
+   "name": "Lunar eclipse 2026-03-03: site totality contains NASA U2 to U3",
+   "value": {
+    "onsetUtc": "2026-03-03T10:22:37Z",
+    "offsetUtc": "2026-03-03T12:39:37Z"
+   },
+   "reference": {
+    "u2Utc": "2026-03-03T11:04:28Z",
+    "u3Utc": "2026-03-03T12:02:46Z"
+   },
+   "tolerance": "interval must contain [U2, U3]",
+   "pass": true,
+   "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
+   "unit": "min",
+   "note": "Full Sun cover at the site must start no later than U2 and end no earlier than U3, because the whole Moon is in the umbra between those times.",
+   "detail": "Ours: first/last minute the Earth disc fully covers the Sun disc (spherical Earth, R 6371 km, no atmosphere enlargement) seen from (0, 0). NASA catalogue (Espenak/Meeus): greatest eclipse TD minus delta-T 75 s; U1/U4 from the partial duration 207.2 min and U2/U3 from the total duration 58.3 min, each split symmetrically about greatest eclipse."
   },
   {
    "name": "Lunar eclipse 2025-03-14: totality (whole Moon disc in umbra, U2 to U3) vs NASA",
@@ -259,6 +476,7 @@
    "pass": true,
    "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
    "unit": "min",
+   "note": "Our time span in which the whole lunar disc is inside Earth's umbra, against NASA's U2 and U3.",
    "detail": "Same Earth model (sphere R 6371 km, no atmosphere enlargement), but totality is defined as NASA defines U2/U3: every point on the lunar limb (as seen from the Sun) has the Sun fully covered by Earth."
   },
   {
@@ -277,6 +495,7 @@
    "pass": true,
    "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
    "unit": "min",
+   "note": "Our time span in which the whole lunar disc is inside Earth's umbra, against NASA's U2 and U3.",
    "detail": "Same Earth model (sphere R 6371 km, no atmosphere enlargement), but totality is defined as NASA defines U2/U3: every point on the lunar limb (as seen from the Sun) has the Sun fully covered by Earth."
   },
   {
@@ -295,6 +514,7 @@
    "pass": true,
    "source_url": "https://eclipse.gsfc.nasa.gov/LEcat5/LE2001-2100.html",
    "unit": "min",
+   "note": "Our time span in which the whole lunar disc is inside Earth's umbra, against NASA's U2 and U3.",
    "detail": "Same Earth model (sphere R 6371 km, no atmosphere enlargement), but totality is defined as NASA defines U2/U3: every point on the lunar limb (as seen from the Sun) has the Sun fully covered by Earth."
   }
  ],
@@ -307,6 +527,7 @@
    "pass": true,
    "source_url": "https://www.isro.gov.in/Chandrayaan3.html",
    "unit": null,
+   "note": "Our first predicted sunset at the landing site after touchdown against the date ISRO put the lander and rover to sleep.",
    "detail": "First sunset (flicker-merged lit state, 'half' threshold, 2 m mast, site horizon) after landing date 2023-08-23 00:00 UTC at the Statio Shiv Shakti point. Sleep dates are as stated in the project brief."
   },
   {
@@ -322,6 +543,7 @@
    "pass": true,
    "source_url": "https://www.nasa.gov/missions/lro/nasas-lro-spots-japans-moon-lander",
    "unit": "deg",
+   "note": "Whenever the Sun is up at the SLIM site in the days it revived, its azimuth should be in the western half of the sky.",
    "detail": "10-minute samples, 2024-01-28 00:00 to 2024-02-02 00:00 UTC; western half defined as azimuth in (180, 360) deg clockwise from north; only samples with the Sun centre above the geometric horizon (elevation > 0)."
   },
   {
@@ -337,6 +559,7 @@
    "pass": null,
    "source_url": "https://www.nasa.gov/blogs/missions/2025/03/06/intuitive-machines-mission-lands-near-south-pole-carrying-nasa-science/",
    "unit": "deg",
+   "note": "Sun direction and the horizon height in that direction at IM-2's landing time, shown for information only.",
    "detail": "Landing time 2025-03-06 17:30 UTC is approximate (NASA: about 11:30 a.m. CST). Site horizon at 2 m mast."
   }
  ]
