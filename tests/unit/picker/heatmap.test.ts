@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_HEATMAP_RADIUS_KM,
   filterWithinRadius,
+  heatmapLegend,
   heatmapStepFill,
   projectHeatmapCells,
   psDistanceKm,
@@ -55,7 +56,7 @@ describe("nearby heatmap (S4)", () => {
     expect(filtered.map((x) => x.bothH)).toEqual([100, 200]);
   });
 
-  it("maps bothH to the 5-step luminance ramp without hex literals", () => {
+  it("maps bothH to the 5-step red to green ramp without hex literals", () => {
     const windowH = 336;
     expect(rampStep(0, windowH)).toBe(0);
     expect(rampStep(70, windowH)).toBe(1);
@@ -65,16 +66,29 @@ describe("nearby heatmap (S4)", () => {
 
     for (let s = 0; s < 5; s++) {
       const fill = heatmapStepFill(s);
-      expect(fill).toContain("color-mix(in srgb, var(--color-text-primary)");
-      expect(fill).toContain("var(--surface-deepest)");
+      expect(fill).toBe(`var(--color-heat-${s})`);
       expect(fill).not.toMatch(/#[0-9a-fA-F]{3,8}/);
     }
+
+    expect(heatmapStepFill(-3)).toBe("var(--color-heat-0)");
+    expect(heatmapStepFill(9)).toBe("var(--color-heat-4)");
 
     const pole = psToLatLon(0, 0);
     const cells = projectHeatmapCells([{ lat: pole.lat, lon: pole.lon, bothH: 300 }], pole.lat, pole.lon, windowH, 400);
     expect(cells).toHaveLength(1);
     expect(cells[0].step).toBe(4);
+    expect(cells[0].fill).toBe("var(--color-heat-4)");
     expect(cells[0].x).toBeCloseTo(200, 3);
     expect(cells[0].y).toBeCloseTo(200, 3);
+  });
+
+  it("builds a legend from the real step thresholds", () => {
+    const lg = heatmapLegend(336);
+    expect(lg.low).toBe("0 h, no overlap");
+    expect(lg.high).toBe("252+ h Sun + Earth");
+    expect(lg.steps).toHaveLength(5);
+    expect(lg.steps[0].fill).toBe("var(--color-heat-0)");
+    expect(lg.steps[4].fill).toBe("var(--color-heat-4)");
+    expect(lg.steps[4].label).toBe("252+ h");
   });
 });

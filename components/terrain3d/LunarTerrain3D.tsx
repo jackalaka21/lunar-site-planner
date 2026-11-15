@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import * as THREE from "three";
 import { Button } from "@astryxdesign/core/Button";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack } from "@astryxdesign/core/HStack";
+import { Stack } from "@astryxdesign/core/Stack";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
+import { ToggleButton } from "@astryxdesign/core/ToggleButton";
+import { VStack } from "@astryxdesign/core/VStack";
 import { useTheme } from "@astryxdesign/core/theme";
 import {
   buildCoarsePolarPatch,
@@ -19,6 +23,19 @@ import type { TimeSeries } from "../../lib/engine/sample";
 import type { HorizonProfile, Topo } from "../../lib/engine/types";
 import { withAlpha } from "../panorama/layout";
 import { panoramaPalette } from "../panorama/palette";
+import { TerrainGlScene, LANDER_TOP, type SurfaceMode } from "./glScene";
+import { drawHud, type PsrStatus } from "./hud";
+import { terrainPalette } from "./palette";
+import { loadPsr } from "./psr";
+import {
+  findBlocker,
+  sampleHeightM,
+  localPsrRings,
+  psrVertexMask,
+  PSR_MIN_ABS_LAT_DEG,
+  type Blocker,
+} from "./terrainModel";
+import { viewportHeightPx } from "./viewport";
 
 export interface LunarTerrain3DProps {
   horizon: HorizonProfile;
@@ -29,14 +46,22 @@ export interface LunarTerrain3DProps {
   /** Catalogue site id; its real LOLA patch is loaded. Omit for a custom point. */
   siteId?: string;
   obsHeightM: number;
+  /** Landing ellipse radius, km (the robustness settings value). */
   ellipseKm?: number;
   pole?: boolean;
+  /** Fixed canvas height in px. Omit to choose by layout (520 single, 400 compare, 340 phone). */
   height?: number;
+  /** Override for the compare layout; otherwise read from the enclosing grid's data-columns. */
+  layout?: "single" | "compare";
   onScrubTime?: (deltaMs: number) => void;
 }
 
 const PATCH_RADIUS_KM = 10;
-const VERT_EXAG = 3.2;
+const DEFAULT_RELIEF = 3;
+const ORBIT_AZ = 215;
+const ORBIT_PITCH = 26;
+const ORBIT_DIST = 18;
+const FOV_DEG = 45;
 const SKY_RADIUS_KM = 9.6;
 /** Vertical exaggeration for sky elevation angles so grazing 1.5 deg polar tracks are clearly separated above ridges. */
 const SKY_EL_SCALE_KM_PER_DEG = 0.36;
@@ -49,6 +74,33 @@ const COMPASS_POINTS: Array<{ az: number; label: string }> = [
   { az: 180, label: "S" },
   { az: 270, label: "W" },
 ];
+
+interface ViewState {
+  mode: "orbit" | "pov";
+  az: number;
+  pitch: number;
+  dist: number;
+  lookAz: number;
+  lookPitch: number;
+}
+
+const DEFAULT_VIEW: ViewState = { mode: "orbit", az: ORBIT_AZ, pitch: ORBIT_PITCH, dist: ORBIT_DIST, lookAz: 0, lookPitch: 4 };
+const VIEWPORT_DEFAULT = 520;
+const TOP_DOWN_DIST = 25.5;
+const MAX_DIST = 45;
+const MIN_DIST = 6;
+
+function canUseWebGl(): boolean {
+  try {
+    const c = document.createElement("canvas");
+    const gl = (c.getContext("webgl2") ?? c.getContext("webgl")) as WebGLRenderingContext | null;
+    if (!gl) return false;
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function parseRgb(color: string): [number, number, number] {
   const m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(color.trim());
@@ -88,9 +140,9 @@ function skyDomeVec(azDeg: number, elDeg: number, radiusKm = SKY_RADIUS_KM): THR
 }
 
 /** Caption naming the real LOLA product and resolution behind a patch. */
-export function terrainCaption(patch: LocalTerrainPatch): string {
+export function terrainCaption(patch: LocalTerrainPatch, relief = DEFAULT_RELIEF): string {
   const size = `${2 * patch.radiusKm} × ${2 * patch.radiusKm} km`;
-  const vert = `vertical ×${VERT_EXAG}`;
+  const vert = `vertical ×${relief}`;
   switch (patch.source) {
     case "LOLA polar 40 m":
       return `LOLA polar DEM, ${size} at ${patch.spacingM} m (from 40 m), ${vert}`;
@@ -113,17 +165,28 @@ export function LunarTerrain3D({
   obsHeightM,
   ellipseKm = 0.5,
   pole = false,
-  height = 260,
+  height: heightProp,
+  layout,
 }: LunarTerrain3DProps) {
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [width, setWidth] = useState(0);
+  const [{ width, height }, setSize] = useState({ width: 0, height: heightProp ?? VIEWPORT_DEFAULT });
+  const [useGl, setUseGl] = useState<boolean>(() => typeof document !== "undefined" && canUseWebGl());
+  const [relief, setRelief] = useState<number>(DEFAULT_RELIEF);
+  const [surface, setSurface] = useState<SurfaceMode>("regolith");
+  const [psrOn, setPsrOn] = useState(false);
+  const [psrRings, setPsrRings] = useState<ReturnType<typeof localPsrRings> | null>(null);
   const [patchState, setPatchState] = useState<{ key: string; patch: LocalTerrainPatch | null } | null>(null);
-  const [camMode, setCamMode] = useState<"orbit" | "pov">("orbit");
-  const [orbitAz, setOrbitAz] = useState(215);
-  const [orbitPitch, setOrbitPitch] = useState(26);
-  const [orbitDist, setOrbitDist] = useState(21.5);
+  const [view, setView] = useState<ViewState>(DEFAULT_VIEW);
+  const camMode = view.mode;
+  const orbitAz = view.az;
+  const orbitPitch = view.pitch;
+  const orbitDist = view.dist;
   const dragRef = useRef<{ x: number; y: number; az: number; pitch: number } | null>(null);
+  const viewRef = useRef<ViewState>(view);
+  useEffect(() => {
+    viewRef.current = view;
+  });
   const { mode } = useTheme();
 
   const patchKey = siteId ? `site:${siteId}` : `pt:${lat}:${lon}`;
@@ -144,13 +207,31 @@ export function LunarTerrain3D({
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const measure = () => setWidth(Math.floor(el.getBoundingClientRect().width));
+    const measure = () => {
+      const w = Math.floor(el.getBoundingClientRect().width);
+      let h = heightProp;
+      if (h === undefined) {
+        const cols =
+          layout === "compare"
+            ? 2
+            : layout === "single"
+              ? 1
+              : Number(el.closest("[data-columns]")?.getAttribute("data-columns") ?? 1);
+        const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+        h = viewportHeightPx({ columns: cols, viewportWidthPx: window.innerWidth, remPx: rem });
+      }
+      setSize((prev) => (prev.width === w && prev.height === h ? prev : { width: w, height: h }));
+    };
     measure();
     if (typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [heightProp, layout]);
 
   const patch = patchState && patchState.key === patchKey ? patchState.patch : null;
   const unavailable = patchState !== null && patchState.key === patchKey && patchState.patch === null;
@@ -176,16 +257,16 @@ export function LunarTerrain3D({
       const zKm = -northKm; // +Z is South, -Z is North
       for (let ix = 0; ix < gs; ix++) {
         const eastKm = ((ix / (gs - 1)) * 2 - 1) * rKm;
-        const dhKm = ((patch.heightsM[iy * gs + ix] - patch.centerHM) / 1000) * VERT_EXAG;
+        const dhKm = ((patch.heightsM[iy * gs + ix] - patch.centerHM) / 1000) * relief;
         verts[iy * gs + ix] = new THREE.Vector3(eastKm, dhKm, zKm);
       }
     }
     return { gs, verts };
-  }, [patch]);
+  }, [patch, relief]);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || width <= 0 || !patch || !meshData) return;
+    if (useGl || !canvas || width <= 0 || !patch || !meshData) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -207,7 +288,7 @@ export function LunarTerrain3D({
     ctx.fillRect(0, 0, width, height);
 
     // Setup THREE.PerspectiveCamera
-    const camera = new THREE.PerspectiveCamera(42, width / Math.max(height, 1), 0.1, 120);
+    const camera = new THREE.PerspectiveCamera(FOV_DEG, width / Math.max(height, 1), 0.1, 120);
     const azRad = (orbitAz * Math.PI) / 180;
     const pitchRad = (orbitPitch * Math.PI) / 180;
 
@@ -220,9 +301,9 @@ export function LunarTerrain3D({
       camera.lookAt(0, 0.35, 0);
     } else {
       // Lander POV: camera positioned slightly behind lander looking toward orbitAz
-      const lookAzRad = (orbitAz * Math.PI) / 180;
-      const lookPitchRad = ((orbitPitch - 18) * Math.PI) / 180;
-      const mastY = Math.max(0.28, (obsHeightM / 1000) * VERT_EXAG + 0.25);
+      const lookAzRad = (view.lookAz * Math.PI) / 180;
+      const lookPitchRad = (view.lookPitch * Math.PI) / 180;
+      const mastY = Math.max(0.28, (obsHeightM / 1000) * relief + 0.25);
       camera.position.set(-Math.sin(lookAzRad) * 1.4, mastY + 0.35, Math.cos(lookAzRad) * 1.4);
       camera.lookAt(
         Math.sin(lookAzRad) * 10,
@@ -429,7 +510,7 @@ export function LunarTerrain3D({
     drawSkyTrack(series.sunAz, series.sunEl, pal.sun);
 
     // Lander mast pin at (0, 0, 0)
-    const mastHeightKm = Math.max(0.28, (obsHeightM / 1000) * VERT_EXAG + 0.22);
+    const mastHeightKm = Math.max(0.28, (obsHeightM / 1000) * relief + 0.22);
     const landerBase = project(new THREE.Vector3(0, 0, 0));
     const landerTop = project(new THREE.Vector3(0, mastHeightKm, 0));
 
@@ -594,7 +675,7 @@ export function LunarTerrain3D({
       height - 40,
     );
     ctx.fillStyle = pal.rim;
-    ctx.fillText(terrainCaption(patch), 10, height - 24);
+    ctx.fillText(terrainCaption(patch, relief), 10, height - 24);
 
     const statusLine =
       `Sun ${isSunLit ? "clear of" : "behind"} ${sunRidgeEl.toFixed(1)}° ridge · ` +
@@ -609,6 +690,10 @@ export function LunarTerrain3D({
     orbitPitch,
     orbitDist,
     camMode,
+    view.lookAz,
+    view.lookPitch,
+    useGl,
+    relief,
     obsHeightM,
     sunAz,
     sunEl,
@@ -629,12 +714,255 @@ export function LunarTerrain3D({
     draw();
   }, [draw]);
 
+  // ---- Derived overlay data -------------------------------------------------------------------------------
+  const psrEligible = !!patch && lat <= -PSR_MIN_ABS_LAT_DEG;
+  const [psrFailed, setPsrFailed] = useState(false);
+  useEffect(() => {
+    if (!psrOn || !patch || !psrEligible) return;
+    let active = true;
+    loadPsr()
+      .then((data) => {
+        if (!active) return;
+        const polys = data.features.map((f) => ({ coordinates: f.geometry.coordinates }));
+        setPsrRings(localPsrRings(polys, lat, lon, patch.radiusKm));
+      })
+      .catch(() => {
+        if (active) setPsrFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [psrOn, patch, psrEligible, lat, lon]);
+  const psrMask = useMemo(
+    () => (psrOn && patch && psrEligible && psrRings ? psrVertexMask(patch, psrRings) : null),
+    [psrOn, patch, psrEligible, psrRings],
+  );
+  const psrStatus: PsrStatus =
+    !psrOn || !psrEligible
+      ? "off"
+      : psrFailed
+        ? "error"
+        : !psrMask
+          ? "loading"
+          : psrMask.some((v) => v === 1)
+            ? "ready"
+            : "none";
+
+  const sunBlocker = useMemo<Blocker | null>(
+    () => (patch && !isSunLit && sunEl >= 0 ? findBlocker(patch, sunAz, sunEl, obsHeightM) : null),
+    [patch, isSunLit, sunAz, sunEl, obsHeightM],
+  );
+  const earthBlocker = useMemo<Blocker | null>(
+    () => (patch && !isEarthUp && earthEl >= 0 ? findBlocker(patch, earthAz, earthEl, obsHeightM) : null),
+    [patch, isEarthUp, earthAz, earthEl, obsHeightM],
+  );
+
+  // ---- WebGL scene, camera damping and on-demand rendering ---------------------------------------------------
+  const live = {
+    width,
+    height,
+    view,
+    relief,
+    surface,
+    psrMask,
+    psrStatus,
+    sunAz,
+    sunEl,
+    earthAz,
+    earthEl,
+    sunRidgeEl,
+    earthRidgeEl,
+    isSunLit,
+    isEarthUp,
+    sunBlocker,
+    earthBlocker,
+  };
+  const liveRef = useRef(live);
+  useEffect(() => {
+    liveRef.current = live;
+  });
+  const kickRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    if (!useGl || !patch) return;
+    const wrap = wrapRef.current;
+    const hudCanvas = canvasRef.current;
+    if (!wrap || !hudCanvas) return;
+    // A fresh WebGL canvas per scene: disposing a scene force-loses its context, and a lost context can never be
+    // reused, so a scene rebuilt on the same element (new site, new series, StrictMode) would fail and drop to 2D.
+    const glCanvas = document.createElement("canvas");
+    glCanvas.setAttribute("aria-hidden", "true");
+    Object.assign(glCanvas.style, { position: "absolute", inset: "0", width: "100%", height: "100%", pointerEvents: "none" });
+    wrap.insertBefore(glCanvas, wrap.firstChild);
+    let sc: TerrainGlScene;
+    try {
+      sc = new TerrainGlScene(glCanvas, patch, terrainPalette(mode), {
+        obsHeightM,
+        ellipseKm,
+        horizon,
+        skyTracks: {
+          sunAz: series.sunAz,
+          sunEl: series.sunEl,
+          earthAz: series.earthAz,
+          earthEl: series.earthEl,
+          n: series.n,
+        },
+      });
+    } catch {
+      glCanvas.remove();
+      void Promise.resolve().then(() => setUseGl(false));
+      return;
+    }
+    const pal = terrainPalette(mode);
+    const reduced =
+      typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const curPos = new THREE.Vector3();
+    const curLook = new THREE.Vector3();
+    const goalPos = new THREE.Vector3();
+    const goalLook = new THREE.Vector3();
+    let inited = false;
+    let sized = "";
+    let raf = 0;
+    let last = 0;
+    let visible = true;
+    let dead = false;
+
+    const goal = (L: typeof live) => {
+      const v = L.view;
+      if (v.mode === "orbit") {
+        const aspect = L.width / Math.max(L.height, 1);
+        const d = v.dist * Math.max(1, Math.min(1.7, 1.4 / Math.max(aspect, 0.3)));
+        const az = (v.az * Math.PI) / 180;
+        const pt = (v.pitch * Math.PI) / 180;
+        goalLook.set(0, 0.35, 0);
+        goalPos.set(
+          d * Math.cos(pt) * Math.sin(az),
+          0.35 + d * Math.sin(pt),
+          -d * Math.cos(pt) * Math.cos(az),
+        );
+      } else {
+        const az = (v.lookAz * Math.PI) / 180;
+        const pt = (v.lookPitch * Math.PI) / 180;
+        const bx = -Math.sin(az) * 0.9;
+        const bz = Math.cos(az) * 0.9;
+        const ground = sampleHeightM(patch, bx, -bz);
+        const gy = ground === null ? 0 : ((ground - patch.centerHM) / 1000) * L.relief;
+        const y = Math.max(LANDER_TOP * 0.8, gy + 0.3);
+        goalPos.set(bx, y, bz);
+        goalLook.set(
+          bx + Math.sin(az) * Math.cos(pt) * 10,
+          y + Math.sin(pt) * 10,
+          bz - Math.cos(az) * Math.cos(pt) * 10,
+        );
+      }
+    };
+
+    const schedule = () => {
+      if (!raf && !dead && visible) raf = requestAnimationFrame(frame);
+    };
+    function frame(t: number) {
+      raf = 0;
+      if (dead || !visible) return;
+      const L = liveRef.current;
+      if (L.width <= 0) return;
+      const key = `${L.width}x${L.height}`;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (key !== sized) {
+        sized = key;
+        sc.setSize(L.width, L.height);
+        hudCanvas!.width = Math.round(L.width * dpr);
+        hudCanvas!.height = Math.round(L.height * dpr);
+      }
+      goal(L);
+      if (!inited || reduced) {
+        curPos.copy(goalPos);
+        curLook.copy(goalLook);
+        inited = true;
+      } else {
+        const dt = Math.min(0.1, Math.max(0.001, (t - last) / 1000));
+        const a = 1 - Math.exp(-dt * 9);
+        curPos.lerp(goalPos, a);
+        curLook.lerp(goalLook, a);
+      }
+      last = t;
+      const moving = curPos.distanceToSquared(goalPos) > 1e-6 || curLook.distanceToSquared(goalLook) > 1e-6;
+      sc.update({
+        sunAz: L.sunAz,
+        sunEl: L.sunEl,
+        earthAz: L.earthAz,
+        earthEl: L.earthEl,
+        sunBlocked: !L.isSunLit,
+        earthBlocked: !L.isEarthUp,
+        sunBlocker: L.sunBlocker,
+        earthBlocker: L.earthBlocker,
+        relief: L.relief,
+        surface: L.surface,
+        psrMask: L.psrMask,
+      });
+      sc.setView(curPos, curLook);
+      sc.render();
+      const ctx = hudCanvas!.getContext("2d");
+      if (ctx) {
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        drawHud({
+          ctx,
+          width: L.width,
+          height: L.height,
+          pal,
+          patch: patch!,
+          caption: terrainCaption(patch!, L.relief),
+          surface: L.surface,
+          psr: L.psrStatus,
+          sc,
+          sunAz: L.sunAz,
+          sunEl: L.sunEl,
+          earthAz: L.earthAz,
+          earthEl: L.earthEl,
+          sunRidgeEl: L.sunRidgeEl,
+          earthRidgeEl: L.earthRidgeEl,
+          isSunLit: L.isSunLit,
+          isEarthUp: L.isEarthUp,
+          sunBlocker: L.sunBlocker,
+          earthBlocker: L.earthBlocker,
+          relief: L.relief,
+        });
+      }
+      if (moving) schedule();
+    }
+    kickRef.current = schedule;
+
+    let io: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== "undefined" && wrapRef.current) {
+      io = new IntersectionObserver((entries) => {
+        visible = entries.some((e) => e.isIntersecting);
+        if (visible) schedule();
+      });
+      io.observe(wrapRef.current);
+    }
+    schedule();
+    return () => {
+      dead = true;
+      kickRef.current = () => {};
+      if (raf) cancelAnimationFrame(raf);
+      io?.disconnect();
+      sc.dispose();
+      glCanvas.remove();
+    };
+  }, [useGl, patch, mode, obsHeightM, ellipseKm, horizon, series]);
+
+  // Any render (props, toggles, drag) asks for one frame; the loop keeps itself alive only while the camera moves.
+  useEffect(() => {
+    kickRef.current();
+  });
+
+  // ---- Interaction ----------------------------------------------------------------------------------------
   const onPointerDown = (ev: ReactPointerEvent<HTMLCanvasElement>) => {
+    const v = viewRef.current;
     dragRef.current = {
       x: ev.clientX,
       y: ev.clientY,
-      az: orbitAz,
-      pitch: orbitPitch,
+      az: v.mode === "orbit" ? v.az : v.lookAz,
+      pitch: v.mode === "orbit" ? v.pitch : v.lookPitch,
     };
     ev.currentTarget.setPointerCapture?.(ev.pointerId);
   };
@@ -644,40 +972,53 @@ export function LunarTerrain3D({
     if (!d) return;
     const dx = ev.clientX - d.x;
     const dy = ev.clientY - d.y;
-    setOrbitAz(((d.az - dx * 0.45) % 360 + 360) % 360);
-    setOrbitPitch(Math.max(6, Math.min(72, d.pitch + dy * 0.32)));
+    setView((v) =>
+      v.mode === "orbit"
+        ? {
+            ...v,
+            az: (((d.az - dx * 0.45) % 360) + 360) % 360,
+            pitch: Math.max(6, Math.min(88, d.pitch + dy * 0.32)),
+          }
+        : {
+            ...v,
+            lookAz: (((d.az + dx * 0.35) % 360) + 360) % 360,
+            lookPitch: Math.max(-20, Math.min(60, d.pitch - dy * 0.25)),
+          },
+    );
   };
 
   const endDrag = () => {
     dragRef.current = null;
   };
 
-  const onWheel = (ev: ReactWheelEvent<HTMLCanvasElement>) => {
-    if (camMode !== "orbit") return;
-    setOrbitDist((prev) => Math.max(11, Math.min(34, prev + (ev.deltaY > 0 ? 1.5 : -1.5))));
-  };
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const onWheel = (ev: WheelEvent) => {
+      if (viewRef.current.mode !== "orbit") return;
+      ev.preventDefault();
+      setView((v) => ({
+        ...v,
+        dist: Math.max(MIN_DIST, Math.min(MAX_DIST, v.dist * (ev.deltaY > 0 ? 1.1 : 1 / 1.1))),
+      }));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [unavailable]);
 
+  const sceneElDeg = (el: number) =>
+    Math.max(-5, Math.min(60, (Math.atan(relief * Math.tan((Math.max(el, 0) * Math.PI) / 180)) * 180) / Math.PI));
+  const lookAt = (az: number, el: number) =>
+    setView((v) => ({ ...v, mode: "pov", lookAz: az, lookPitch: sceneElDeg(el) }));
   const toggleCameraMode = () => {
-    if (camMode === "orbit") {
-      setCamMode("pov");
-      setOrbitAz(sunAz);
-      setOrbitPitch(20);
-    } else {
-      setCamMode("orbit");
-      setOrbitAz(215);
-      setOrbitPitch(26);
-    }
+    if (camMode === "orbit") lookAt(sunAz, sunEl);
+    else setView(DEFAULT_VIEW);
   };
-
-  const resetView = () => {
-    setCamMode("orbit");
-    setOrbitAz(215);
-    setOrbitPitch(26);
-    setOrbitDist(21.5);
-  };
+  const topDown = () => setView((v) => ({ ...v, mode: "orbit", az: 180, pitch: 88, dist: TOP_DOWN_DIST }));
+  const resetView = () => setView(DEFAULT_VIEW);
 
   const summary =
-    `3D lunar terrain and sky view, vertical exaggeration ${VERT_EXAG} times. ` +
+    `3D lunar terrain and sky view, vertical exaggeration ${relief} times. ` +
     `At the cursor the Sun is at azimuth ${sunAz.toFixed(1)}°, elevation ${sunEl.toFixed(1)}° ` +
     `(ridge ${sunRidgeEl.toFixed(1)}°); Earth is at azimuth ${earthAz.toFixed(1)}°, elevation ${earthEl.toFixed(1)}° ` +
     `(ridge ${earthRidgeEl.toFixed(1)}°).${pole ? " At the pole, north points toward 0° longitude." : ""}`;
@@ -693,52 +1034,67 @@ export function LunarTerrain3D({
   }
 
   return (
-    <div
-      ref={wrapRef}
-      data-testid="lunar-terrain-3d"
-      style={{
-        position: "relative",
-        width: "100%",
-        height,
-        touchAction: "none",
-        userSelect: "none",
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        role="img"
-        aria-label={summary}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-        onWheel={onWheel}
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height,
-          cursor: "grab",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: 8,
-          right: 8,
-          zIndex: 2,
-        }}
+    <VStack gap={2}>
+      <Stack
+        ref={wrapRef}
+        data-testid="lunar-terrain-3d"
+        width="100%"
+        height={height}
+        style={{ position: "relative", touchAction: "none", userSelect: "none", overflow: "hidden" }}
       >
-        <HStack gap={1.5} vAlign="center">
-          <Button
-            label={camMode === "orbit" ? "Lander POV" : "3D Orbit"}
+        <canvas
+          ref={canvasRef}
+          role="img"
+          aria-label={summary}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          style={{ position: "absolute", inset: 0, width: "100%", height, cursor: "grab" }}
+        />
+      </Stack>
+      <HStack gap={1.5} vAlign="center" wrap="wrap" data-testid="terrain-controls">
+        <Button
+          label={camMode === "orbit" ? "Lander POV" : "3D Orbit"}
+          size="lg"
+          variant="secondary"
+          onClick={toggleCameraMode}
+        />
+        <Button label="Top-down" size="lg" variant="ghost" onClick={topDown} />
+        <Button label="Look at Sun" size="lg" variant="ghost" onClick={() => lookAt(sunAz, sunEl)} />
+        <Button label="Look at Earth" size="lg" variant="ghost" onClick={() => lookAt(earthAz, earthEl)} />
+        <Button label="Reset view" size="lg" variant="ghost" onClick={resetView} />
+      </HStack>
+      {useGl ? (
+        <HStack gap={1.5} vAlign="center" wrap="wrap">
+          <SegmentedControl
+            label="Surface mode"
             size="lg"
-            variant="secondary"
-            onClick={toggleCameraMode}
-          />
-          <Button label="Reset 3D" size="lg" variant="ghost" onClick={resetView} />
+            value={surface}
+            onChange={(v) => setSurface(v === "slope" ? "slope" : "regolith")}
+          >
+            <SegmentedControlItem value="regolith" label="Regolith" />
+            <SegmentedControlItem value="slope" label="Elevation & slope" />
+          </SegmentedControl>
+          <SegmentedControl
+            label="Vertical relief"
+            size="lg"
+            value={String(relief)}
+            onChange={(v) => setRelief(v === "1" ? 1 : DEFAULT_RELIEF)}
+          >
+            <SegmentedControlItem value="1" label="Relief 1x" />
+            <SegmentedControlItem value="3" label="Relief 3x" />
+          </SegmentedControl>
+          {psrEligible ? (
+            <ToggleButton
+              label="PSR shading"
+              size="lg"
+              isPressed={psrOn}
+              onPressedChange={(p) => setPsrOn(p)}
+            />
+          ) : null}
         </HStack>
-      </div>
-    </div>
+      ) : null}
+    </VStack>
   );
 }

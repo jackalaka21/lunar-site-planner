@@ -1,8 +1,14 @@
 import { psToXY } from "../../lib/data/ps";
-import { rampStep, RAMP_STEPS } from "../calendar/calendarModel";
+import { rampLegend, rampStep, RAMP_EDGES_PCT, RAMP_STEPS } from "../calendar/calendarModel";
 import { southToPixel } from "./projection";
 
-export { rampStep, RAMP_STEPS };
+export { rampLegend, rampStep, RAMP_EDGES_PCT, RAMP_STEPS };
+
+/** Spacing of the LOLA horizon grid the heatmap samples, in metres (horizons/grid/index.json spacingM). */
+export const HEATMAP_GRID_SPACING_M = 2000;
+
+/** Fill opacity of a heatmap cell, so the basemap stays readable beneath it. */
+export const HEATMAP_FILL_OPACITY = 0.82;
 
 export const DEFAULT_HEATMAP_RADIUS_KM = 20;
 
@@ -62,13 +68,24 @@ export function filterWithinRadius<T extends { lat: number; lon: number }>(
   });
 }
 
-/** 5-step luminance fill: step 0 = deepest surface, step 4 = primary ink. */
+/** Theme ramp colour for a step: --color-heat-0 (red, no Sun and Earth overlap) to --color-heat-4 (green, most overlap). */
 export function heatmapStepFill(step: number): string {
   const clamped = Math.max(0, Math.min(RAMP_STEPS - 1, Math.round(step)));
-  return `color-mix(in srgb, var(--color-text-primary) ${(clamped * 100) / (RAMP_STEPS - 1)}%, var(--surface-deepest))`;
+  return `var(--color-heat-${clamped})`;
 }
 
-/** Project heatmap points within `radiusKm` onto the south-polar map SVG (`size` x `size`) with 5-step luminance fill. */
+/** Legend for the ramp: end captions and one hour range per step, from the same thresholds as rampStep. */
+export function heatmapLegend(windowH: number): { low: string; high: string; steps: { fill: string; label: string }[] } {
+  const labels = rampLegend(windowH);
+  const topEdgeH = Math.round((windowH * RAMP_EDGES_PCT[RAMP_EDGES_PCT.length - 1]) / 100);
+  return {
+    low: "0 h, no overlap",
+    high: `${topEdgeH}+ h Sun + Earth`,
+    steps: labels.map((label, i) => ({ fill: heatmapStepFill(i), label: `${label} h` })),
+  };
+}
+
+/** Project heatmap points within `radiusKm` onto the south-polar map SVG (`size` x `size`) with the 5-step red to green ramp. */
 export function projectHeatmapCells(
   points: readonly HeatmapPoint[],
   refLat: number,

@@ -160,6 +160,7 @@ export function ScenarioSlot({ scenario, slot, ctx, onRetry, fallback }: Scenari
         countdowns={countdowns}
         deltaVsA={ctx.deltaVsA}
         robust={robust}
+        ellipseKm={settings.ellipseKm}
         onSeek={seekIndex}
         onScrubTime={(deltaMs) => ctx.onSeekH(ctx.cursorH + deltaMs / MS_PER_HOUR)}
         onEdit={ctx.onEdit}

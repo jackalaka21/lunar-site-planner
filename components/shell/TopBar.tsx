@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Link as LinkIcon, Menu, Settings } from "lucide-react";
+import { Download, HelpCircle, Link as LinkIcon, Menu, Settings } from "lucide-react";
 import { Button } from "@astryxdesign/core/Button";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -15,14 +15,19 @@ interface TopBarProps {
   onOpenNav?: () => void;
   onOpenSettings: () => void;
   onOpenLanding?: () => void;
+  /** Starts the guided tour. */
+  onOpenTour?: () => void;
 }
 
-const PHONE_QUERY = "(max-width: 47.99rem)";
+/** Header height: room for a 44 high button with at least 0.5rem clear above and below it. */
+export const TOPBAR_HEIGHT = "4.5rem";
+
+// Mobile first: before hydration the query reads false, so the prerendered header is the compact one
+// and never overflows a phone; labels appear once the query is known to match.
 const TABLET_UP_QUERY = "(min-width: 48rem)";
 
-export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding }: TopBarProps) {
+export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }: TopBarProps) {
   const showToast = useToast();
-  const isPhone = useMediaQuery(PHONE_QUERY);
   const isTabletUp = useMediaQuery(TABLET_UP_QUERY);
   const copyLink = async () => {
     try {
@@ -44,7 +49,15 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding }: TopBarProps
     }
   };
   return (
-    <HStack gap={2} vAlign="center" hAlign="between" data-testid="top-bar">
+    <HStack
+      gap={2}
+      vAlign="center"
+      hAlign="between"
+      height={TOPBAR_HEIGHT}
+      paddingInline={4}
+      data-testid="top-bar"
+      data-tour-id="tour-topbar"
+    >
       <HStack gap={2} vAlign="center">
         {onOpenNav ? (
           <IconButton
@@ -70,7 +83,7 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding }: TopBarProps
           label="Copy link"
           size="lg"
           variant="ghost"
-          isIconOnly={isPhone}
+          isIconOnly={!isTabletUp}
           icon={<Icon icon={LinkIcon} />}
           onClick={copyLink}
         />
@@ -81,6 +94,16 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding }: TopBarProps
             variant="ghost"
             icon={<Icon icon={Download} />}
             onClick={exportPng}
+          />
+        ) : null}
+        {onOpenTour ? (
+          <Button
+            label="Tutorial"
+            size="lg"
+            variant="ghost"
+            isIconOnly={!isTabletUp}
+            icon={<Icon icon={HelpCircle} />}
+            onClick={onOpenTour}
           />
         ) : null}
         <IconButton

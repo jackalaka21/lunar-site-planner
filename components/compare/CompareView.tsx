@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useContext, useMemo } from "react";
 import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { Grid } from "@astryxdesign/core/Grid";
@@ -13,6 +14,11 @@ import { sharedElDomain } from "../panorama/layout";
 import { SwipeDeck } from "../ui/SwipeDeck";
 import { FirstCardContext } from "../shell/FirstCardContext";
 import { ScenarioSlot } from "./ScenarioSlot";
+
+// The map (basemap image, projection maths) stays out of the first-view bundle.
+const ScenarioMapPanel = dynamic(() => import("../picker/ScenarioMapPanel").then((m) => m.ScenarioMapPanel), {
+  ssr: false,
+});
 
 const HOURS_PER_DAY = 24;
 const DESKTOP_QUERY = "(min-width: 64rem)";
@@ -99,7 +105,9 @@ export function CompareView({ onEdit }: CompareViewProps) {
     );
   });
 
-  if (isPhone && scenarios.length > 1) return (
+  const columns = isDesktop && scenarios.length > 1 ? 2 : 1;
+  const cards =
+    isPhone && scenarios.length > 1 ? (
       <SwipeDeck label="Scenario cards">
         {nodes.map((n) => (
           <Stack key={n.key} width="calc(100vw - 3rem)">
@@ -107,11 +115,15 @@ export function CompareView({ onEdit }: CompareViewProps) {
           </Stack>
         ))}
       </SwipeDeck>
+    ) : (
+      <Grid columns={columns} gap={4} data-testid="card-grid" data-columns={columns}>
+        {nodes}
+      </Grid>
     );
-  const columns = isDesktop && scenarios.length > 1 ? 2 : 1;
   return (
-    <Grid columns={columns} gap={4} data-testid="card-grid" data-columns={columns}>
-      {nodes}
-    </Grid>
+    <Stack gap={4}>
+      {cards}
+      <ScenarioMapPanel />
+    </Stack>
   );
 }

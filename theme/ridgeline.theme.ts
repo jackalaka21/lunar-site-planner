@@ -44,6 +44,18 @@ export const ridgelineTheme = defineTheme({
     "--surface-raised": ["#f4f4f5", "#232325"],
     // Spec 10.3 third text role (muted). Astryx has primary/secondary/disabled only.
     "--color-text-muted": ["#737373", "#85858b"],
+    // Nearby heatmap ramp, step 0 (no Sun + Earth overlap) to step 4 (most overlap).
+    // Lightness rises with the step so the order still reads without hue.
+    "--color-heat-0": ["#dc2626", "#ef4444"],
+    "--color-heat-1": ["#ea580c", "#f97316"],
+    "--color-heat-2": ["#d97706", "#f59e0b"],
+    "--color-heat-3": ["#65a30d", "#84cc16"],
+    "--color-heat-4": ["#16a34a", "#22c55e"],
+    // 3D terrain overlays: permanently shadowed ground (from psr.json), contour lines,
+    // and the slope hazard tint (> 10 degrees).
+    "--color-terrain-psr": ["#3b5b8c", "#5b7fb8"],
+    "--color-terrain-contour": ["#17171766", "#ededed66"],
+    "--color-terrain-hazard": ["#d97706", "#f59e0b"],
   },
 
   tokens: {

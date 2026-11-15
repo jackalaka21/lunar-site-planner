@@ -123,11 +123,30 @@ describe("MapPicker drag, heatmap, and PSR overlay", () => {
       expect(screen.getByTestId("heatmap-point-0")).toBeTruthy();
     });
 
+    const first = screen.getByTestId("heatmap-point-0");
+    expect(first.getAttribute("data-step")).toBe("4");
+    expect(first.style.fill).toBe("var(--color-heat-4)");
+    expect(first.style.fillOpacity).toBe("0.82");
+    expect(screen.getByTestId("heatmap-legend")).toBeTruthy();
+    expect(screen.getByTestId("heatmap-legend").textContent).toContain("0 h, no overlap");
+    expect(screen.getByTestId("map-south").getAttribute("data-zoom")).not.toBe("1.00");
+    fireEvent.pointerEnter(first);
+    expect(screen.getByTestId("heatmap-hover")).toBeTruthy();
+
     const beforeCount = useAppStore.getState().scenarios.length;
     fireEvent.click(screen.getByTestId("heatmap-point-0"));
     const afterScenarios = useAppStore.getState().scenarios;
     expect(afterScenarios.length).toBe(beforeCount + 1);
     expect(afterScenarios[afterScenarios.length - 1].site.kind).toBe("custom");
+  });
+
+  it("zoom buttons change the zoom badge and reset restores it", () => {
+    render(<MapPicker scenarioKey="a" mode="south" />);
+    expect(screen.getByTestId("zoom-badge").textContent).toContain("1.0x");
+    fireEvent.click(screen.getByRole("button", { name: "Zoom in" }));
+    expect(screen.getByTestId("zoom-badge").textContent).toContain("1.6x");
+    fireEvent.click(screen.getByRole("button", { name: "Reset zoom" }));
+    expect(screen.getByTestId("zoom-badge").textContent).toContain("1.0x");
   });
 
   it("toggling Permanent shadow (PSR) lazily loads and renders PSR polygons", async () => {

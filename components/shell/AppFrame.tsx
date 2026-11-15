@@ -18,22 +18,22 @@ import { loadCatalogOnce } from "../../lib/useCatalog";
 import { decodeState } from "../../lib/state/url";
 import { isDefaultState } from "../../lib/state/isDefault";
 import { bindUrlSync, useAppStore } from "../../lib/state/store";
+import { CloseDrawerContext } from "./DrawerContext";
 import { FirstCardContext } from "./FirstCardContext";
 import { dateFieldId } from "./ids";
 import { RegisterSW } from "../pwa/RegisterSW";
 import { Notice } from "./Notice";
 import { StatStrip } from "./StatStrip";
-import { TopBar } from "./TopBar";
+import { TOPBAR_HEIGHT, TopBar } from "./TopBar";
 
 // Overlays are fetched the first time they open, keeping them out of the first view's JavaScript.
 const SettingsPanel = dynamic(
   () => import("../settings/SettingsPanel").then((m) => m.SettingsPanel),
   { ssr: false },
 );
-const LandingPage = dynamic(
-  () => import("../landing/LandingPage").then((m) => m.LandingPage),
-  { ssr: false },
-);
+const LandingPage = dynamic(() => import("../landing/LandingPage").then((m) => m.LandingPage), {
+  ssr: false,
+});
 // The cards (panorama, timeline, metrics) and the scenario editor load right after the shell paints.
 const CompareView = dynamic(() => import("../compare/CompareView").then((m) => m.CompareView), {
   ssr: false,
@@ -77,16 +77,20 @@ const TimeBar = dynamic(() => import("../time/TimeBar").then((m) => m.TimeBar), 
   loading: () => <TimeBarPlaceholder />,
 });
 const LeftPanel = dynamic(() => import("./LeftPanel").then((m) => m.LeftPanel), { ssr: false });
+const GuidedTour = dynamic(() => import("../tour/GuidedTour").then((m) => m.GuidedTour), {
+  ssr: false,
+});
 const NavOverlay = dynamic(() => import("./NavOverlay"), { ssr: false });
 
 const NO_WORKER_NOTICE = "This browser can't run the calculator (Web Workers unavailable).";
-const HEADER_HEIGHT = 56;
 const PANEL_WIDTH = 280;
 const TIME_BAR_HEIGHT = 61;
 const TIME_BAR_PHONE_HEIGHT = 125;
 /** One value at every width: the server HTML cannot know the viewport, and a different one after hydration would shift the page. */
 const CONTENT_PADDING = 4;
-const CONTENT_MAX_WIDTH = 1600;
+/** Wide enough that a single card can use a large monitor. */
+const CONTENT_MAX_WIDTH = "120rem";
+const TOUR_SEEN_KEY = "ridgeline-tour-seen";
 /** 1024 at the 16 root size. Below it the left panel becomes a drawer. */
 const WIDE_QUERY = "(min-width: 64rem)";
 /** Below 768: scenario editing is a bottom sheet instead of a side drawer. */
@@ -101,6 +105,8 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
   // The prerendered card is only right for the default view: not for a link that asks for something else.
   const [linkIsDefault, setLinkIsDefault] = useState(true);
   const [showLanding, setShowLanding] = useState(false);
+  const [landingChecked, setLandingChecked] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
 
   useEffect(() => {
     const search = window.location.search;
@@ -121,6 +127,7 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
     if (forceLanding || (!hasScenarioParam && !alreadyEntered && !navigator.webdriver)) {
       setShowLanding(true);
     }
+    setLandingChecked(true);
   }, []);
 
   const enterPlannerFromLanding = () => {
@@ -193,6 +200,36 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
     };
   }, []);
 
+  const openTour = () => {
+    try {
+      window.localStorage.setItem(TOUR_SEEN_KEY, "1");
+    } catch {
+      // ignore storage errors
+    }
+    setTourOpen(true);
+  };
+
+  // Offer the tour once, on the first planner visit. Never on the landing page and never under automation.
+  useEffect(() => {
+    if (!landingChecked || showLanding || !ready || navigator.webdriver) return;
+    let seen = true;
+    try {
+      seen = window.localStorage.getItem(TOUR_SEEN_KEY) === "1";
+    } catch {
+      // without storage we cannot remember it, so do not start it
+    }
+    if (seen) return;
+    const t = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(TOUR_SEEN_KEY, "1");
+      } catch {
+        // ignore storage errors
+      }
+      setTourOpen(true);
+    }, 800);
+    return () => window.clearTimeout(t);
+  }, [landingChecked, showLanding, ready]);
+
   const editScenario = (key: string) => {
     if (!isWide) {
       openNav();
@@ -215,11 +252,15 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
       <Stack height="100dvh">
         <Layout
           header={
-            <LayoutHeader height={HEADER_HEIGHT} hasDivider>
+            <LayoutHeader height={TOPBAR_HEIGHT} padding={0} hasDivider>
               <TopBar
                 onOpenNav={isWide || !mounted ? undefined : openNav}
                 onOpenSettings={openSettings}
-                onOpenLanding={() => setShowLanding(true)}
+                onOpenLanding={() => {
+                  setTourOpen(false);
+                  setShowLanding(true);
+                }}
+                onOpenTour={openTour}
               />
             </LayoutHeader>
           }
@@ -263,8 +304,11 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
           }
         />
         {!isWide && navSeen ? (
-          <NavOverlay isOpen={navOpen} onOpenChange={setNavOpen} isPhone={isPhone} />
+          <CloseDrawerContext.Provider value={() => setNavOpen(false)}>
+            <NavOverlay isOpen={navOpen} onOpenChange={setNavOpen} isPhone={isPhone} />
+          </CloseDrawerContext.Provider>
         ) : null}
+        {tourOpen ? <GuidedTour onClose={() => setTourOpen(false)} /> : null}
         {settingsSeen ? (
           <SettingsPanel isOpen={settingsOpen} onOpenChange={setSettingsOpen} />
         ) : null}

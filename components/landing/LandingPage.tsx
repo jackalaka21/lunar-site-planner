@@ -167,6 +167,8 @@ const FOCUS =
 const BTN_BASE = `inline-flex min-h-[44px] cursor-pointer items-center justify-center px-5 text-[15px] font-medium transition-colors ${FOCUS}`;
 const BTN_PRIMARY = `${BTN_BASE} h-[52px] bg-(color:--ln-ffb454) text-(color:--ln-0a0a0c) hover:bg-(color:--ln-ffc47a)`;
 const BTN_HAIR = `${BTN_BASE} h-[52px] border border-white/30 bg-(color:--ln-05050a)/70 text-(color:--ln-f1efe9) hover:border-white/60 hover:bg-(color:--ln-15151a)`;
+const SOLID_FOCUS = "focus-visible:border-(color:--ln-ffb454) focus-visible:shadow-[0_0_0_2px_rgb(0_0_0)]";
+const BTN_SOLID = `${BTN_BASE} h-[52px] rounded-[2px] border border-white bg-black text-white hover:border-(color:--ln-ffb454) hover:bg-(color:--ln-15151a) ${SOLID_FOCUS}`;
 const MONO = "font-[family-name:var(--font-family-code)] tracking-[0.04em]";
 
 function setLayer(el: HTMLElement | null, opacity: number, inertBelow = 0.3) {
@@ -702,30 +704,30 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
           </div>
           <div ref={horizonUiRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-4 pb-14 lg:px-14" style={{ opacity: 0 }}>
             <div className="pointer-events-auto flex w-full max-w-[56rem] flex-col items-center gap-5 text-center">
-              <h2 className="mb-14 text-[clamp(1.6rem,3.4vw,2.6rem)] font-medium leading-tight tracking-[-0.02em]">
+              <h2 className="mb-14 max-w-full rounded-[2px] border border-white bg-black px-[1em] py-[0.5em] text-[clamp(1.6rem,3.4vw,2.6rem)] font-medium leading-tight tracking-[-0.02em] text-white [overflow-wrap:anywhere]">
                 Choose a site and a date
               </h2>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center">
                 <button type="button" className={BTN_PRIMARY} onClick={() => enterPlanner()}>
                   Enter 3D Mission Planner
                 </button>
-                <button type="button" className={BTN_HAIR} onClick={() => enterPlanner(SHOWCASE_STAGES[2].scenarios)}>
+                <button type="button" className={BTN_SOLID} onClick={() => enterPlanner(SHOWCASE_STAGES[2].scenarios)}>
                   Compare 2-week launch slip
                 </button>
-                <button type="button" className={BTN_HAIR} onClick={() => enterPlanner(SHOWCASE_STAGES[1].scenarios)}>
+                <button type="button" className={BTN_SOLID} onClick={() => enterPlanner(SHOWCASE_STAGES[1].scenarios)}>
                   Mons Mouton vs Shackleton rim
                 </button>
               </div>
-              <div className="grid w-full grid-cols-3 gap-px border border-white/25 bg-white/25 sm:w-auto">
+              <div className="grid w-full grid-cols-3 gap-2 sm:w-auto">
                 {REPLAYS.map((r) => (
                   <button
                     key={r.id}
                     type="button"
                     onClick={() => loadMissionReplay(r.id, r.iso)}
-                    className={`flex min-h-[56px] cursor-pointer flex-col items-center justify-center bg-(color:--ln-05050a)/90 px-3 py-2 sm:px-6 ${FOCUS} hover:bg-(color:--ln-15151a)`}
+                    className={`flex min-h-[56px] min-w-0 cursor-pointer flex-col items-center justify-center rounded-[2px] border border-white bg-black px-2 py-2 transition-colors hover:border-(color:--ln-ffb454) hover:bg-(color:--ln-15151a) sm:px-6 ${FOCUS} ${SOLID_FOCUS}`}
                   >
-                    <span className="text-[13px] font-medium text-(color:--ln-f1efe9)">{r.label}</span>
-                    <span className={`${MONO} text-[10.5px] text-(color:--ln-a9a69d)`}>{r.iso.slice(0, 10)}</span>
+                    <span className="text-[13px] font-medium text-white">{r.label}</span>
+                    <span className={`${MONO} text-[10.5px] text-(color:--ln-d4d1c8)`}>{r.iso.slice(0, 10)}</span>
                   </button>
                 ))}
               </div>

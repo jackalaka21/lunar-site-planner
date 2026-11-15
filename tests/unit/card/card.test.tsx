@@ -77,6 +77,21 @@ describe("ScenarioCard", () => {
     expect(screen.getAllByText("Good").length).toBeGreaterThan(0);
     expect(screen.getByText("127 h")).toBeTruthy();
   });
+  it("opens in the 3D terrain view by default and keeps the 2D skyline option", () => {
+    render(<ScenarioCard {...base} />);
+    expect(screen.getByRole("radio", { name: "3D terrain" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("radio", { name: "2D skyline" })).toBeTruthy();
+  });
+  it("marks the tour targets", () => {
+    const { container } = render(<ScenarioCard {...base} />);
+    for (const id of ["tour-metrics", "tour-3d-terrain", "tour-view-toggle", "tour-timeline", "tour-validation"]) {
+      expect(container.querySelectorAll(`[data-tour-id="${id}"]`).length).toBe(1);
+    }
+  });
+  it("puts tour-validation on the delta badge when there is a delta", () => {
+    const { container } = render(<ScenarioCard {...base} deltaVsA={{ bothH: 12, sunlitH: 0, longestDarkH: 0 }} />);
+    expect(container.querySelectorAll('[data-tour-id="tour-validation"]').length).toBe(1);
+  });
   it("shows Sunset in with the countdown", () => {
     render(<ScenarioCard {...base} />);
     expect(screen.getByText("Sunset in")).toBeTruthy();

@@ -10,6 +10,7 @@ import { Outline, type OutlineItem } from "@astryxdesign/core/Outline";
 import { VStack } from "@astryxdesign/core/Stack";
 import { Table, proportional } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
+import { ScrollRegion } from "../../components/about/ScrollRegion";
 import { ValidationTable, type ValidationEntry, type ValidationReport } from "../../components/about/ValidationTable";
 import { AI_DISCLOSURE, limitations, NASA_DATASETS, PARTNERS, type Dataset } from "../../components/about/content";
 import { DEFAULT_SETTINGS } from "../../lib/engine/settings";
@@ -63,6 +64,11 @@ function replayHref(siteId: string, actualUtc: string): string {
   };
   return `/?${encodeState(state)}`;
 }
+
+const BODY_STYLE = { lineHeight: 1.65 } as const;
+const WRAP_STYLE = { overflowWrap: "anywhere", wordBreak: "break-word" } as const;
+// Sticky needs every ancestor to be free of overflow auto/hidden/scroll; LayoutPanel is clipped, not scrollable, so this holds.
+const STICKY_STYLE = { position: "sticky", top: "1.5rem", alignSelf: "flex-start", maxHeight: "calc(100vh - 3rem)", overflowY: "auto" } as const;
 
 const LIT_LABEL = { any: "any part of the disc", half: "at least 50% of the disc", full: "the whole disc" } as const;
 
@@ -133,12 +139,14 @@ export default function AboutPage() {
       contentWidth={960}
       end={
         <LayoutPanel isScrollable={false} label="On this page" role="complementary">
-          <Outline items={OUTLINE_ITEMS} />
+          <VStack data-testid="about-outline" style={STICKY_STYLE}>
+            <Outline items={OUTLINE_ITEMS} />
+          </VStack>
         </LayoutPanel>
       }
       content={
         <LayoutContent isScrollable={false} padding={8}>
-          <VStack gap={8}>
+          <VStack gap={10}>
             <VStack gap={2}>
               <Text type="display-1">About Ridgeline</Text>
               <Link href="/" isStandalone>
@@ -146,16 +154,16 @@ export default function AboutPage() {
               </Link>
             </VStack>
 
-            <VStack gap={4}>
+            <VStack gap={5}>
               <Heading id="what-this-is" level={2}>
                 What this is
               </Heading>
-              <Text type="body">
+              <Text type="body" style={BODY_STYLE}>
                 Ridgeline compares lunar landing sites and dates. For each scenario it shows when the Sun and Earth are above the real
                 terrain horizon, so you can see when a lander has both power and a direct line to Earth, and how long it sits in the
                 dark. It answers the NASA Space Apps challenge Lunar Landing Site Navigator.
               </Text>
-              <Text type="body" color="secondary">
+              <Text type="body" color="secondary" style={BODY_STYLE}>
                 Everything runs in your browser from files served with the site. There is no account and no call to a third-party
                 service while you use it.
               </Text>
@@ -163,11 +171,11 @@ export default function AboutPage() {
 
             <Divider />
 
-            <VStack gap={4}>
+            <VStack gap={5}>
               <Heading id="method" level={2}>
                 Method
               </Heading>
-              <Text type="body">
+              <Text type="body" style={BODY_STYLE}>
                 Sun and Earth directions come from the DE440 ephemeris, rotated into the Moon&apos;s mean-Earth frame with the NAIF lunar
                 orientation kernels, with light-time and stellar aberration applied, sampled hourly and interpolated. Each direction is
                 compared with the terrain horizon at the site, built from LOLA elevation data. The Sun and Earth are treated as discs,
@@ -175,6 +183,7 @@ export default function AboutPage() {
                 from the Moon. Results are merged into lit and dark spells and scored against the thresholds below. These are the defaults
                 a new scenario starts with; each can be changed in the settings panel.
               </Text>
+              <ScrollRegion label="Default settings (scrollable table)">
               <Table<SettingRow>
                 aria-label="Default settings"
                 density="compact"
@@ -186,18 +195,20 @@ export default function AboutPage() {
                   { key: "note", header: "What it does", width: proportional(5, { minWidth: 280 }) },
                 ]}
               />
+              </ScrollRegion>
             </VStack>
 
             <Divider />
 
-            <VStack gap={4}>
+            <VStack gap={5}>
               <Heading id="nasa-data" level={2}>
                 NASA data used
               </Heading>
-              <Text type="body">
+              <Text type="body" style={BODY_STYLE}>
                 Every dataset Ridgeline uses is listed here with its source and its job. Versions, file sizes and SHA-256 checksums are in
                 DATA_SOURCES.md in the repository.
               </Text>
+              <ScrollRegion label="NASA datasets (scrollable table)">
               <Table<DatasetRow>
                 aria-label="NASA datasets"
                 density="compact"
@@ -233,6 +244,7 @@ export default function AboutPage() {
                   },
                 ]}
               />
+              </ScrollRegion>
               {kernels ? (
                 <VStack gap={2}>
                   <Text type="label" weight="medium">
@@ -240,7 +252,7 @@ export default function AboutPage() {
                   </Text>
                   <List density="compact" listStyle="none">
                     {kernels.map((k) => (
-                      <ListItem key={k.name} label={k.name} description={k.sha256} />
+                      <ListItem key={k.name} label={k.name} description={<Text type="supporting" style={WRAP_STYLE}>{k.sha256}</Text>} />
                     ))}
                   </List>
                 </VStack>
@@ -249,11 +261,11 @@ export default function AboutPage() {
 
             <Divider />
 
-            <VStack gap={4}>
+            <VStack gap={5}>
               <Heading id="partners" level={2}>
                 Partner credits
               </Heading>
-              <Text type="body">Landing sites and events come from the missions of these agencies, as listed in the challenge resources.</Text>
+              <Text type="body" style={BODY_STYLE}>Landing sites and events come from the missions of these agencies, as listed in the challenge resources.</Text>
               <List density="compact" listStyle="none">
                 {PARTNERS.map((p) => (
                   <ListItem
@@ -271,17 +283,17 @@ export default function AboutPage() {
 
             <Divider />
 
-            <VStack gap={4}>
+            <VStack gap={5}>
               <Heading id="validation" level={2}>
                 Validation
               </Heading>
-              <Text type="body">
+              <Text type="body" style={BODY_STYLE}>
                 Each check compares Ridgeline against an independent reference. Passing, failing and informational results are all shown,
                 with the method in each note. A failure stays on this page.
               </Text>
-              {error ? <Text type="body">Validation results could not be loaded ({error}).</Text> : null}
+              {error ? <Text type="body" style={BODY_STYLE}>Validation results could not be loaded ({error}).</Text> : null}
               {report ? (
-                <VStack gap={6}>
+                <VStack gap={8}>
                   <Text type="supporting" size="xsm">
                     Report generated {String(report.generatedUtc)} UTC
                   </Text>
@@ -289,7 +301,7 @@ export default function AboutPage() {
                     const entries = report[key];
                     if (!Array.isArray(entries) || entries.length === 0) return null;
                     return (
-                      <VStack key={key} gap={2}>
+                      <VStack key={key} gap={4}>
                         <Heading level={3}>{title}</Heading>
                         <ValidationTable caption={title} entries={entries as ValidationEntry[]} />
                       </VStack>
@@ -303,11 +315,11 @@ export default function AboutPage() {
 
             <Divider />
 
-            <VStack gap={4}>
+            <VStack gap={5}>
               <Heading id="replays" level={2}>
                 Mission replays
               </Heading>
-              <Text type="body">
+              <Text type="body" style={BODY_STYLE}>
                 Open the planner at a real landing site and the time of touchdown. Chandrayaan-3 has a landing date only, so its replay
                 starts at 00:00 UTC on that date.
               </Text>
@@ -327,7 +339,7 @@ export default function AboutPage() {
 
             <Divider />
 
-            <VStack gap={4}>
+            <VStack gap={5}>
               <Heading id="limitations" level={2}>
                 Limitations
               </Heading>
@@ -340,16 +352,16 @@ export default function AboutPage() {
 
             <Divider />
 
-            <VStack gap={4}>
+            <VStack gap={5}>
               <Heading id="ai-use" level={2}>
                 AI use
               </Heading>
-              <Text type="body">{AI_DISCLOSURE}</Text>
+              <Text type="body" style={BODY_STYLE}>{AI_DISCLOSURE}</Text>
             </VStack>
 
             <Divider />
 
-            <VStack gap={4}>
+            <VStack gap={5}>
               <Heading id="credits" level={2}>
                 Credits
               </Heading>

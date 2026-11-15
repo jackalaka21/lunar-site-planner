@@ -22,10 +22,14 @@ test("use actual landing date sets the date and time fields", async ({ page }) =
 test("click on south map sets custom coords card with grid badge", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("scenario-card-a")).toBeVisible({ timeout: 30_000 });
-  await page.getByRole("tab", { name: "Map" }).click();
+  await page.getByTestId("scenario-map").scrollIntoViewIfNeeded();
   const map = page.getByTestId("map-south");
   await expect(map).toBeVisible();
   await expect(page.getByTestId("scale-bar")).toContainText("km");
+  await page.getByRole("button", { name: "Zoom in" }).click();
+  await expect(page.getByTestId("zoom-badge")).toContainText("1.6x");
+  await page.getByRole("button", { name: "Reset zoom" }).click();
+  await expect(page.getByTestId("zoom-badge")).toContainText("1.0x");
   const box = (await map.boundingBox())!;
   // Left of the pole, near the 270 E meridian at about 86 S.
   await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.5);

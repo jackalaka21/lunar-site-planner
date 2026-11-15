@@ -38,7 +38,7 @@ export function LeftPanel() {
 
   return (
     <Stack gap={4} data-testid="left-panel-body">
-      <Stack gap={3}>
+      <Stack gap={3} data-tour-id="tour-scenarios">
         <Heading level={2}>Scenarios</Heading>
         <Text type="supporting" size="xsm">
           Landing date and time are UTC

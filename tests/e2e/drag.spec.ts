@@ -8,10 +8,11 @@ test("dragging pin updates card metrics within one frame-throttled cycle", async
   await expect(card).toBeVisible({ timeout: 30_000 });
   await expect(card).toContainText("Mons Mouton");
 
-  await page.getByRole("tab", { name: "Map" }).click();
-  const map = page.getByTestId("map-south");
+  const panel = page.getByTestId("scenario-map");
+  await panel.scrollIntoViewIfNeeded();
+  const map = panel.getByTestId("map-south");
   await expect(map).toBeVisible();
-  const pin = page.getByTestId("pin-a");
+  const pin = panel.getByTestId("pin-a");
   await expect(pin).toBeVisible();
 
   const mapBox = (await map.boundingBox())!;

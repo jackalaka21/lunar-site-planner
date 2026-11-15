@@ -8,6 +8,11 @@ import { fmtHours } from "../../lib/engine/format";
 import type { Metrics } from "../../lib/engine/metrics";
 import type { HorizonSource } from "../../lib/engine/types";
 import prerender from "../../public/data/v1/prerender/default.json";
+import {
+  CONTROLS_RESERVE_REM,
+  PHONE_BREAKPOINT_REM,
+  VIEWPORT_HEIGHT_REM,
+} from "../terrain3d/viewport";
 import { MissionClock } from "../ui/MissionClock";
 import { Term } from "../ui/Term";
 import { MetricsBar } from "./MetricsBar";
@@ -16,8 +21,14 @@ import { StaticCardActions } from "./StaticCardActions";
 import { VerdictChip } from "./VerdictChip";
 import { formatSpan } from "./delta";
 
-/** Same height as the panorama canvas in the live card (HorizonPanorama default). */
-const PANORAMA_HEIGHT = 240;
+/**
+ * Same height as the live card's default 3D viewport (520 single card desktop, 340 phone, see
+ * terrain3d/viewport.ts) plus the control bar under it, so hydration causes no layout jump.
+ */
+const PHONE_QUERY = `(max-width: ${PHONE_BREAKPOINT_REM}rem)`;
+const placeholderCss =
+  `[data-testid="static-panorama"]{height:${VIEWPORT_HEIGHT_REM.single + CONTROLS_RESERVE_REM.desktop}rem}` +
+  `@media ${PHONE_QUERY}{[data-testid="static-panorama"]{height:${VIEWPORT_HEIGHT_REM.phone + CONTROLS_RESERVE_REM.phone}rem}}`;
 /** Timeline viewBox, so the placeholder keeps the live timeline's aspect ratio. */
 const TIMELINE_VIEWBOX = "0 0 1000 124";
 const NONE_WITHIN = "> 60 d";
@@ -101,7 +112,8 @@ export function StaticDefaultCard() {
           }}
         />
 
-        <Stack height={PANORAMA_HEIGHT} aria-hidden="true" data-testid="static-panorama" />
+        <style>{placeholderCss}</style>
+        <Stack aria-hidden="true" data-testid="static-panorama" />
         <svg
           viewBox={TIMELINE_VIEWBOX}
           width="100%"

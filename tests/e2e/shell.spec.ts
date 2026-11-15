@@ -30,7 +30,7 @@ for (const width of [375, 1440]) {
     await page.goto("/");
     await expect(page.getByTestId("stat-strip")).toBeVisible();
     // Wait for the live card: the prerendered one is swapped out, so its buttons would vanish mid-loop.
-    await expect(page.getByTestId("scenario-card-a").locator("canvas")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("scenario-card-a").locator("canvas[role='img']")).toBeVisible({ timeout: 60_000 });
     // The time bar shortcut trigger must be a real button, so the loop below covers it.
     // (Phones drop it: the shortcuts are for keyboards.)
     if (width >= 768)
@@ -72,7 +72,8 @@ for (const width of [375, 1440]) {
   }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
-    await expect(page.getByTestId("scenario-card-a")).toBeVisible({ timeout: 30_000 }); // hydrated
+    // The live card (its canvas) exists only after hydration; the prerendered one is visible before any handler is attached.
+    await expect(page.getByTestId("scenario-card-a").locator("canvas[role='img']")).toBeVisible({ timeout: 60_000 });
     await page.getByRole("button", { name: "Settings" }).click();
     const dialog = page.getByRole("dialog", { name: "Settings" });
     await expect(dialog).toBeVisible();
@@ -89,3 +90,28 @@ test("buttons inside the scenario sheet are at least 44 by 44 at 375 wide", asyn
   await expect(dialog).toBeVisible();
   await expectAllButtons44(dialog);
 });
+
+for (const width of [1440, 1024, 768]) {
+  test(`header buttons keep 0.5rem clear of the header edges at ${width} wide`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/");
+    const bar = page.getByTestId("top-bar");
+    await expect(bar).toBeVisible();
+    const barBox = await bar.boundingBox();
+    expect(barBox?.height ?? 0).toBeGreaterThanOrEqual(72);
+    const buttons = bar.getByRole("button");
+    const count = await buttons.count();
+    for (let i = 0; i < count; i++) {
+      const b = buttons.nth(i);
+      if (!(await b.isVisible())) continue;
+      await b.hover();
+      const box = await b.boundingBox();
+      const name = (await b.getAttribute("aria-label")) ?? (await b.innerText());
+      expect((box?.y ?? 0) - (barBox?.y ?? 0), `${name} clear above`).toBeGreaterThanOrEqual(8);
+      expect(
+        (barBox?.y ?? 0) + (barBox?.height ?? 0) - ((box?.y ?? 0) + (box?.height ?? 0)),
+        `${name} clear below`,
+      ).toBeGreaterThanOrEqual(8);
+    }
+  });
+}

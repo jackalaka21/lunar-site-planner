@@ -63,6 +63,30 @@ describe("LunarTerrain3D", () => {
     expect(povBtn).toBeTruthy();
     fireEvent.click(povBtn);
     expect(screen.getByRole("button", { name: "3D Orbit" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "3D Orbit" }));
+    expect(screen.getByRole("button", { name: "Lander POV" })).toBeTruthy();
+  });
+
+  it("offers the camera presets as buttons", async () => {
+    render(
+      <LunarTerrain3D
+        horizon={horizon}
+        series={series}
+        cursorIndex={6}
+        lat={-84.78}
+        lon={29.13}
+        siteId="artemis3-mons-mouton"
+        obsHeightM={2}
+      />,
+    );
+    await screen.findByRole("img");
+    for (const name of ["Top-down", "Look at Sun", "Look at Earth", "Reset view"]) {
+      expect(screen.getByRole("button", { name })).toBeTruthy();
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Look at Earth" }));
+    expect(screen.getByRole("button", { name: "3D Orbit" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Reset view" }));
+    expect(screen.getByRole("button", { name: "Lander POV" })).toBeTruthy();
   });
 
   it("shows an honest empty state for a custom point outside the south-polar grid", async () => {
@@ -88,8 +112,8 @@ describe("LunarTerrain3D", () => {
     const base = { gridSize: 101, radiusKm: 10, spacingM: 200 } as never;
     const cap = (source: string, resM: number) =>
       terrainCaption({ ...(base as object), source, resM } as never);
-    expect(cap("LOLA polar 40 m", 40)).toBe("LOLA polar DEM, 20 × 20 km at 200 m (from 40 m), vertical ×3.2");
-    expect(cap("LOLA global 64 ppd", 474)).toBe("LOLA global DEM (~470 m), 20 × 20 km, vertical ×3.2");
+    expect(cap("LOLA polar 40 m", 40)).toBe("LOLA polar DEM, 20 × 20 km at 200 m (from 40 m), vertical ×3");
+    expect(cap("LOLA global 64 ppd", 474)).toBe("LOLA global DEM (~470 m), 20 × 20 km, vertical ×3");
     expect(cap("LOLA 2 km grid", 2000)).toMatch(/^LOLA 2 km grid \(coarse\)/);
   });
 

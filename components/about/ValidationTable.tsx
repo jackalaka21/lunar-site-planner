@@ -7,6 +7,7 @@ import { Link } from "@astryxdesign/core/Link";
 import { Table, proportional } from "@astryxdesign/core/Table";
 import { Text } from "@astryxdesign/core/Text";
 import { VStack } from "@astryxdesign/core/VStack";
+import { ScrollRegion } from "./ScrollRegion";
 
 /** One entry of a validation.json section (written by pipeline/lsp/validate.py). */
 export interface ValidationEntry {
@@ -79,11 +80,12 @@ interface Row extends Record<string, unknown> {
 export function ValidationTable({ entries, caption }: { entries: ValidationEntry[]; caption: string }) {
   const data: Row[] = entries.map((entry, i) => ({ id: `${i}-${entry.name}`, entry }));
   return (
+    <ScrollRegion label={`${caption} (scrollable table)`}>
     <Table<Row>
       aria-label={caption}
       data={data}
       idKey="id"
-      density="compact"
+      density="balanced"
       verticalAlign="top"
       columns={[
         {
@@ -91,7 +93,7 @@ export function ValidationTable({ entries, caption }: { entries: ValidationEntry
           header: "Check",
           width: proportional(3, { minWidth: 280 }),
           renderCell: (row) => (
-            <VStack gap={1}>
+            <VStack gap={2}>
               <Text type="label" weight="medium">
                 {row.entry.name}
               </Text>
@@ -138,5 +140,6 @@ export function ValidationTable({ entries, caption }: { entries: ValidationEntry
         },
       ]}
     />
+    </ScrollRegion>
   );
 }

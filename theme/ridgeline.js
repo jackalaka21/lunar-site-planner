@@ -236,13 +236,29 @@ export const ridgelineTheme = {
     "--astryx-theme-neutral-color-status-fill-accent": "light-dark(#0074e2, #6d9cfe)",
     "--surface-deepest": "light-dark(#ececee, #0f0f10)",
     "--surface-raised": "light-dark(#f4f4f5, #232325)",
-    "--color-text-muted": "light-dark(#737373, #85858b)"
+    "--color-text-muted": "light-dark(#737373, #85858b)",
+    "--color-heat-0": "light-dark(#dc2626, #ef4444)",
+    "--color-heat-1": "light-dark(#ea580c, #f97316)",
+    "--color-heat-2": "light-dark(#d97706, #f59e0b)",
+    "--color-heat-3": "light-dark(#65a30d, #84cc16)",
+    "--color-heat-4": "light-dark(#16a34a, #22c55e)",
+    "--color-terrain-psr": "light-dark(#3b5b8c, #5b7fb8)",
+    "--color-terrain-contour": "light-dark(#17171766, #ededed66)",
+    "--color-terrain-hazard": "light-dark(#d97706, #f59e0b)"
   },
   __localTokenOwners: {
     "--astryx-theme-neutral-color-status-fill-accent": "neutral",
     "--surface-deepest": "ridgeline",
     "--surface-raised": "ridgeline",
-    "--color-text-muted": "ridgeline"
+    "--color-text-muted": "ridgeline",
+    "--color-heat-0": "ridgeline",
+    "--color-heat-1": "ridgeline",
+    "--color-heat-2": "ridgeline",
+    "--color-heat-3": "ridgeline",
+    "--color-heat-4": "ridgeline",
+    "--color-terrain-psr": "ridgeline",
+    "--color-terrain-contour": "ridgeline",
+    "--color-terrain-hazard": "ridgeline"
   },
   __localTokenLineage: ["neutral","ridgeline"],
   components: {

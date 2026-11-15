@@ -58,6 +58,8 @@ export interface ScenarioCardProps {
   /** Differences in hours against scenario A. Cards 2 to 4 only. */
   deltaVsA?: { bothH: number; sunlitH: number; longestDarkH: number };
   robust?: RobustnessResult;
+  /** Landing ellipse radius in km (settings), drawn draped on the 3D terrain. */
+  ellipseKm?: number;
   onSeek: (index: number) => void;
   onScrubTime?: (deltaMs: number) => void;
   onEdit: () => void;
@@ -77,7 +79,7 @@ function compassDir(azDeg: number): string {
 export function ScenarioCard(p: ScenarioCardProps) {
   const { scenario, result, cursorIndex, axis, tz, countdowns, deltaVsA, robust } = p;
   const { ctx, series, metrics } = result;
-  const [viewMode, setViewMode] = useState<"2d" | "3d">("2d");
+  const [viewMode, setViewMode] = useState<"2d" | "3d">("3d");
   const letter = scenario.key.toUpperCase();
   const idx = Math.max(0, Math.min(series.n - 1, cursorIndex));
   const cursorMs = series.t0Ms + idx * series.stepMs;
@@ -126,78 +128,82 @@ export function ScenarioCard(p: ScenarioCardProps) {
   return (
     <Card padding={5} data-testid={`scenario-card-${scenario.key}`}>
       <VStack gap={5}>
-        <HStack gap={2} vAlign="center" hAlign="between" wrap="wrap">
-          <VStack gap={0.5}>
-            <HStack gap={2} vAlign="center" wrap="wrap">
-              <Token label={letter} size="sm" color="gray" description={`Scenario ${letter}`} />
-              <Text type="label" weight="medium">
-                {scenario.name}
-              </Text>
-              {scenario.groupTag && <Text type="supporting">{scenario.groupTag}</Text>}
-            </HStack>
-            <HStack gap={1.5} vAlign="center" wrap="wrap">
-              <Text type="supporting" size="xsm">
-                Landing
-              </Text>
-              <MissionClock ms={scenario.t0Ms} axis="cal" tz={tz} />
-              <Text type="supporting" size="xsm">
-                Cursor
-              </Text>
-              <MissionClock
-                ms={axis === "met" ? idx * series.stepMs : cursorMs}
-                axis={axis}
-                tz={tz}
+        <VStack gap={5} data-tour-id="tour-metrics">
+          <HStack gap={2} vAlign="center" hAlign="between" wrap="wrap">
+            <VStack gap={0.5}>
+              <HStack gap={2} vAlign="center" wrap="wrap">
+                <Token label={letter} size="sm" color="gray" description={`Scenario ${letter}`} />
+                <Text type="label" weight="medium">
+                  {scenario.name}
+                </Text>
+                {scenario.groupTag && <Text type="supporting">{scenario.groupTag}</Text>}
+              </HStack>
+              <HStack gap={1.5} vAlign="center" wrap="wrap">
+                <Text type="supporting" size="xsm">
+                  Landing
+                </Text>
+                <MissionClock ms={scenario.t0Ms} axis="cal" tz={tz} />
+                <Text type="supporting" size="xsm">
+                  Cursor
+                </Text>
+                <MissionClock
+                  ms={axis === "met" ? idx * series.stepMs : cursorMs}
+                  axis={axis}
+                  tz={tz}
+                />
+              </HStack>
+            </VStack>
+            <HStack gap={1} vAlign="center">
+              <VerdictChip verdict={metrics.verdict} reason={metrics.reason} />
+              <IconButton
+                label={`Edit scenario ${letter}`}
+                tooltip="Edit"
+                variant="ghost"
+                size="lg"
+                icon={<Icon icon={Pencil} />}
+                onClick={p.onEdit}
+              />
+              <IconButton
+                label={`Remove scenario ${letter}`}
+                tooltip="Remove"
+                variant="ghost"
+                size="lg"
+                icon={<Icon icon={X} />}
+                onClick={p.onRemove}
               />
             </HStack>
-          </VStack>
-          <HStack gap={1} vAlign="center">
-            <VerdictChip verdict={metrics.verdict} reason={metrics.reason} />
-            <IconButton
-              label={`Edit scenario ${letter}`}
-              tooltip="Edit"
-              variant="ghost"
-              size="lg"
-              icon={<Icon icon={Pencil} />}
-              onClick={p.onEdit}
-            />
-            <IconButton
-              label={`Remove scenario ${letter}`}
-              tooltip="Remove"
-              variant="ghost"
-              size="lg"
-              icon={<Icon icon={X} />}
-              onClick={p.onRemove}
-            />
           </HStack>
-        </HStack>
 
-        <MetricsBar
-          both={fmtHours(metrics.bothH)}
-          bothDelta={deltaVsA ? formatDelta(deltaVsA.bothH) : undefined}
-          robust={robust ? { ...robust.bothH, points: robust.points } : undefined}
-          sun={{
-            label: (
-              <Term id={sunLit ? "sunset" : "sunrise"}>{sunLit ? "Sunset in" : "Sunrise in"}</Term>
-            ),
-            value: sunValue,
-          }}
-          earth={
-            earthNever
-              ? { value: "Earth never in view" }
-              : {
-                  label: (
-                    <Term id={earthUp ? "earthset" : "earthrise"}>
-                      {earthUp ? "Earthset in" : "Earthrise in"}
-                    </Term>
-                  ),
-                  value: earthValue,
-                }
-          }
-          sunEl={{
-            label: <Term id="elevation">Sun elevation now</Term>,
-            value: `${sunElNow.toFixed(1)}°`,
-          }}
-        />
+          <MetricsBar
+            both={fmtHours(metrics.bothH)}
+            bothDelta={deltaVsA ? formatDelta(deltaVsA.bothH) : undefined}
+            robust={robust ? { ...robust.bothH, points: robust.points } : undefined}
+            sun={{
+              label: (
+                <Term id={sunLit ? "sunset" : "sunrise"}>
+                  {sunLit ? "Sunset in" : "Sunrise in"}
+                </Term>
+              ),
+              value: sunValue,
+            }}
+            earth={
+              earthNever
+                ? { value: "Earth never in view" }
+                : {
+                    label: (
+                      <Term id={earthUp ? "earthset" : "earthrise"}>
+                        {earthUp ? "Earthset in" : "Earthrise in"}
+                      </Term>
+                    ),
+                    value: earthValue,
+                  }
+            }
+            sunEl={{
+              label: <Term id="elevation">Sun elevation now</Term>,
+              value: `${sunElNow.toFixed(1)}°`,
+            }}
+          />
+        </VStack>
 
         <VStack gap={2}>
           <HStack gap={2} vAlign="center" hAlign="between" wrap="wrap">
@@ -221,53 +227,62 @@ export function ScenarioCard(p: ScenarioCardProps) {
                 </Text>
               </HStack>
             </HStack>
-            <SegmentedControl
-              label="Terrain view mode"
-              size="lg"
-              value={viewMode}
-              onChange={(v) => setViewMode(v === "3d" ? "3d" : "2d")}
-            >
-              <SegmentedControlItem value="2d" label="2D skyline" />
-              <SegmentedControlItem value="3d" label="3D terrain" />
-            </SegmentedControl>
+            <HStack data-tour-id="tour-view-toggle">
+              <SegmentedControl
+                label="Terrain view mode"
+                size="lg"
+                value={viewMode}
+                onChange={(v) => setViewMode(v === "3d" ? "3d" : "2d")}
+              >
+                <SegmentedControlItem value="2d" label="2D skyline" />
+                <SegmentedControlItem value="3d" label="3D terrain" />
+              </SegmentedControl>
+            </HStack>
           </HStack>
 
-          {viewMode === "3d" ? (
-            <LunarTerrain3D
-              horizon={ctx.horizon}
-              series={series}
-              cursorIndex={idx}
-              lat={scenario.lat}
-              lon={scenario.lon}
-              siteId={scenario.siteId}
-              obsHeightM={ctx.obsHeightM}
-              pole={Math.abs(scenario.lat) >= POLE_LAT}
-              onScrubTime={p.onScrubTime}
-            />
-          ) : (
-            <HorizonPanorama
-              horizon={ctx.horizon}
-              series={series}
-              cursorIndex={idx}
-              elDomain={p.elDomain}
-              centerAz={p.centerAz}
-              onScrubTime={p.onScrubTime}
-              pole={Math.abs(scenario.lat) >= POLE_LAT}
-            />
-          )}
+          <VStack data-tour-id="tour-3d-terrain">
+            {viewMode === "3d" ? (
+              <LunarTerrain3D
+                horizon={ctx.horizon}
+                series={series}
+                cursorIndex={idx}
+                lat={scenario.lat}
+                lon={scenario.lon}
+                siteId={scenario.siteId}
+                obsHeightM={ctx.obsHeightM}
+                ellipseKm={p.ellipseKm}
+                pole={Math.abs(scenario.lat) >= POLE_LAT}
+                onScrubTime={p.onScrubTime}
+              />
+            ) : (
+              <HorizonPanorama
+                horizon={ctx.horizon}
+                series={series}
+                cursorIndex={idx}
+                elDomain={p.elDomain}
+                centerAz={p.centerAz}
+                onScrubTime={p.onScrubTime}
+                pole={Math.abs(scenario.lat) >= POLE_LAT}
+              />
+            )}
+          </VStack>
         </VStack>
 
-        <Timeline
-          series={series}
-          metrics={metrics}
-          cursorIndex={idx}
-          axis={axis}
-          tz={tz}
-          flickerMergeMin={p.flickerMergeMin}
-          onSeek={p.onSeek}
-        />
+        <VStack data-tour-id="tour-timeline">
+          <Timeline
+            series={series}
+            metrics={metrics}
+            cursorIndex={idx}
+            axis={axis}
+            tz={tz}
+            flickerMergeMin={p.flickerMergeMin}
+            onSeek={p.onSeek}
+          />
+        </VStack>
 
-        <Provenance ctx={ctx} />
+        <VStack data-tour-id={deltaVsA ? undefined : "tour-validation"}>
+          <Provenance ctx={ctx} />
+        </VStack>
 
         <SecondaryMetrics
           scenarioName={scenario.name}

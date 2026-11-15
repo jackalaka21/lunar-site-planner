@@ -1,46 +1,33 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
-import { CalendarClock } from "lucide-react";
+import { useContext, useMemo } from "react";
+import { CalendarClock, MapPin } from "lucide-react";
 import { Button } from "@astryxdesign/core/Button";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
 import { Link } from "@astryxdesign/core/Link";
-import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { Stack } from "@astryxdesign/core/Stack";
-import { Tab, TabList } from "@astryxdesign/core/TabList";
 import { Text } from "@astryxdesign/core/Text";
-import { Typeahead } from "@astryxdesign/core/Typeahead";
+import { Typeahead, TypeaheadItem } from "@astryxdesign/core/Typeahead";
 import type { SearchableItem, SearchSource } from "@astryxdesign/core/Typeahead";
-import type { Site, SiteCatalog } from "../../lib/data/sites";
+import type { Site } from "../../lib/data/sites";
 import { MAX_T0_MS, MIN_T0_MS } from "../../lib/state/defaults";
 import { useAppStore } from "../../lib/state/store";
 import { useCatalog } from "../../lib/useCatalog";
+import { CloseDrawerContext } from "../shell/DrawerContext";
 import { CoordInput } from "./CoordInput";
+import { GROUP_HEADING, GROUP_ORDER, SiteList, formatLatLon, siteSearchMeta } from "./SiteList";
 
-// The map (d3-geo, projection maths) is not part of the first view.
-const MapPicker = dynamic(() => import("./MapPicker").then((m) => m.MapPicker), { ssr: false });
-import type { MapMode } from "./MapPicker";
+export { GROUP_ORDER, GROUP_HEADING };
 
-export const GROUP_ORDER: Site["group"][] = [
-  "apollo",
-  "clps",
-  "international",
-  "artemis3",
-  "polar",
-];
-export const GROUP_HEADING: Record<Site["group"], string> = {
-  apollo: "Apollo",
-  clps: "Commercial (CLPS)",
-  international: "Other agencies",
-  artemis3: "Artemis crewed landing candidates",
-  polar: "Polar features",
-};
+type SiteItem = SearchableItem<{ site: Site; group: string }>;
 
-type SiteItem = SearchableItem<Site>;
-
-const toItem = (s: Site): SiteItem => ({ id: s.id, label: s.name, auxiliaryData: s });
+// auxiliaryData.group makes Typeahead render a non-selectable heading above each category's results.
+const toItem = (s: Site): SiteItem => ({
+  id: s.id,
+  label: s.name,
+  auxiliaryData: { site: s, group: GROUP_HEADING[s.group] },
+});
 
 /** Every word typed must appear in the name, id or group, in any order: "apollo 11" finds Apollo 11 Eagle. */
 export function matchSites(sites: Site[], query: string): Site[] {
@@ -52,7 +39,9 @@ export function matchSites(sites: Site[], query: string): Site[] {
   });
 }
 
-const coordText = (s: { lat: number; lon: number }) => `${s.lat.toFixed(2)}°, ${s.lon.toFixed(2)}°`;
+/** Time for the drawer close transition, before the page scrolls to the map. */
+const DRAWER_CLOSE_MS = 350;
+
 const round3 = (v: number) => String(Math.round(v * 1000) / 1000 + 0);
 
 interface SitePickerProps {
@@ -64,8 +53,7 @@ export function SitePicker({ scenarioKey }: SitePickerProps) {
   const scenario = useAppStore((s) => s.scenarios.find((x) => x.key === scenarioKey));
   const updateScenario = useAppStore((s) => s.updateScenario);
   const catalog = useCatalog();
-  const [tab, setTab] = useState<"search" | "map">("search");
-  const [mapMode, setMapMode] = useState<MapMode>("south");
+  const closeDrawer = useContext(CloseDrawerContext);
 
   const source = useMemo<SearchSource<SiteItem>>(
     () => ({
@@ -92,69 +80,71 @@ export function SitePicker({ scenarioKey }: SitePickerProps) {
     />
   );
 
-  return (
-    <Stack gap={3} data-testid="site-picker">
-      <Heading level={3}>{`Site for scenario ${letter}`}</Heading>
-      <TabList
-        value={tab}
-        onChange={(v) => setTab(v === "map" ? "map" : "search")}
-        role="tablist"
-        size="lg"
-        hasDivider
-        aria-label="Choose a site"
-      >
-        <Tab value="search" label="Search" panelId="site-panel-search" />
-        <Tab value="map" label="Map" panelId="site-panel-map" />
-      </TabList>
+  /** The map lives below the 3D render in the workspace: scroll to it and focus it. */
+  const jumpToMap = () => {
+    const go = () => {
+      const panel = document.querySelector<HTMLElement>('[data-testid="scenario-map"]');
+      if (!panel) return;
+      const reduce =
+        typeof window.matchMedia === "function" &&
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      panel.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      panel.querySelector<SVGElement>("svg[data-testid^='map-']")?.focus({ preventScroll: true });
+    };
+    if (closeDrawer) {
+      // Let the drawer finish closing (it locks page scroll and traps focus) before scrolling.
+      closeDrawer();
+      window.setTimeout(go, DRAWER_CLOSE_MS);
+    } else go();
+  };
 
-      {tab === "search" ? (
-        <Stack gap={3} id="site-panel-search" role="tabpanel" aria-label="Search">
-          <Typeahead<SiteItem>
-            label="Search sites"
-            isLabelHidden
-            placeholder="Search"
-            size="lg"
-            searchSource={source}
-            value={null}
-            hasClear={false}
-            debounceMs={0}
-            onChange={(item) => {
-              if (item) choose(item.id);
-            }}
-          />
-          {chosen ? (
-            <SiteDetail
-              site={chosen}
-              canUseActual={canUseActual}
-              onUseActual={() => updateScenario(scenarioKey, { t0Ms: actualMs })}
+  return (
+    <Stack gap={3} data-testid="site-picker" data-tour-id="tour-site-picker">
+      <Heading level={3}>{`Site for scenario ${letter}`}</Heading>
+      <Stack gap={3} id="site-panel-search">
+        <Typeahead<SiteItem>
+          label="Search sites"
+          isLabelHidden
+          placeholder="Search"
+          size="lg"
+          searchSource={source}
+          value={null}
+          hasClear={false}
+          debounceMs={0}
+          renderItem={(item) => (
+            <TypeaheadItem
+              item={item}
+              description={item.auxiliaryData ? siteSearchMeta(item.auxiliaryData.site) : undefined}
             />
-          ) : null}
-          {coords}
-          <SiteList catalog={catalog} currentId={chosen?.id ?? null} onChoose={choose} />
-          {catalog ? (
-            <Text
-              type="code"
-              size="xsm"
-              color="secondary"
-            >{`Last checked ${catalog.checkedUtc}`}</Text>
-          ) : null}
-        </Stack>
-      ) : (
-        <Stack gap={3} id="site-panel-map" role="tabpanel" aria-label="Map">
-          <SegmentedControl
-            label="Map view"
-            size="lg"
-            layout="fill"
-            value={mapMode}
-            onChange={(v) => setMapMode(v === "global" ? "global" : "south")}
-          >
-            <SegmentedControlItem value="south" label="South pole" />
-            <SegmentedControlItem value="global" label="Whole Moon" />
-          </SegmentedControl>
-          <MapPicker scenarioKey={scenarioKey} mode={mapMode} />
-          {coords}
-        </Stack>
-      )}
+          )}
+          onChange={(item) => {
+            if (item) choose(item.id);
+          }}
+        />
+        {chosen ? (
+          <SiteDetail
+            site={chosen}
+            canUseActual={canUseActual}
+            onUseActual={() => updateScenario(scenarioKey, { t0Ms: actualMs })}
+          />
+        ) : null}
+        {coords}
+        <Button
+          label="Jump to map"
+          size="lg"
+          variant="secondary"
+          icon={<Icon icon={MapPin} />}
+          onClick={jumpToMap}
+        />
+        <SiteList catalog={catalog} currentId={chosen?.id ?? null} onChoose={choose} />
+        {catalog ? (
+          <Text
+            type="code"
+            size="xsm"
+            color="secondary"
+          >{`Last checked ${catalog.checkedUtc}`}</Text>
+        ) : null}
+      </Stack>
     </Stack>
   );
 }
@@ -171,7 +161,7 @@ function SiteDetail({
   return (
     <Stack gap={2}>
       <Text type="code" size="xsm" color="secondary">
-        {coordText(site)}
+        {formatLatLon(site)}
       </Text>
       {site.actual_landing_utc ? (
         <>
@@ -197,42 +187,6 @@ function SiteDetail({
           />
         </>
       ) : null}
-    </Stack>
-  );
-}
-
-function SiteList({
-  catalog,
-  currentId,
-  onChoose,
-}: {
-  catalog: SiteCatalog | null;
-  currentId: string | null;
-  onChoose: (id: string) => void;
-}) {
-  if (!catalog) return <Text type="supporting">Loading sites</Text>;
-  return (
-    <Stack gap={3} data-testid="site-list">
-      {GROUP_ORDER.map((g) => {
-        const sites = catalog.sites.filter((s) => s.group === g);
-        if (sites.length === 0) return null;
-        return (
-          <Stack key={g} gap={1}>
-            <Heading level={4}>{GROUP_HEADING[g]}</Heading>
-            {sites.map((s) => (
-              <Button
-                key={s.id}
-                label={s.name}
-                size="lg"
-                width="100%"
-                variant={s.id === currentId ? "secondary" : "ghost"}
-                aria-pressed={s.id === currentId}
-                onClick={() => onChoose(s.id)}
-              />
-            ))}
-          </Stack>
-        );
-      })}
     </Stack>
   );
 }
