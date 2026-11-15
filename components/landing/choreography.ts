@@ -7,7 +7,7 @@ export const FRAME_COUNT = 120;
 /** Act boundaries as a fraction of the scroll track. */
 export const ACT1_END = 0.18;
 export const ACT2_END = 0.45;
-export const ACT3_END = 0.72;
+export const ACT3_END = 0.71;
 /** Descent frame reached at the end of Act 2. */
 export const SCRUB_END_FRAME = 70;
 /** Static descent frame used under prefers-reduced-motion. */
@@ -51,12 +51,12 @@ export interface Layers {
 export function layersAt(p: number): Layers {
   // Each text layer is fully out before the next starts to come in, so two never overlap at partial opacity.
   return {
-    intro: 1 - smoothstep(0.08, 0.16, p),
-    caps: smoothstep(0.22, 0.27, p) * (1 - smoothstep(0.38, 0.43, p)),
-    capsGlide: clamp01((p - 0.22) / (0.43 - 0.22)),
-    showcase: smoothstep(0.45, 0.5, p) * (1 - smoothstep(0.68, 0.72, p)),
-    horizon: smoothstep(0.72, 0.8, p),
-    media: 1 - 0.78 * smoothstep(0.72, 0.92, p),
+    intro: 1 - smoothstep(0.1, 0.17, p),
+    caps: smoothstep(0.18, 0.23, p) * (1 - smoothstep(0.38, 0.43, p)),
+    capsGlide: clamp01((p - 0.18) / (0.43 - 0.18)),
+    showcase: smoothstep(0.45, 0.5, p) * (1 - smoothstep(0.67, 0.71, p)),
+    horizon: smoothstep(0.71, 0.77, p),
+    media: 1 - 0.78 * smoothstep(0.71, 0.92, p),
   };
 }
 
@@ -99,7 +99,7 @@ export function moonLayout(vw: number, vh: number, wide: boolean, p: number): Mo
     const fitH = (0.43 * vh - 84) / (2 * MOON_SRC.r * boxH);
     const fitW = (0.9 * vw) / (2 * MOON_SRC.r * boxH);
     s0 = Math.min(fitH, fitW);
-    const m = smoothstep(0.1, 0.2, p);
+    const m = smoothstep(0.2, 0.3, p);
     targetX = vw / 2;
     targetY = lerp((68 + 0.43 * vh) / 2, vh * 0.5, m);
   }

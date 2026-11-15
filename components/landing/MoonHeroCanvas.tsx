@@ -92,7 +92,7 @@ const STARS: Array<{ x: number; y: number; r: number; phase: number; depth: numb
 
 const AMBER = "255,180,84";
 const CYAN = "94,200,255";
-const MONO = '500 11px var(--font-family-code), "IBM Plex Mono", monospace';
+const MONO = '500 11px "IBM Plex Mono", ui-monospace, monospace';
 
 export interface MoonHeroCanvasProps {
   /** "hero": orbital HUD over the video. "showcase": lighting HUD over the low-altitude frames. */
@@ -166,7 +166,7 @@ export function MoonHeroCanvas({ variant, drive, reducedMotion = false }: MoonHe
           : "Illustrative lighting angle for the selected stage"
       }
       role="img"
-      className="pointer-events-none absolute inset-0 h-full w-full"
+      className="pointer-events-none absolute inset-0 z-[11] h-full w-full"
     />
   );
 }
@@ -182,7 +182,7 @@ function label(
   color: string,
   size: number,
 ) {
-  ctx.font = `500 ${size}px var(--font-family-code), "IBM Plex Mono", monospace`;
+  ctx.font = `500 ${size}px "IBM Plex Mono", ui-monospace, monospace`;
   ctx.textAlign = align;
   ctx.textBaseline = baseline;
   const w = ctx.measureText(text).width;
@@ -320,5 +320,5 @@ function drawShowcase(ctx: CanvasRenderingContext2D, d: HudDrive, phaseDeg: numb
   ctx.stroke();
 
   const lx = Math.min(w - 120, Math.max(120, sx));
-  label(ctx, "Sun direction (illustrative)", lx, sy - 24, "center", "bottom", `rgb(${AMBER})`, d.wide ? 12 : 13);
+  label(ctx, "Sun direction (illustrative)", lx, sy - 24, "center", "bottom", `rgb(${AMBER})`, 13);
 }

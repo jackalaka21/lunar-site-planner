@@ -157,6 +157,7 @@ const LN_VARS = {
   "--ln-e8e5dd": "rgb(232 229 221)",
   "--ln-f1efe9": "rgb(241 239 233)",
   "--ln-ffb454": "rgb(255 180 84)",
+  "--ln-ffd08a": "rgb(255 208 138)",
   "--ln-ffc47a": "rgb(255 196 122)",
 } as CSSProperties;
 
@@ -505,7 +506,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
   );
 
   return (
-    <div data-testid="landing-page" className="relative w-full bg-(color:--ln-030305) text-(color:--ln-f1efe9) [overflow-x:clip]" style={{ ...LN_VARS, minHeight: "100dvh" }}>
+    <div data-testid="landing-page" className="relative w-full bg-(color:--ln-030305) text-(color:--ln-f1efe9) [overflow-x:clip] [&_:focus-visible]:outline-2 [&_:focus-visible]:outline-offset-2 [&_:focus-visible]:outline-solid [&_:focus-visible]:outline-(color:--ln-ffb454)" style={{ ...LN_VARS, minHeight: "100dvh" }}>
       <div ref={trackRef} className="relative w-full" style={{ height: "450dvh" }}>
         <div
           ref={stageRef}
@@ -646,12 +647,12 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
 
           {/* Act 2: capabilities */}
           <div ref={capsRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-10" style={{ opacity: 0 }}>
-            <div className="absolute inset-x-0 bottom-0 h-[88%] bg-[linear-gradient(to_top,rgb(3_3_5)_0%,rgb(3_3_5/0.94)_42%,rgb(3_3_5/0.55)_72%,rgb(3_3_5/0)_100%)]" />
+            <div className="absolute inset-x-0 bottom-0 h-[88%] bg-[linear-gradient(to_top,rgb(3_3_5)_0%,rgb(3_3_5/0.97)_55%,rgb(3_3_5/0.6)_78%,rgb(3_3_5/0)_100%)]" />
             <div ref={capsInnerRef} className="relative px-4 pb-14 lg:px-14">
               <ol className="grid grid-cols-1 border-t border-white/30 lg:grid-cols-4">
                 {CAPABILITIES.map((c, i) => (
                   <li key={c.title} className="border-b border-white/15 py-3 lg:border-b-0 lg:border-l lg:px-5 lg:py-5 lg:first:border-l-0 lg:first:pl-0">
-                    <p className={`${MONO} text-[11px] text-(color:--ln-ffb454)`}>{`0${i + 1} / ${c.title}`}</p>
+                    <p className={`${MONO} text-[12px] text-(color:--ln-ffd08a)`}>{`0${i + 1} / ${c.title}`}</p>
                     <p className="mt-1.5 text-[13px] leading-[1.5] text-(color:--ln-d4d1c8)">{c.text}</p>
                   </li>
                 ))}
