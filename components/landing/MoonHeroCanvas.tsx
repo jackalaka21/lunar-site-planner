@@ -171,6 +171,33 @@ export function MoonHeroCanvas({ variant, drive, reducedMotion = false }: MoonHe
   );
 }
 
+/** Text on a dark rounded pill so it stays readable over the bright Moon and terrain. */
+function label(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  align: CanvasTextAlign,
+  baseline: CanvasTextBaseline,
+  color: string,
+  size: number,
+) {
+  ctx.font = `500 ${size}px var(--font-family-code), "IBM Plex Mono", monospace`;
+  ctx.textAlign = align;
+  ctx.textBaseline = baseline;
+  const w = ctx.measureText(text).width;
+  const padX = 6;
+  const hh = size + 8;
+  const left = align === "right" ? x - w : align === "center" ? x - w / 2 : x;
+  const top = baseline === "top" ? y - 4 : baseline === "bottom" ? y - hh + 4 : y - hh / 2;
+  ctx.fillStyle = "rgba(3,3,5,0.72)";
+  ctx.beginPath();
+  ctx.roundRect(left - padX, top, w + padX * 2, hh, 4);
+  ctx.fill();
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+
 function drawHero(ctx: CanvasRenderingContext2D, d: HudDrive, now: number, reduced: boolean) {
   const { w, h, mx, my, mr } = d;
   // Parallax starfield, drawn faintly so it reads as depth rather than content.
@@ -202,13 +229,16 @@ function drawHero(ctx: CanvasRenderingContext2D, d: HudDrive, now: number, reduc
   ctx.beginPath();
   ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
   ctx.fill();
-  ctx.textAlign = "right";
-  ctx.textBaseline = small ? "top" : "bottom";
-  ctx.fillStyle = `rgba(${AMBER},0.9)`;
-  ctx.fillText(
+  const fs = small ? 12 : 12;
+  label(
+    ctx,
     small ? "Sun ray (illustrative)" : "Sun, grazing ray (illustrative)",
     w - (small ? 12 : 24),
-    small ? sy + 4 : sy - mr * 0.1 - 6,
+    small ? sy + 12 : sy - mr * 0.1 - 14,
+    "right",
+    small ? "top" : "bottom",
+    `rgb(${AMBER})`,
+    fs,
   );
 
   // Direct-to-Earth line from the upper limb to an Earth marker.
@@ -230,12 +260,15 @@ function drawHero(ctx: CanvasRenderingContext2D, d: HudDrive, now: number, reduc
   ctx.beginPath();
   ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
   ctx.fill();
-  ctx.textAlign = small ? "left" : "right";
-  ctx.textBaseline = "bottom";
-  ctx.fillText(
+  label(
+    ctx,
     small ? "Earth (illustrative)" : "Direct-to-Earth line (illustrative)",
     small ? ex - 6 : ex + 4,
-    ey - 10,
+    ey - 12,
+    small ? "left" : "right",
+    "bottom",
+    `rgb(${CYAN})`,
+    12,
   );
 }
 
@@ -286,13 +319,6 @@ function drawShowcase(ctx: CanvasRenderingContext2D, d: HudDrive, phaseDeg: numb
   ctx.arc(sx, sy, 10, 0, Math.PI * 2);
   ctx.stroke();
 
-  ctx.textAlign = "center";
-  ctx.textBaseline = "bottom";
-  ctx.fillStyle = `rgba(${AMBER},0.95)`;
-  const lbl = "Sun direction (illustrative)";
-  const lx = Math.min(w - 110, Math.max(110, sx));
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = "rgba(3,3,5,0.85)";
-  ctx.strokeText(lbl, lx, sy - 16);
-  ctx.fillText(lbl, lx, sy - 16);
+  const lx = Math.min(w - 120, Math.max(120, sx));
+  label(ctx, "Sun direction (illustrative)", lx, sy - 24, "center", "bottom", `rgb(${AMBER})`, d.wide ? 12 : 13);
 }

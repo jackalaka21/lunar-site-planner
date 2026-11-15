@@ -7,7 +7,7 @@ export const FRAME_COUNT = 120;
 /** Act boundaries as a fraction of the scroll track. */
 export const ACT1_END = 0.18;
 export const ACT2_END = 0.45;
-export const ACT3_END = 0.75;
+export const ACT3_END = 0.72;
 /** Descent frame reached at the end of Act 2. */
 export const SCRUB_END_FRAME = 70;
 /** Static descent frame used under prefers-reduced-motion. */
@@ -49,13 +49,14 @@ export interface Layers {
 }
 
 export function layersAt(p: number): Layers {
+  // Each text layer is fully out before the next starts to come in, so two never overlap at partial opacity.
   return {
     intro: 1 - smoothstep(0.08, 0.16, p),
-    caps: smoothstep(0.19, 0.24, p) * (1 - smoothstep(0.41, 0.46, p)),
-    capsGlide: clamp01((p - 0.19) / (0.45 - 0.19)),
-    showcase: smoothstep(0.46, 0.52, p) * (1 - smoothstep(0.7, 0.75, p)),
-    horizon: smoothstep(0.74, 0.84, p),
-    media: 1 - 0.78 * smoothstep(0.74, 0.92, p),
+    caps: smoothstep(0.22, 0.27, p) * (1 - smoothstep(0.38, 0.43, p)),
+    capsGlide: clamp01((p - 0.22) / (0.43 - 0.22)),
+    showcase: smoothstep(0.45, 0.5, p) * (1 - smoothstep(0.68, 0.72, p)),
+    horizon: smoothstep(0.72, 0.8, p),
+    media: 1 - 0.78 * smoothstep(0.72, 0.92, p),
   };
 }
 
@@ -82,7 +83,7 @@ export function moonLayout(vw: number, vh: number, wide: boolean, p: number): Mo
     boxH = vw / SRC_ASPECT;
   }
   const glide = smoothstep(0, ACT1_END, p);
-  const zoom = smoothstep(0.14, 0.3, p);
+  const zoom = smoothstep(ACT1_END, 0.3, p);
 
   let s0: number;
   let targetX: number;
@@ -102,8 +103,13 @@ export function moonLayout(vw: number, vh: number, wide: boolean, p: number): Mo
     targetX = vw / 2;
     targetY = lerp((68 + 0.43 * vh) / 2, vh * 0.5, m);
   }
-  const s1 = 1.25;
+  // Frames are 16:9 and already cover the stage, so zoom barely past 1: more would only upscale them.
+  const s1 = wide ? 1.08 : 1.0;
   const scale = lerp(s0, s1, zoom);
+  // Once the frames take over, keep the box covering the viewport horizontally.
+  const minX = vw - (1 - MOON_SRC.cx) * boxW * scale;
+  const maxX = MOON_SRC.cx * boxW * scale;
+  if (minX <= maxX) targetX = lerp(targetX, Math.min(maxX, Math.max(minX, targetX)), zoom);
   if (wide) targetY = lerp(targetY, vh * 0.5, zoom);
 
   const natX = vw / 2 + (MOON_SRC.cx - 0.5) * boxW;
@@ -138,17 +144,17 @@ export function nearestLoaded(f: number, loaded: ArrayLike<boolean>): number {
   return 0;
 }
 
-/** Order in which frames are fetched: the first, then every 4th, then the rest. */
-export function frameLoadOrder(): number[] {
-  const out: number[] = [1];
-  for (let i = 5; i <= FRAME_COUNT; i += 4) out.push(i);
-  for (let i = 2; i <= FRAME_COUNT; i++) if (!out.includes(i)) out.push(i);
+/** Order in which frames are fetched: the first, then every 4th, then the rest (up to `max`; `sparse` stops after every 4th). */
+export function frameLoadOrder(max = FRAME_COUNT, from = 1, sparse = false): number[] {
+  const out: number[] = [];
+  for (let i = from; i <= max; i++) if ((i - 1) % 4 === 0) out.push(i);
+  if (!sparse) for (let i = from; i <= max; i++) if ((i - 1) % 4 !== 0) out.push(i);
   return out;
 }
 
 /** 640 px frames for small or low-density viewports, 1280 px otherwise. */
 export function pickFrameSet(viewportWidth: number, dpr: number): 640 | 1280 {
-  return viewportWidth * dpr <= 900 ? 640 : 1280;
+  return viewportWidth * dpr <= 700 ? 640 : 1280;
 }
 
 export function frameUrl(size: 640 | 1280, n: number): string {

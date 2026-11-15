@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CSSProperties, KeyboardEvent } from "react";
+import type { CSSProperties, KeyboardEvent, RefObject } from "react";
 import Link from "next/link";
 import { useAppStore } from "../../lib/state/store";
 import type { Scenario } from "../../lib/state/url";
@@ -19,11 +19,11 @@ import {
 import { ThemeToggle } from "../ThemeToggle";
 import {
   ACT1_END,
-  ACT2_END,
-  ACT3_END,
   DISSOLVE_S,
   FRAME_COUNT,
   REDUCED_FRAME,
+  SCRUB_END_FRAME,
+  frameLoadOrder,
   WIDE_MIN_PX,
   clamp01,
   frameTarget,
@@ -132,7 +132,7 @@ const LEADERS: Leader[] = [
 ];
 
 const ACT_LABELS = ["Orbital arrival", "Polar plunge", "Showcase", "Horizon"];
-const ACT_STARTS = [0, ACT1_END + 0.01, ACT2_END + 0.01, ACT3_END + 0.04];
+const ACT_STARTS = [0, 0.3, 0.55, 0.84];
 
 const MASK =
   "linear-gradient(to right, transparent 0, black 14%, black 86%, transparent 100%), linear-gradient(to bottom, transparent 0, black 6%, black 94%, transparent 100%)";
@@ -160,6 +160,7 @@ const LN_VARS = {
   "--ln-ffc47a": "rgb(255 196 122)",
 } as CSSProperties;
 
+const SKIP = `sr-only focus:not-sr-only focus:inline-flex focus:min-h-[44px] focus:items-center focus:bg-(--ln-ffb454) focus:px-4 focus:text-[14px] focus:font-medium focus:text-(color:--ln-0a0a0c) ${"focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(color:--ln-f1efe9) focus-visible:outline-solid"}`;
 const FOCUS =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(color:--ln-ffb454) focus-visible:outline-solid";
 const BTN_BASE = `inline-flex min-h-[44px] cursor-pointer items-center justify-center px-5 text-[15px] font-medium transition-colors ${FOCUS}`;
@@ -220,13 +221,31 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
     [onEnterPlanner],
   );
 
-  const jumpToAct = useCallback((i: number) => {
+  const jumpToAct = useCallback((i: number, instant = false) => {
     const track = trackRef.current;
     if (!track) return;
     const top = track.getBoundingClientRect().top + window.scrollY;
     const range = track.offsetHeight - window.innerHeight;
-    window.scrollTo({ top: top + ACT_STARTS[i] * range, behavior: reduced ? "auto" : "smooth" });
+    window.scrollTo({ top: top + ACT_STARTS[i] * range, behavior: reduced || instant ? "auto" : "smooth" });
   }, [reduced]);
+
+  /** Scrolls to an act, waits for its layer to become interactive, then focuses its first control. */
+  const skipTo = useCallback(
+    (i: number, layer: RefObject<HTMLDivElement | null>) => {
+      jumpToAct(i, true);
+      let tries = 0;
+      const poll = () => {
+        const el = layer.current;
+        if (el && !el.inert) {
+          const target =
+            el.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ?? el.querySelector<HTMLElement>("button");
+          target?.focus();
+        } else if (tries++ < 60) window.setTimeout(poll, 50);
+      };
+      window.setTimeout(poll, 50);
+    },
+    [jumpToAct],
+  );
 
   useEffect(() => {
     const onResize = () => {
@@ -280,23 +299,47 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
     window.addEventListener("scroll", readScroll, { passive: true });
     window.addEventListener("resize", onResize);
 
-    // Media loads only now, after mount.
+    // Media loads only now, after mount. The orbital video comes first; descent frames wait for the first
+    // scroll or ~2 s of idle, then 1-70 (every 4th first), then 71-120 when the browser is idle.
     let startTimer = 0;
+    let framesTimer = 0;
+    let phase2Timer = 0;
+    let framesQueued = false;
+    const conn = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    const sparse = Boolean(conn?.saveData) || conn?.effectiveType === "2g" || conn?.effectiveType === "3g";
+    const idle = (fn: () => void, timeout: number): number =>
+      typeof window.requestIdleCallback === "function"
+        ? window.requestIdleCallback(fn, { timeout })
+        : window.setTimeout(fn, timeout);
     const loadFrames = () => {
-      if (reduced) frames.start(() => undefined, [REDUCED_FRAME], 1);
-      else frames.start(() => undefined);
+      if (framesQueued) return;
+      framesQueued = true;
+      if (reduced) {
+        frames.enqueue([REDUCED_FRAME]);
+        return;
+      }
+      frames.enqueue(frameLoadOrder(SCRUB_END_FRAME, 1, sparse), () => {
+        phase2Timer = window.setTimeout(loadPhase2, 12000);
+      });
     };
+    let phase2Queued = false;
+    const loadPhase2 = () => {
+      if (phase2Queued || reduced) return;
+      phase2Queued = true;
+      frames.enqueue(frameLoadOrder(FRAME_COUNT, SCRUB_END_FRAME + 1, sparse));
+    };
+    const onFirstScroll = () => {
+      if (pTarget > 0.002) loadFrames();
+      if (pTarget > 0.3) loadPhase2();
+    };
+    window.addEventListener("scroll", onFirstScroll, { passive: true });
+    framesTimer = window.setTimeout(() => idle(loadFrames, 1500), 2000);
     if (!reduced) {
       startTimer = window.setTimeout(() => {
         video.src = "/landing/moon-idle.mp4";
         videoStarted = true;
-        video.addEventListener("loadeddata", loadFrames, { once: true });
-        window.setTimeout(loadFrames, 2500);
       }, 50);
-    } else {
-      startTimer = window.setTimeout(loadFrames, 50);
     }
-    const idleTimer = window.setTimeout(() => requestHorizon(), 8000);
     function requestHorizon() {
       if (horizonRequested) return;
       horizonRequested = true;
@@ -337,7 +380,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
       if (capsInnerRef.current) {
         const g = L.capsGlide;
         capsInnerRef.current.style.transform = isWide
-          ? `translate3d(${lerp(4, -4, g)}vw, 0, 0)`
+          ? `translate3d(${lerp(2, -2, g)}vw, 0, 0)`
           : `translate3d(0, ${lerp(24, -24, g)}px, 0)`;
       }
 
@@ -406,7 +449,9 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
     return () => {
       window.cancelAnimationFrame(raf);
       window.clearTimeout(startTimer);
-      window.clearTimeout(idleTimer);
+      window.clearTimeout(framesTimer);
+      window.clearTimeout(phase2Timer);
+      window.removeEventListener("scroll", onFirstScroll);
       window.removeEventListener("scroll", readScroll);
       window.removeEventListener("resize", onResize);
       frames.dispose();
@@ -487,6 +532,14 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
           <MoonHeroCanvas variant="hero" drive={driveRef} reducedMotion={reduced} />
           <MoonHeroCanvas variant="showcase" drive={driveRef} reducedMotion={reduced} />
 
+          <div className="absolute left-4 top-[68px] z-50 flex gap-2 lg:left-14">
+            <button type="button" onClick={() => skipTo(2, showRef)} className={SKIP}>
+              Skip to showcase
+            </button>
+            <button type="button" onClick={() => skipTo(3, horizonUiRef)} className={SKIP}>
+              Skip to quick launch
+            </button>
+          </div>
           {/* Top bar */}
           <header className="absolute inset-x-0 top-0 z-30 flex h-16 items-center justify-between px-4 lg:px-14">
             <span className="text-[15px] font-semibold tracking-[0.02em]">Ridgeline</span>
@@ -581,7 +634,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
                         onClick={() => enterPlanner(l.scenarios)}
                         className={`flex min-h-[64px] w-full cursor-pointer flex-col justify-center px-3 py-2 text-left ${FOCUS}`}
                       >
-                        <span className={`${MONO} text-[10.5px] text-(color:--ln-ffb454)`}>{CALLOUTS[l.key].title}</span>
+                        <span className={`${MONO} whitespace-nowrap text-[10.5px] text-(color:--ln-ffb454)`}>{CALLOUTS[l.key].short}</span>
                         <span className="text-[12px] leading-snug text-(color:--ln-f1efe9)">{CALLOUTS[l.key].fact}</span>
                       </button>
                     </li>
@@ -593,7 +646,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
 
           {/* Act 2: capabilities */}
           <div ref={capsRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-10" style={{ opacity: 0 }}>
-            <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-(--ln-030305) via-(--ln-030305)/80 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-[88%] bg-[linear-gradient(to_top,rgb(3_3_5)_0%,rgb(3_3_5/0.94)_42%,rgb(3_3_5/0.55)_72%,rgb(3_3_5/0)_100%)]" />
             <div ref={capsInnerRef} className="relative px-4 pb-14 lg:px-14">
               <ol className="grid grid-cols-1 border-t border-white/30 lg:grid-cols-4">
                 {CAPABILITIES.map((c, i) => (
@@ -678,7 +731,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
             </div>
           </div>
 
-          <p className={`${MONO} pointer-events-none absolute bottom-3 left-0 right-0 z-30 text-center text-[11px] text-(color:--ln-9a978f) lg:left-14 lg:right-auto lg:text-left`}>
+          <p className={`${MONO} pointer-events-none absolute bottom-3 left-0 right-0 z-30 text-center text-[11px] text-(color:--ln-d4d1c8) [text-shadow:0_1px_3px_rgb(0_0_0/0.95),0_0_8px_rgb(0_0_0/0.8)] lg:left-14 lg:right-auto lg:text-left`}>
             Rendered visualization, not mission imagery
           </p>
         </div>

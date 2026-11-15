@@ -27,6 +27,11 @@ createServer((req, res) => {
     res.writeHead(403).end();
     return;
   }
+  // Next 16 prefetches /about/__next.about.__PAGE__.txt but exports it as /about/__next.about/__PAGE__.txt.
+  if (!existsSync(file)) {
+    const alt = file.replace(/(__next\.[^\/]+)\.__PAGE__\.txt$/, "$1/__PAGE__.txt");
+    if (alt !== file && existsSync(alt)) file = alt;
+  }
   if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");
   if (!existsSync(file)) {
     res.writeHead(404, { "content-type": "text/plain" }).end("Not found");

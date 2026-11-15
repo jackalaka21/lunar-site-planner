@@ -71,13 +71,16 @@ export const LANDING_HOOK =
 export const JPL_AGREEMENT = "≈0.00001° Sun, ≈0.0001° Earth vs JPL Horizons";
 
 export const CALLOUTS = {
-  monsMouton: { title: `Mons Mouton · ${SITE_LAT_TEXT.monsMouton}`, fact: `${F.bothH} h Sun + Earth` },
+  monsMouton: {
+    title: `Mons Mouton · ${SITE_LAT_TEXT.monsMouton}`,
+    short: `Mons Mouton · ${SITE_LAT_TEXT.monsMouton}`, fact: `${F.bothH} h Sun + Earth` },
   shackleton: {
     title: `Shackleton rim · ${SITE_LAT_TEXT.shackleton}`,
+    short: `Shackleton · ${SITE_LAT_TEXT.shackleton}`,
     fact: `${F.shackletonBothH} h Sun + Earth`,
   },
-  jpl: { title: "JPL DE440 ephemeris", fact: JPL_AGREEMENT },
-  replays: { title: "Historical replays", fact: "IM-2 · Chandrayaan-3 · SLIM" },
+  jpl: { title: "JPL DE440 ephemeris", short: "JPL DE440 ephemeris", fact: JPL_AGREEMENT },
+  replays: { title: "Historical replays", short: "Historical replays", fact: "IM-2 · Chandrayaan-3 · SLIM" },
 } as const;
 
 /** Catalogue ids and actual landing times (sites.json `actual_landing_utc`); the facts test compares them. */
