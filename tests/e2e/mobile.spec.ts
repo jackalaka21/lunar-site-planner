@@ -54,6 +54,18 @@ test.describe("layout at 375 wide", () => {
     expect(overflow.body).toBeLessThanOrEqual(0);
   });
 
+  test("scenario card fits inside the viewport (no clipped overflow)", async ({ page }) => {
+    await page.goto("/");
+    const card = page.getByTestId("scenario-card-a");
+    await expect(card.locator("canvas[role='img']")).toBeVisible({ timeout: 60_000 });
+    // The scroll container clips overflow, so the page-scroll test cannot see a card wider than the screen.
+    const box = (await card.boundingBox())!;
+    const innerWidth = await page.evaluate(() => window.innerWidth);
+    expect(box.x + box.width).toBeLessThanOrEqual(innerWidth);
+    const notes = (await card.getByTestId("terrain-notes").boundingBox())!;
+    expect(notes.x + notes.width).toBeLessThanOrEqual(innerWidth);
+  });
+
   test("touch targets are at least 44 px", async ({ page }) => {
     await page.goto("/");
     // Wait for the live card: the prerendered one is swapped out, so its buttons would vanish mid-loop.

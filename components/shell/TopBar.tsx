@@ -5,6 +5,7 @@ import { Button } from "@astryxdesign/core/Button";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
 import { IconButton } from "@astryxdesign/core/IconButton";
+import { MoreMenu } from "@astryxdesign/core/MoreMenu";
 import { useMediaQuery } from "@astryxdesign/core/hooks";
 import { HStack } from "@astryxdesign/core/Stack";
 import { useToast } from "@astryxdesign/core/Toast";
@@ -97,15 +98,17 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
           icon={<Icon icon={CircleHelp} />}
           href="/about/"
         />
-        <Button
-          label="Copy link"
-          tooltip={isWide ? undefined : "Copy link"}
-          size="lg"
-          variant="ghost"
-          isIconOnly={!isWide}
-          icon={<Icon icon={LinkIcon} />}
-          onClick={copyLink}
-        />
+        {isTabletUp ? (
+          <Button
+            label="Copy link"
+            tooltip={isWide ? undefined : "Copy link"}
+            size="lg"
+            variant="ghost"
+            isIconOnly={!isWide}
+            icon={<Icon icon={LinkIcon} />}
+            onClick={copyLink}
+          />
+        ) : null}
         {isTabletUp ? (
           <Button
             label="Export PNG"
@@ -117,7 +120,7 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
             onClick={exportPng}
           />
         ) : null}
-        {onOpenTour ? (
+        {isTabletUp && onOpenTour ? (
           <Button
             label="Tutorial"
             tooltip={isWide ? undefined : "Tutorial"}
@@ -128,6 +131,19 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
             onClick={onOpenTour}
           />
         ) : null}
+        {isTabletUp ? null : (
+          <MoreMenu
+            label="More"
+            size="lg"
+            alignment="end"
+            items={[
+              { label: "Copy link", icon: <Icon icon={LinkIcon} />, onClick: copyLink },
+              ...(onOpenTour
+                ? [{ label: "Tutorial", icon: <Icon icon={GraduationCap} />, onClick: onOpenTour }]
+                : []),
+            ]}
+          />
+        )}
         <IconButton
           label="Settings"
           tooltip="Settings"

@@ -80,7 +80,7 @@ const COMPASS_POINTS: Array<{ az: number; label: string }> = [
 /** Phones: control rows stay one line each and scroll sideways instead of wrapping to three rows. */
 const SCROLL_ROW_CSS =
   `@media (max-width: ${PHONE_BREAKPOINT_REM}rem){` +
-  `[data-terrain-scroll="true"]{flex-wrap:nowrap !important;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}` +
+  `[data-terrain-scroll="true"]{flex-wrap:nowrap !important;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;max-width:100%;min-width:0;contain:inline-size}` +
   `[data-terrain-scroll="true"]>*{flex:0 0 auto}}`;
 
 interface ViewState {

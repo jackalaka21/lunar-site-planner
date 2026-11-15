@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@astryxdesign/core/Button";
+import { Collapsible } from "@astryxdesign/core/Collapsible";
 import { HStack } from "@astryxdesign/core/HStack";
 import { Icon } from "@astryxdesign/core/Icon";
 import { Stack } from "@astryxdesign/core/Stack";
@@ -75,6 +76,16 @@ const AUTO_ZOOM_SPAN_KM = 52;
 /** Wait this long after the site stops changing before asking the engine for a heatmap. */
 const HEATMAP_DEBOUNCE_MS = 250;
 
+/** Pins whose centres land within this many screen pixels are drawn as one combined pin. */
+const GROUP_PX = 10;
+/** Width in screen pixels per label character, and the padding around the label, of a combined pin. */
+const PIN_CHAR_W = 10;
+const PIN_PAD = 14;
+const TOUCH_QUERY = "(pointer: coarse), (hover: none)";
+const TOUCH_HELP =
+  "Tap to place a point, drag the pin to move it, pinch or use the buttons to zoom.";
+const MOUSE_HELP =
+  "Click to place a point, drag the pin to move it, drag empty map to pan, scroll to zoom.";
 const KEYBOARD_HELP =
   "With the map focused, arrow keys pan, + and − zoom, 0 resets. Type coordinates in the Latitude and Longitude fields to place a point by keyboard.";
 const INK = "var(--color-text-primary)";
@@ -100,6 +111,50 @@ interface MapPickerProps {
   mode: MapMode;
   /** Height of the map area as a CSS length. Without it the map keeps the basemap aspect ratio. */
   height?: string;
+}
+
+interface PinGroup {
+  /** Scenario keys in scenario order. */
+  keys: string[];
+  letters: string[];
+  /** Index of the first member, which picks the outline. */
+  index: number;
+  p: Point;
+  /** Key a drag on this pin moves: the active scenario when it is a member, else the first member. */
+  dragKey: string;
+  hasActive: boolean;
+  /** Pin width in screen pixels. */
+  width: number;
+}
+
+/** Group pins whose positions are within `thresholdUnits` map units of each other. */
+export function groupPins(
+  items: { key: string; index: number; p: Point }[],
+  thresholdUnits: number,
+  activeKey: string,
+): PinGroup[] {
+  const clusters: { members: typeof items }[] = [];
+  for (const it of items) {
+    const hit = clusters.find((c) =>
+      c.members.some((m) => Math.hypot(m.p.x - it.p.x, m.p.y - it.p.y) <= thresholdUnits),
+    );
+    if (hit) hit.members.push(it);
+    else clusters.push({ members: [it] });
+  }
+  return clusters.map(({ members }) => {
+    const active = members.find((m) => m.key === activeKey);
+    const anchor = active ?? members[0];
+    const n = members.length;
+    return {
+      keys: members.map((m) => m.key),
+      letters: members.map((m) => m.key.toUpperCase()),
+      index: members[0].index,
+      p: anchor.p,
+      dragKey: anchor.key,
+      hasActive: Boolean(active),
+      width: n === 1 ? 2 * PIN_R : Math.max(2 * PIN_R, (2 * n - 1) * PIN_CHAR_W + PIN_PAD),
+    };
+  });
 }
 
 interface DragState {
@@ -155,6 +210,7 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
   const [hover, setHover] = useState<ProjectedHeatmapCell | null>(null);
   const [view, setView] = useState<MapView>(() => homeView(VIEW_W, h));
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const [isTouch, setIsTouch] = useState(false);
 
   const viewRef = useRef(view);
   const aspect = size && size.h > 0 ? size.w / size.h : VIEW_W / h;
@@ -223,6 +279,16 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
       if (dragRef.current?.rafId != null) cancelAnimationFrame(dragRef.current.rafId);
       if (animRef.current !== null) cancelAnimationFrame(animRef.current);
     };
+  }, []);
+
+  // Pick the help text after mount, so the prerendered markup matches the first client render.
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const q = window.matchMedia(TOUCH_QUERY);
+    const update = () => setIsTouch(q.matches);
+    update();
+    q.addEventListener?.("change", update);
+    return () => q.removeEventListener?.("change", update);
   }, []);
 
   // Track the rendered size, so the viewBox matches the container and the map fills it.
@@ -406,6 +472,16 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
     return p ? [{ site, p }] : [];
   });
 
+  const pinGroups = groupPins(
+    scenarios.flatMap((sc, i) => {
+      const ll = siteOf(sc.site);
+      const p = ll ? toPixel(ll.lat, ll.lon) : null;
+      return p ? [{ key: sc.key, index: i, p }] : [];
+    }),
+    GROUP_PX * pxu,
+    scenarioKey,
+  );
+
   const coordsAt = (
     clientX: number,
     clientY: number,
@@ -485,14 +561,10 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
     const targetPinEl = target?.closest?.("[data-pin-key]");
     let pinKey = targetPinEl?.getAttribute("data-pin-key") ?? null;
     if (!pinKey) {
-      const ordered = [...scenarios].sort((a, b) =>
-        a.key === scenarioKey ? -1 : b.key === scenarioKey ? 1 : 0,
-      );
-      for (const sc of ordered) {
-        const ll = siteOf(sc.site);
-        const p = ll ? toPixel(ll.lat, ll.lon) : null;
-        if (p && Math.hypot(p.x - x, p.y - y) <= PIN_HIT * pxu) {
-          pinKey = sc.key;
+      for (const g of pinGroups) {
+        const reach = Math.max(PIN_HIT, g.width / 2 + 4);
+        if (Math.abs(g.p.x - x) <= reach * pxu && Math.abs(g.p.y - y) <= PIN_HIT * pxu) {
+          pinKey = g.dragKey;
           break;
         }
       }
@@ -894,32 +966,37 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
             <title>{site.name}</title>
           </circle>
         ))}
-        {scenarios.map((sc, i) => {
-          const ll = siteOf(sc.site);
-          const p = ll ? toPixel(ll.lat, ll.lon) : null;
-          if (!p) return null;
-          const selected = sc.key === scenarioKey;
-          const letter = sc.key.toUpperCase();
+        {pinGroups.map((g) => {
+          const label = g.letters.join(" ");
+          const half = g.width / 2;
+          const multi = g.keys.length > 1;
           return (
             <g
-              key={sc.key}
-              transform={`translate(${p.x} ${p.y}) scale(${pxu})`}
-              data-testid={`pin-${sc.key}`}
-              data-pin-key={sc.key}
+              key={g.keys.join("")}
+              transform={`translate(${g.p.x} ${g.p.y}) scale(${pxu})`}
+              data-testid={`pin-${g.keys[0]}`}
+              data-pin-key={g.dragKey}
+              data-pin-keys={g.keys.join(",")}
               style={{ cursor: "grab", touchAction: "none" }}
             >
-              <g style={{ fill: CARD, stroke: INK, strokeWidth: selected ? 3 : 2 }}>
-                <Glyph index={i} r={PIN_R} />
+              <g style={{ fill: CARD, stroke: INK, strokeWidth: g.hasActive ? 3 : 2 }}>
+                {multi ? (
+                  <rect x={-half} y={-PIN_R} width={g.width} height={2 * PIN_R} rx={PIN_R} />
+                ) : (
+                  <Glyph index={g.index} r={PIN_R} />
+                )}
               </g>
               <text
                 textAnchor="middle"
                 dominantBaseline="central"
-                y={i % 4 === 2 ? 3 : 0}
+                y={!multi && g.index % 4 === 2 ? 3 : 0}
                 style={{ fill: INK, fontSize: 14, fontWeight: 500, pointerEvents: "none" }}
               >
-                {letter}
+                {label}
               </text>
-              <title>{`Scenario ${letter}`}</title>
+              <title>
+                {multi ? `Scenarios ${g.letters.join(" and ")} share this spot` : `Scenario ${label}`}
+              </title>
             </g>
           );
         })}
@@ -976,14 +1053,42 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
         </Stack>
       ) : null}
       <Text type="supporting" size="xsm" id="map-help">
-        {south
-          ? `North is up and 0° E at the top. Click for a custom point, drag the pin to move it, drag empty map to pan, click a dot for a catalogue site. Click the map, then scroll to zoom (or Ctrl+scroll), or pinch. ${KEYBOARD_HELP}${
-              showPsr
-                ? " Zero average sunlight over the 18.6-yr illumination model, NASA PGDA 120 m (Mazarico et al. 2011). Regions under 1 km² omitted."
-                : ""
-            }${showHeatmap ? " Heatmap cells show hours with the Sun and Earth both above the horizon over the mission window, on the 2 km LOLA grid. Click (or tap again) a cell to add it as a new scenario." : ""}`
-          : `Click for a custom point, drag the pin to move it, drag empty map to pan, click a dot for a catalogue site. Click the map, then scroll to zoom (or Ctrl+scroll), or pinch. ${KEYBOARD_HELP}`}
+        {isTouch ? TOUCH_HELP : MOUSE_HELP}
       </Text>
+      <Collapsible
+        trigger={
+          <HStack vAlign="center" style={{ minHeight: "2.75rem" }}>
+            <Text>Map controls</Text>
+          </HStack>
+        }
+        defaultIsOpen={false}
+      >
+        <Stack gap={1}>
+          <Text type="supporting" size="xsm">
+            {south
+              ? "North is up and 0° E at the top. Click or tap a dot for a catalogue site."
+              : "Click or tap a dot for a catalogue site."}
+          </Text>
+          <Text type="supporting" size="xsm">
+            {isTouch
+              ? "Drag empty map to pan once zoomed in. Pins that share a spot show every letter; dragging one moves the selected scenario."
+              : "Click the map, then scroll to zoom (or Ctrl+scroll). Pins that share a spot show every letter; dragging one moves the selected scenario."}
+          </Text>
+          <Text type="supporting" size="xsm">
+            {KEYBOARD_HELP}
+          </Text>
+          {south && showPsr ? (
+            <Text type="supporting" size="xsm">
+              Permanent shadow: zero average sunlight over the 18.6-yr illumination model, NASA PGDA 120 m (Mazarico et al. 2011). Regions under 1 km² omitted.
+            </Text>
+          ) : null}
+          {south && showHeatmap ? (
+            <Text type="supporting" size="xsm">
+              Heatmap cells show hours with the Sun and Earth both above the horizon over the mission window, on the 2 km LOLA grid. Click (or tap again) a cell to add it as a new scenario.
+            </Text>
+          ) : null}
+        </Stack>
+      </Collapsible>
     </Stack>
   );
 }

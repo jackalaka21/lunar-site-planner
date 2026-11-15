@@ -122,6 +122,7 @@ for (const width of [1440, 1024, 768, 375]) {
 test("About & validation sits between Landing page and Copy link and opens /about/", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
+  await expect(page.locator("canvas[role='img']").first()).toBeVisible({ timeout: 30_000 }); // hydrated: wide labels only render after the media query resolves
   const bar = page.getByTestId("top-bar");
   await expect(bar).toBeVisible();
   const landing = bar.getByRole("button", { name: "Landing page" });
@@ -133,4 +134,25 @@ test("About & validation sits between Landing page and Copy link and opens /abou
   expect(a!.x).toBeLessThan(c!.x);
   await about.click();
   await expect(page).toHaveURL(/\/about\/?$/);
+});
+
+test("phones keep Copy link and Tutorial in a 44 px More menu and show the full title", async ({ page }) => {
+  for (const width of [375, 390]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/");
+    const bar = page.getByTestId("top-bar");
+    await expect(bar).toBeVisible();
+    await expect(bar.getByRole("button", { name: "Copy link" })).toHaveCount(0);
+    const more = bar.getByRole("button", { name: "More" });
+    await expect(more).toBeVisible();
+    const box = (await more.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    const title = await bar.getByRole("heading", { level: 1 }).evaluate((h) => h.scrollWidth <= h.clientWidth);
+    expect(title, `title untruncated at ${width}`).toBe(true);
+    await more.click();
+    await expect(page.getByRole("menuitem", { name: "Copy link" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Tutorial" })).toBeVisible();
+    await page.keyboard.press("Escape");
+  }
 });

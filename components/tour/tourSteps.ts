@@ -33,7 +33,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     targetId: "tour-topbar",
     category: "Top bar",
     title: "The top bar",
-    what: "On wide screens it holds Landing page, About & validation, Copy link, Export PNG, Tutorial, Settings and the theme switch. Narrow screens hide Landing page and Export PNG, show the rest as icons, and add a scenario menu.",
+    what: "On wide screens it holds Landing page, About & validation, Copy link, Export PNG, Tutorial, Settings and the theme switch. On phones, Copy link and Tutorial move into a More menu, and a menu button opens the scenarios.",
     means:
       "Copy link saves your scenarios in the web address, so a colleague opens the same comparison. Export PNG saves the cards as an image.",
     tryIt: "Open Settings to adjust the calculation, or press Tutorial to replay this tour.",

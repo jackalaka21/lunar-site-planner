@@ -24,6 +24,12 @@ function fallbackLabel(site: SiteRef): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+/** Short display name: drops a leading "Group prefix: ". sites.json has no short-name field. */
+export function shortName(name: string): string {
+  const i = name.indexOf(": ");
+  return i > 0 && i < name.length - 2 ? name.slice(i + 2) : name;
+}
+
 /** Scenario rows (site + landing date) and the site picker slot. Used in the 280 wide panel and inside the drawer. */
 export function LeftPanel() {
   const scenarios = useAppStore((s) => s.scenarios);
@@ -50,7 +56,9 @@ export function LeftPanel() {
           return (
             <Stack key={sc.key} gap={1}>
               <Button
-                label={`${sc.key.toUpperCase()} ${name}`}
+                label={`${sc.key.toUpperCase()} ${shortName(name)}`}
+                aria-label={`${sc.key.toUpperCase()} ${name}`}
+                tooltip={`${sc.key.toUpperCase()} ${name}`}
                 size="lg"
                 variant={sc.key === selected ? "secondary" : "ghost"}
                 aria-pressed={sc.key === selected}
