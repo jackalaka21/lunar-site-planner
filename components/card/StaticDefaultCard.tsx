@@ -89,6 +89,7 @@ export function StaticDefaultCard() {
 
         <MetricsBar
           both={fmtHours(metrics.bothH)}
+          reserveRange
           sun={{
             label: (
               <Term id={sunLit ? "sunset" : "sunrise"}>{sunLit ? "Sunset in" : "Sunrise in"}</Term>

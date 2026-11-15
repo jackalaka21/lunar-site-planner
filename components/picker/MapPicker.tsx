@@ -953,19 +953,19 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
               {legend.high}
             </Text>
           </HStack>
-          <HStack gap={0.5}>
+          <HStack gap={2} wrap="wrap">
             {legend.steps.map((st, i) => (
               <Stack
                 key={st.label}
                 gap={0.5}
-                style={{ flex: 1 }}
+                style={{ flex: "1 1 4.5rem", minWidth: 0 }}
                 data-testid={`heatmap-legend-step-${i}`}
               >
                 <Stack
                   style={{ height: "0.75rem", background: st.fill, opacity: HEATMAP_FILL_OPACITY }}
                 />
-                <Text type="supporting" size="xsm">
-                  {st.label}
+                <Text type="supporting" size="xsm" style={{ whiteSpace: "nowrap" }}>
+                  {st.label.replace(" to ", "–")}
                 </Text>
               </Stack>
             ))}

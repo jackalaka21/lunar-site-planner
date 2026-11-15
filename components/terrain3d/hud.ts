@@ -73,6 +73,29 @@ export function drawHud(a: HudArgs): void {
   ctx.textBaseline = "middle";
   ctx.textAlign = "center";
 
+  // Status text, bottom-left, wrapped to the canvas width. Legends and citations live in the page text below.
+  // Its geometry is computed first so the compass labels can stay clear of the strip.
+  const lines: Array<{ text: string; color: string }> = [];
+  ctx.font = FONT;
+  const maxW = Math.max(120, width - 20);
+  const push = (text: string, color: string) => {
+    for (const l of wrap(ctx, text, maxW)) lines.push({ text: l, color });
+  };
+  push(
+    `${blockStatus("Sun", a.sunEl, a.sunRidgeEl, a.isSunLit, a.sunBlocker, patch.spacingM)} · ${blockStatus("Earth", a.earthEl, a.earthRidgeEl, a.isEarthUp, a.earthBlocker, patch.spacingM)}`,
+    pal.rim,
+  );
+
+  const lh = 14;
+  const top = height - 8 - lines.length * lh;
+  const stripTop = top - 4;
+  const MARGIN = 4;
+  /** Centre x for a label of this text, clamped so the whole label stays inside the canvas. */
+  const clampX = (x: number, text: string) => {
+    const half = ctx.measureText(text).width / 2;
+    return Math.max(MARGIN + half, Math.min(width - MARGIN - half, x));
+  };
+
   // Compass at the four tile edges, standing on the terrain there.
   const r = patch.radiusKm;
   const edges: Array<{ label: string; e: number; n: number }> = [
@@ -90,10 +113,12 @@ export function drawHud(a: HudArgs): void {
       height,
     );
     if (!p.visible) continue;
+    const cx = Math.max(MARGIN + 9, Math.min(width - MARGIN - 9, p.x));
+    const cy = Math.max(MARGIN + 7, Math.min(stripTop - 2 - 7, p.y));
     ctx.fillStyle = withAlpha(pal.sky, 0.78);
-    ctx.fillRect(p.x - 9, p.y - 7, 18, 14);
+    ctx.fillRect(cx - 9, cy - 7, 18, 14);
     ctx.fillStyle = pal.rim;
-    ctx.fillText(c.label, p.x, p.y);
+    ctx.fillText(c.label, cx, cy);
   }
 
   // Earth disc with phase.
@@ -128,11 +153,8 @@ export function drawHud(a: HudArgs): void {
     ctx.restore();
     ctx.font = FONT;
     ctx.fillStyle = pal.earth;
-    ctx.fillText(
-      `Earth ${a.earthEl >= 0 ? "+" : ""}${a.earthEl.toFixed(1)}°`,
-      earthPt.x,
-      Math.max(14, earthPt.y - 16),
-    );
+    const earthText = `Earth ${a.earthEl >= 0 ? "+" : ""}${a.earthEl.toFixed(1)}°`;
+    ctx.fillText(earthText, clampX(earthPt.x, earthText), Math.min(Math.max(14, earthPt.y - 16), stripTop - 8));
   }
 
   // Sun disc with glow.
@@ -151,23 +173,10 @@ export function drawHud(a: HudArgs): void {
     ctx.restore();
     ctx.font = FONT;
     ctx.fillStyle = pal.sun;
-    ctx.fillText(`Sun ${a.sunEl >= 0 ? "+" : ""}${a.sunEl.toFixed(1)}°`, sunPt.x, Math.max(14, sunPt.y - 16));
+    const sunText = `Sun ${a.sunEl >= 0 ? "+" : ""}${a.sunEl.toFixed(1)}°`;
+    ctx.fillText(sunText, clampX(sunPt.x, sunText), Math.min(Math.max(14, sunPt.y - 16), stripTop - 8));
   }
 
-  // Status text, bottom-left, wrapped to the canvas width. Legends and citations live in the page text below.
-  const lines: Array<{ text: string; color: string }> = [];
-  ctx.font = FONT;
-  const maxW = Math.max(120, width - 20);
-  const push = (text: string, color: string) => {
-    for (const l of wrap(ctx, text, maxW)) lines.push({ text: l, color });
-  };
-  push(
-    `${blockStatus("Sun", a.sunEl, a.sunRidgeEl, a.isSunLit, a.sunBlocker, patch.spacingM)} · ${blockStatus("Earth", a.earthEl, a.earthRidgeEl, a.isEarthUp, a.earthBlocker, patch.spacingM)}`,
-    pal.rim,
-  );
-
-  const lh = 14;
-  const top = height - 8 - lines.length * lh;
   ctx.fillStyle = withAlpha(pal.sky, 0.66);
   ctx.fillRect(4, top - 4, width - 8, lines.length * lh + 8);
   ctx.textAlign = "left";

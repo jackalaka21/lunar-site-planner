@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { LocalTerrainPatch } from "../../lib/data/terrain";
 import { horizonAt } from "../../lib/engine/horizon";
 import type { HorizonProfile } from "../../lib/engine/types";
-import type { Rgba, TerrainPalette } from "./palette";
+import { parseColor, type Rgba, type TerrainPalette } from "./palette";
 import {
   contourSegments,
   HAZARD_SLOPE_DEG,
@@ -12,6 +12,9 @@ import {
   slopeGridDeg,
   type Blocker,
 } from "./terrainModel";
+
+/** How strongly the PSR tint replaces the terrain colour at masked vertices. */
+export const PSR_BLEND = 0.75;
 
 export type SurfaceMode = "shaded" | "slope";
 
@@ -68,11 +71,6 @@ function col(c: Rgba | { r: number; g: number; b: number }): THREE.Color {
 function mix(a: Rgba, b: Rgba, t: number): Rgba {
   const u = Math.max(0, Math.min(1, t));
   return { r: a.r + (b.r - a.r) * u, g: a.g + (b.g - a.g) * u, b: a.b + (b.b - a.b) * u, a: 1 };
-}
-
-function strToRgba(s: string): Rgba {
-  const m = /([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(s);
-  return m ? { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]), a: 1 } : { r: 128, g: 128, b: 128, a: 1 };
 }
 
 interface RayParts {
@@ -154,7 +152,7 @@ export class TerrainGlScene {
     this.renderer.shadowMap.enabled = true;
     // three r187 removed PCFSoftShadowMap; PCFShadowMap is the soft-filtered PCF there.
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
-    this.scene.background = col(strToRgba(pal.sky));
+    this.scene.background = col(parseColor(pal.sky));
 
     const gs = patch.gridSize;
     this.slopeDeg = slopeGridDeg(patch);
@@ -223,7 +221,7 @@ export class TerrainGlScene {
         return new THREE.Vector3(p.east, (h - patch.centerHM) / 1000 + 0.035, -p.north);
       });
       const rg = new THREE.BufferGeometry().setFromPoints(pts);
-      this.ring = new THREE.Line(rg, new THREE.LineDashedMaterial({ color: col(strToRgba(pal.sun)), dashSize: 0.3, gapSize: 0.18 }));
+      this.ring = new THREE.Line(rg, new THREE.LineDashedMaterial({ color: col(parseColor(pal.sun)), dashSize: 0.3, gapSize: 0.18 }));
       this.ring.computeLineDistances();
       this.terrainGroup.add(this.ring);
     } else {
@@ -232,7 +230,7 @@ export class TerrainGlScene {
     this.scene.add(this.terrainGroup);
 
     // Lights.
-    const sunCol = mix(strToRgba(pal.sun), { r: 255, g: 255, b: 255, a: 1 }, 0.7);
+    const sunCol = mix(parseColor(pal.sun), { r: 255, g: 255, b: 255, a: 1 }, 0.7);
     this.sunLight.color = col(sunCol);
     this.sunLight.castShadow = true;
     this.sunLight.shadow.mapSize.set(2048, 2048);
@@ -246,19 +244,19 @@ export class TerrainGlScene {
     sc.updateProjectionMatrix();
     this.sunLight.shadow.bias = -0.0005;
     this.sunLight.shadow.normalBias = 0.04;
-    this.earthLight.color = col(mix(strToRgba(pal.earth), { r: 255, g: 255, b: 255, a: 1 }, 0.35));
-    this.ambient.color = col(mix(strToRgba(pal.near), strToRgba(pal.earth), 0.25));
+    this.earthLight.color = col(mix(parseColor(pal.earth), { r: 255, g: 255, b: 255, a: 1 }, 0.35));
+    this.ambient.color = col(mix(parseColor(pal.near), parseColor(pal.earth), 0.25));
     this.scene.add(this.sunLight, this.sunLight.target, this.earthLight, this.earthLight.target, this.ambient);
 
     this.buildLander();
     this.scene.add(this.lander);
 
     // Rays, markers, skyline and tracks.
-    const sunC = col(strToRgba(pal.sun));
-    const earthC = col(strToRgba(pal.earth));
+    const sunC = col(parseColor(pal.sun));
+    const earthC = col(parseColor(pal.earth));
     this.sunRay = this.makeRay(sunC);
     this.earthRay = this.makeRay(earthC);
-    this.skyline = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: col(strToRgba(pal.rim)) }));
+    this.skyline = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: col(parseColor(pal.rim)) }));
     this.skyline.frustumCulled = false;
     this.sunTrack = new THREE.Line(
       new THREE.BufferGeometry(),
@@ -283,9 +281,9 @@ export class TerrainGlScene {
   }
 
   private buildLander(): void {
-    const body = new THREE.MeshLambertMaterial({ color: col(mix(strToRgba(this.pal.near), this.pal.textPrimary, 0.55)) });
-    const metal = new THREE.MeshLambertMaterial({ color: col(strToRgba(this.pal.rim)) });
-    const dishMat = new THREE.MeshLambertMaterial({ color: col(strToRgba(this.pal.earth)), side: THREE.DoubleSide });
+    const body = new THREE.MeshLambertMaterial({ color: col(mix(parseColor(this.pal.near), this.pal.textPrimary, 0.55)) });
+    const metal = new THREE.MeshLambertMaterial({ color: col(parseColor(this.pal.rim)) });
+    const dishMat = new THREE.MeshLambertMaterial({ color: col(parseColor(this.pal.earth)), side: THREE.DoubleSide });
     const add = (m: THREE.Mesh) => {
       m.castShadow = true;
       m.receiveShadow = true;
@@ -330,6 +328,11 @@ export class TerrainGlScene {
     this.camera.updateMatrixWorld();
   }
 
+  /** The enlarged lander symbol hides in lander and look views so its mast and dish do not fill the frame. */
+  setLanderVisible(v: boolean): void {
+    this.lander.visible = v;
+  }
+
   /** Project a scene point to CSS pixel coordinates. */
   project(v: THREE.Vector3, width: number, height: number): { x: number; y: number; visible: boolean } {
     const p = this.tmp2.copy(v).project(this.camera);
@@ -346,9 +349,9 @@ export class TerrainGlScene {
     this.paintKey = key;
     this.paintMask = mask;
     const pal = this.pal;
-    const far = strToRgba(pal.far);
-    const rim = strToRgba(pal.rim);
-    const deepest = strToRgba(pal.deepest);
+    const far = parseColor(pal.far);
+    const rim = parseColor(pal.rim);
+    const deepest = parseColor(pal.deepest);
     const attr = this.terrain.geometry.getAttribute("color") as THREE.BufferAttribute;
     const n = this.patch.gridSize * this.patch.gridSize;
     const hazard = { ...pal.hazard, a: 1 };
@@ -362,7 +365,7 @@ export class TerrainGlScene {
       } else {
         c = mix(far, rim, 0.5 + 0.3 * hn);
       }
-      if (mask && mask[i]) c = mix(c, psr, 0.6);
+      if (mask && mask[i]) c = mix(c, psr, PSR_BLEND);
       const lin = col(c);
       attr.setXYZ(i, lin.r, lin.g, lin.b);
     }

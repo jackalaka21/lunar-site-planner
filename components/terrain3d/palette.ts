@@ -26,6 +26,8 @@ export function parseColor(input: string, fallback: Rgba = { r: 128, g: 128, b: 
     const v = (i: number) => parseInt(h.slice(i, i + 2), 16);
     return { r: v(0), g: v(2), b: v(4), a: h.length === 8 ? v(6) / 255 : 1 };
   }
+  const bare = /^([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?$/.exec(c);
+  if (bare) return { r: Number(bare[1]), g: Number(bare[2]), b: Number(bare[3]), a: bare[4] === undefined ? 1 : Number(bare[4]) };
   const m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)(?:[\s,/]+([\d.]+))?/.exec(c);
   return m ? { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]), a: m[4] === undefined ? 1 : Number(m[4]) } : fallback;
 }

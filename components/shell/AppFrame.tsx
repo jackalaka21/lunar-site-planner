@@ -11,6 +11,7 @@ import {
   LayoutPanel,
 } from "@astryxdesign/core/Layout";
 import { Grid } from "@astryxdesign/core/Grid";
+import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { Stack } from "@astryxdesign/core/Stack";
 import { VStack } from "@astryxdesign/core/VStack";
 import { getEngine } from "../../lib/engineClient";
@@ -70,7 +71,23 @@ function FirstCardGrid() {
 /** Holds the time bar's height while its chunk loads, so the page above it does not jump. */
 function TimeBarPlaceholder() {
   const isPhone = useMediaQuery(PHONE_QUERY);
-  return <Stack minHeight={isPhone ? TIME_BAR_PHONE_HEIGHT : TIME_BAR_HEIGHT} />;
+  return (
+    <Stack minHeight={isPhone ? TIME_BAR_PHONE_HEIGHT : TIME_BAR_HEIGHT} aria-hidden="true">
+      <Skeleton height={isPhone ? TIME_BAR_PHONE_HEIGHT : TIME_BAR_HEIGHT} radius="none" />
+    </Stack>
+  );
+}
+
+/** Same-size stand-in for the left panel's scenario rows until the live panel mounts. */
+function LeftPanelPlaceholder() {
+  return (
+    <Stack gap={4} aria-hidden="true" data-testid="left-panel-placeholder">
+      <Skeleton height="1.75rem" width="60%" />
+      <Skeleton height="2.75rem" />
+      <Skeleton height="2.75rem" index={1} />
+      <Skeleton height="2.75rem" index={2} />
+    </Stack>
+  );
 }
 const TimeBar = dynamic(() => import("../time/TimeBar").then((m) => m.TimeBar), {
   ssr: false,
@@ -273,7 +290,7 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
                 label="Scenarios"
                 data-testid="left-panel"
               >
-                {ready ? <LeftPanel /> : null}
+                {ready ? <LeftPanel /> : <LeftPanelPlaceholder />}
               </LayoutPanel>
             ) : null
           }

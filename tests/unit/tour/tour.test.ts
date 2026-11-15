@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { padBox, placeCard, spotlightPanes } from "../../../components/tour/position";
+import { clampBox, padBox, placeCard, spotlightPanes } from "../../../components/tour/position";
 import { TOUR_STEPS } from "../../../components/tour/tourSteps";
 
 describe("tour steps", () => {
@@ -46,12 +46,44 @@ describe("placeCard", () => {
     const inside = placeCard({ left: 0, top: 0, width: 1000, height: 800 }, card, vp, 16, 16);
     expect(inside.placement).toBe("inside");
   });
+  it("keeps at least 12 px from the target even when asked for less", () => {
+    const t = { left: 100, top: 50, width: 200, height: 40 };
+    const p = placeCard(t, card, vp, 4, 16);
+    expect(p.top - (t.top + t.height)).toBeGreaterThanOrEqual(12);
+  });
+  it("puts a card beside a target taller than half the viewport", () => {
+    const right = placeCard({ left: 20, top: 100, width: 300, height: 600 }, card, vp, 16, 16);
+    expect(right.placement).toBe("right");
+    expect(right.left).toBe(336);
+    const left = placeCard({ left: 650, top: 100, width: 330, height: 600 }, card, vp, 16, 16);
+    expect(left.placement).toBe("left");
+  });
+  it("pins to the roomier side without covering the centre when nothing fits", () => {
+    const t = { left: 100, top: 20, width: 800, height: 700 };
+    const p = placeCard(t, card, vp, 16, 16);
+    expect(p.placement).toBe("inside");
+    const cx = t.left + t.width / 2;
+    const cy = t.top + t.height / 2;
+    const covers = p.left <= cx && cx <= p.left + card.width && p.top <= cy && cy <= p.top + card.height;
+    expect(covers).toBe(false);
+  });
   it("never clips and centres with no target", () => {
     const p = placeCard({ left: 900, top: 10, width: 90, height: 40 }, card, vp, 16, 16);
     expect(p.left + card.width).toBeLessThanOrEqual(vp.width - 16);
     expect(p.left).toBeGreaterThanOrEqual(16);
     const c = placeCard(null, card, vp, 16, 16);
     expect(c).toEqual({ left: 300, top: 250, placement: "center" });
+  });
+});
+
+describe("clampBox", () => {
+  it("pulls a ring that starts off-screen back inside, inset by 2", () => {
+    expect(clampBox({ left: -8, top: -40, width: 1016, height: 100 }, vp, 2)).toEqual({
+      left: 2,
+      top: 2,
+      width: 996,
+      height: 58,
+    });
   });
 });
 

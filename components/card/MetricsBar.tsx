@@ -12,13 +12,15 @@ export interface MetricsBarProps {
   bothDelta?: string;
   /** Spread of both-hours across horizon and site shifts; absent until the engine returns it. */
   robust?: { min: number; max: number; points: number };
+  /** Keep the range line's height before the spread arrives (the static card), so the row below does not drop. */
+  reserveRange?: boolean;
   sun: { label?: ReactNode; value: string };
   earth: { label?: ReactNode; value: string };
   sunEl: { label?: ReactNode; value: string };
 }
 
 /** Label, figure and delta only: no sparklines, no icons. */
-export function MetricsBar({ both, bothDelta, robust, sun, earth, sunEl }: MetricsBarProps) {
+export function MetricsBar({ both, bothDelta, robust, reserveRange, sun, earth, sunEl }: MetricsBarProps) {
   return (
     <VStack gap={3} data-testid="metrics-bar">
       <VStack gap={0.5}>
@@ -48,6 +50,11 @@ export function MetricsBar({ both, bothDelta, robust, sun, earth, sunEl }: Metri
         {robust && (
           <Text type="supporting" size="xsm" data-testid="robust-points">
             {`Range across horizon and site shifts, ${robust.points} points`}
+          </Text>
+        )}
+        {!robust && reserveRange && (
+          <Text type="supporting" size="xsm" aria-hidden="true" style={{ visibility: "hidden" }}>
+            Range across horizon and site shifts, 00 points
           </Text>
         )}
       </VStack>

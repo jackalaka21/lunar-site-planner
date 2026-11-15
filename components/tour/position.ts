@@ -46,18 +46,33 @@ export function spotlightPanes(
   };
 }
 
+/** Smallest gap kept between the card and the ring, whatever the caller asks for. */
+export const MIN_CARD_GAP = 12;
+
+/** Clamp a box to the viewport, inset by `inset` on every side, so a ring never sits off-screen. */
+export function clampBox(b: Box, vp: Size, inset: number): Box {
+  const left = clamp(b.left, inset, vp.width - inset);
+  const top = clamp(b.top, inset, vp.height - inset);
+  const right = clamp(b.left + b.width, inset, vp.width - inset);
+  const bottom = clamp(b.top + b.height, inset, vp.height - inset);
+  return { left, top, width: right - left, height: bottom - top };
+}
+
 /**
- * Place the card beside the spotlight. Preference: below, right, above, left. A side is used only when
- * the whole card fits there inside `margin`. If none fits (a very large target), the card sits inside the
- * viewport near the bottom. With no target it is centred. The result is always inside the viewport.
+ * Place the card beside the spotlight, keeping at least MIN_CARD_GAP from it. Preference: below, right, above,
+ * left, except that a target taller than half the viewport prefers the sides (right, left, below, above) so the
+ * card does not sit over it. A side is used only when the whole card fits there inside `margin`. If none fits,
+ * the card goes to the side with the most room, pinned to the viewport edge so it overlaps only the target's
+ * outer edge (placement "inside"). With no target it is centred. The result is always inside the viewport.
  */
 export function placeCard(
   target: Box | null,
   card: Size,
   vp: Size,
-  gap: number,
+  gapIn: number,
   margin: number,
 ): CardPosition {
+  const gap = Math.max(gapIn, MIN_CARD_GAP);
   const maxLeft = vp.width - card.width - margin;
   const maxTop = vp.height - card.height - margin;
   if (!target) {
@@ -69,29 +84,48 @@ export function placeCard(
   }
   const bottom = target.top + target.height;
   const right = target.left + target.width;
-  if (bottom + gap + card.height <= vp.height - margin) {
-    return { left: clamp(target.left, margin, maxLeft), top: bottom + gap, placement: "below" };
-  }
-  if (right + gap + card.width <= vp.width - margin) {
-    return { left: right + gap, top: clamp(target.top, margin, maxTop), placement: "right" };
-  }
-  if (target.top - gap - card.height >= margin) {
-    return {
-      left: clamp(target.left, margin, maxLeft),
-      top: target.top - gap - card.height,
-      placement: "above",
-    };
-  }
-  if (target.left - gap - card.width >= margin) {
-    return {
-      left: target.left - gap - card.width,
-      top: clamp(target.top, margin, maxTop),
-      placement: "left",
-    };
-  }
-  return {
-    left: clamp(maxLeft, margin, maxLeft),
-    top: clamp(maxTop, margin, maxTop),
-    placement: "inside",
+  const fits = {
+    below: bottom + gap + card.height <= vp.height - margin,
+    right: right + gap + card.width <= vp.width - margin,
+    above: target.top - gap - card.height >= margin,
+    left: target.left - gap - card.width >= margin,
   };
+  const at = (side: "below" | "right" | "above" | "left"): CardPosition => {
+    switch (side) {
+      case "below":
+        return { left: clamp(target.left, margin, maxLeft), top: bottom + gap, placement: "below" };
+      case "right":
+        return { left: right + gap, top: clamp(target.top, margin, maxTop), placement: "right" };
+      case "above":
+        return {
+          left: clamp(target.left, margin, maxLeft),
+          top: target.top - gap - card.height,
+          placement: "above",
+        };
+      default:
+        return {
+          left: target.left - gap - card.width,
+          top: clamp(target.top, margin, maxTop),
+          placement: "left",
+        };
+    }
+  };
+  const tall = target.height > vp.height * 0.5;
+  const order: ("below" | "right" | "above" | "left")[] = tall
+    ? ["right", "left", "below", "above"]
+    : ["below", "right", "above", "left"];
+  for (const side of order) if (fits[side]) return at(side);
+
+  // Nothing fits: take the side with the most room and pin the card to that viewport edge.
+  const room = {
+    below: vp.height - bottom,
+    above: target.top,
+    right: vp.width - right,
+    left: target.left,
+  };
+  const best = (["below", "above", "right", "left"] as const).reduce((a, b) => (room[b] > room[a] ? b : a));
+  if (best === "right") return { left: maxLeft, top: clamp(target.top, margin, maxTop), placement: "inside" };
+  if (best === "left") return { left: margin, top: clamp(target.top, margin, maxTop), placement: "inside" };
+  if (best === "above") return { left: clamp(target.left, margin, maxLeft), top: margin, placement: "inside" };
+  return { left: clamp(target.left, margin, maxLeft), top: maxTop, placement: "inside" };
 }

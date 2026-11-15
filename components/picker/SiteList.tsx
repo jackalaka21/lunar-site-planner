@@ -49,6 +49,14 @@ export function siteSearchMeta(s: Site): string {
   return `${GROUP_HEADING[s.group]} · ${siteMeta(s)}`;
 }
 
+const ELLIPSIS = {
+  display: "block",
+  maxWidth: "100%",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+} as const;
+
 interface SiteListProps {
   catalog: SiteCatalog | null;
   currentId: string | null;
@@ -103,12 +111,13 @@ export function SiteList({ catalog, currentId, onChoose }: SiteListProps) {
                     aria-pressed={isCurrent}
                     icon={<Icon icon={g === "artemis3" || g === "polar" ? Crosshair : MapPin} />}
                     onClick={() => onChoose(s.id)}
+                    style={{ justifyContent: "flex-start", textAlign: "start" }}
                   >
-                    <Stack as="span" gap={0} align="start" style={{ minWidth: 0 }}>
-                      <Text as="span" size="sm">
+                    <Stack as="span" gap={0} align="start" style={{ minWidth: 0, flex: 1, overflow: "hidden" }}>
+                      <Text as="span" size="sm" style={ELLIPSIS}>
                         {s.name}
                       </Text>
-                      <Text as="span" type="code" size="xsm" color="secondary">
+                      <Text as="span" type="code" size="xsm" color="secondary" style={ELLIPSIS}>
                         {siteMeta(s)}
                       </Text>
                     </Stack>

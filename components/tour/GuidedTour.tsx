@@ -8,7 +8,7 @@ import { HStack, Stack } from "@astryxdesign/core/Stack";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
 import { VStack } from "@astryxdesign/core/VStack";
-import { padBox, placeCard, spotlightPanes, type Box, type Size } from "./position";
+import { MIN_CARD_GAP, clampBox, padBox, placeCard, spotlightPanes, type Box, type Size } from "./position";
 import { TOUR_STEPS } from "./tourSteps";
 
 export interface GuidedTourProps {
@@ -201,6 +201,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
   const gap = remPx(1);
   const margin = remPx(1);
   const pos = placeCard(hole, cardSize, vp, gap, margin);
+  const ringBox = hole ? clampBox(hole, vp, 2) : null;
   const panes = hole ? spotlightPanes(hole, vp) : null;
   const paneStyle = (b: Box): CSSProperties => ({
     ...boxStyle(b),
@@ -215,18 +216,20 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
         left: 0,
         right: 0,
         bottom: 0,
-        maxHeight: "60dvh",
-        overflowY: "auto",
+        maxHeight: "70dvh",
+        overflow: "hidden",
         borderRadius: "var(--radius-lg) var(--radius-lg) 0 0",
-        paddingBottom: "max(var(--spacing-4), env(safe-area-inset-bottom))",
       }
     : {
         position: "fixed",
         left: pos.left,
-        top: pos.top,
+        // Above the target the card hangs from its bottom edge, so a late height change cannot push it onto the ring.
+        ...(pos.placement === "above" && hole
+          ? { bottom: vp.height - hole.top + Math.max(gap, MIN_CARD_GAP) }
+          : { top: pos.top }),
         width: "min(26rem, calc(100vw - 2rem))",
         maxHeight: "calc(100dvh - 2rem)",
-        overflowY: "auto",
+        overflow: "hidden",
         borderRadius: "var(--radius-lg)",
       };
 
@@ -242,12 +245,12 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
       ) : (
         <Stack style={paneStyle({ left: 0, top: 0, width: vp.width, height: vp.height })} data-testid="tour-pane" />
       )}
-      {hole ? (
+      {ringBox ? (
         <Stack
           data-testid="tour-ring"
           aria-hidden="true"
           style={{
-            ...boxStyle(hole),
+            ...boxStyle(ringBox),
             pointerEvents: "none",
             boxSizing: "border-box",
             border: "0.1875rem solid var(--color-data-categorical-blue)",
@@ -263,10 +266,11 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
         tabIndex={-1}
         data-testid="tour-card"
         data-placement={isPhone ? "sheet" : pos.placement}
-        padding={4}
-        gap={3}
+        gap={0}
         style={{
           ...cardStyle,
+          display: "flex",
+          flexDirection: "column",
           boxSizing: "border-box",
           background: "var(--surface-raised)",
           border: "0.0625rem solid var(--color-border)",
@@ -274,6 +278,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
           outline: "none",
         }}
       >
+        <Stack gap={3} padding={4} style={{ flex: "1 1 auto", minHeight: 0, overflowY: "auto" }} data-testid="tour-card-body">
         <HStack gap={1} role="presentation" aria-hidden="true">
           {TOUR_STEPS.map((s, i) => (
             <Stack
@@ -311,7 +316,19 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
           </VStack>
           {usedFallback && step.fallbackNote ? <Text type="supporting">{step.fallbackNote}</Text> : null}
         </VStack>
-        <HStack gap={2} vAlign="center" hAlign="between" wrap="wrap">
+        </Stack>
+        <HStack
+          gap={2}
+          vAlign="center"
+          hAlign="between"
+          wrap="wrap"
+          style={{
+            flex: "0 0 auto",
+            padding: "var(--spacing-3) var(--spacing-4)",
+            paddingBottom: isPhone ? "max(var(--spacing-4), env(safe-area-inset-bottom))" : undefined,
+            borderTop: "0.0625rem solid var(--color-border)",
+          }}
+        >
           <Button label="Skip tour" size="lg" variant="ghost" onClick={onClose} />
           <HStack gap={2} vAlign="center">
             <Button label="Previous" size="lg" variant="secondary" isDisabled={index === 0} onClick={prev} />

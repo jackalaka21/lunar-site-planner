@@ -156,6 +156,7 @@ const LN_VARS = {
   "--ln-d9d6cd": "rgb(217 214 205)",
   "--ln-e8e5dd": "rgb(232 229 221)",
   "--ln-f1efe9": "rgb(241 239 233)",
+  "--ln-ffffff": "rgb(255 255 255)",
   "--ln-ffb454": "rgb(255 180 84)",
   "--ln-ffd08a": "rgb(255 208 138)",
   "--ln-ffc47a": "rgb(255 196 122)",
@@ -166,9 +167,9 @@ const FOCUS =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(color:--ln-ffb454) focus-visible:outline-solid";
 const BTN_BASE = `inline-flex min-h-[44px] cursor-pointer items-center justify-center px-5 text-[15px] font-medium transition-colors ${FOCUS}`;
 const BTN_PRIMARY = `${BTN_BASE} h-[52px] bg-(color:--ln-ffb454) text-(color:--ln-0a0a0c) hover:bg-(color:--ln-ffc47a)`;
-const BTN_HAIR = `${BTN_BASE} h-[52px] border border-white/30 bg-(color:--ln-05050a)/70 text-(color:--ln-f1efe9) hover:border-white/60 hover:bg-(color:--ln-15151a)`;
+const BTN_HAIR = `${BTN_BASE} h-[52px] border border-white/30 bg-(color:--ln-05050a)/70 text-(color:--ln-ffffff) hover:border-white/60 hover:bg-(color:--ln-15151a)`;
 const SOLID_FOCUS = "focus-visible:border-(color:--ln-ffb454) focus-visible:shadow-[0_0_0_2px_rgb(0_0_0)]";
-const BTN_SOLID = `${BTN_BASE} h-[52px] rounded-[2px] border border-white bg-black text-white hover:shadow-[inset_0_0_0_1px_rgb(255_255_255)] hover:bg-(color:--ln-15151a) ${SOLID_FOCUS}`;
+const BTN_SOLID = `${BTN_BASE} h-[52px] rounded-[2px] border border-white bg-black text-(color:--ln-ffffff) hover:shadow-[inset_0_0_0_1px_rgb(255_255_255)] hover:bg-(color:--ln-15151a) ${SOLID_FOCUS}`;
 const MONO = "font-[family-name:var(--font-family-code)] tracking-[0.04em]";
 
 function setLayer(el: HTMLElement | null, opacity: number, inertBelow = 0.3) {
@@ -648,7 +649,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
           </div>
 
           {/* Act 2: capabilities */}
-          <div ref={capsRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-10" style={{ opacity: 0 }}>
+          <div ref={capsRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-[12]" style={{ opacity: 0 }}>
             <div className="absolute inset-x-0 bottom-0 h-[88%] bg-[linear-gradient(to_top,rgb(3_3_5)_0%,rgb(3_3_5/0.97)_55%,rgb(3_3_5/0.6)_78%,rgb(3_3_5/0)_100%)]" />
             <div ref={capsInnerRef} className="relative px-4 pb-14 lg:px-14">
               <ol className="grid grid-cols-1 border-t border-white/30 lg:grid-cols-4">
@@ -663,7 +664,7 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
           </div>
 
           {/* Act 3: showcase */}
-          <div ref={showRef} className="pointer-events-none absolute inset-0 z-10" style={{ opacity: 0 }}>
+          <div ref={showRef} className="pointer-events-none absolute inset-0 z-[12]" style={{ opacity: 0 }}>
             <div className="absolute inset-y-0 left-0 hidden w-[56%] bg-gradient-to-r from-(--ln-030305)/90 via-(--ln-030305)/70 to-transparent lg:block" />
             <div className="absolute inset-x-0 bottom-0 h-[72%] bg-gradient-to-t from-(--ln-030305) via-(--ln-030305)/85 to-transparent lg:hidden" />
             <div
@@ -702,9 +703,9 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
               <img src={horizonSrc} alt="" decoding="async" className="h-full w-full object-cover object-bottom" />
             ) : null}
           </div>
-          <div ref={horizonUiRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center px-4 pb-14 lg:px-14" style={{ opacity: 0 }}>
+          <div ref={horizonUiRef} className="pointer-events-none absolute inset-x-0 bottom-0 z-[12] flex justify-center px-4 pb-14 lg:px-14" style={{ opacity: 0 }}>
             <div className="pointer-events-auto flex w-full max-w-[56rem] flex-col items-center gap-5 text-center">
-              <h2 className="mb-14 max-w-full rounded-[2px] border border-white bg-black px-[1em] py-[0.5em] text-[clamp(1.6rem,3.4vw,2.6rem)] font-medium leading-tight tracking-[-0.02em] text-white [overflow-wrap:anywhere]">
+              <h2 className="mb-14 max-w-full rounded-[2px] border border-white bg-black px-[1em] py-[0.5em] text-[clamp(1.6rem,3.4vw,2.6rem)] font-medium leading-tight tracking-[-0.02em] text-(color:--ln-ffffff) [overflow-wrap:anywhere]">
                 Choose a site and a date
               </h2>
               <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-center">
@@ -724,10 +725,10 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
                     key={r.id}
                     type="button"
                     onClick={() => loadMissionReplay(r.id, r.iso)}
-                    className={`flex min-h-[56px] min-w-0 cursor-pointer flex-col items-center justify-center rounded-[2px] border border-white bg-black px-2 py-2 transition-colors hover:shadow-[inset_0_0_0_1px_rgb(255_255_255)] hover:bg-(color:--ln-15151a) sm:px-6 ${FOCUS} ${SOLID_FOCUS}`}
+                    className={`flex min-h-[56px] min-w-0 cursor-pointer flex-col items-center justify-center rounded-[2px] border border-white bg-black px-2 py-2 transition-colors hover:shadow-[inset_0_0_0_1px_rgb(255_255_255)] hover:bg-(color:--ln-15151a) sm:px-6 text-(color:--ln-ffffff) ${FOCUS} ${SOLID_FOCUS}`}
                   >
-                    <span className="text-[13px] font-medium text-white">{r.label}</span>
-                    <span className={`${MONO} text-[10.5px] text-white`}>{r.iso.slice(0, 10)}</span>
+                    <span className="text-[13px] font-medium text-(color:--ln-ffffff)">{r.label}</span>
+                    <span className={`${MONO} text-[10.5px] text-(color:--ln-ffffff)`}>{r.iso.slice(0, 10)}</span>
                   </button>
                 ))}
               </div>

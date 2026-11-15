@@ -26,7 +26,7 @@ import { withAlpha } from "../panorama/layout";
 import { panoramaPalette } from "../panorama/palette";
 import { TerrainGlScene, LANDER_TOP, type SurfaceMode } from "./glScene";
 import { drawHud, terrainNotes, type PsrStatus } from "./hud";
-import { terrainPalette } from "./palette";
+import { parseColor, terrainPalette } from "./palette";
 import { loadPsr } from "./psr";
 import {
   ellipseRingKm,
@@ -37,7 +37,7 @@ import {
   PSR_MIN_ABS_LAT_DEG,
   type Blocker,
 } from "./terrainModel";
-import { viewportHeightPx } from "./viewport";
+import { PHONE_BREAKPOINT_REM, viewportHeightPx } from "./viewport";
 
 export interface LunarTerrain3DProps {
   horizon: HorizonProfile;
@@ -77,6 +77,12 @@ const COMPASS_POINTS: Array<{ az: number; label: string }> = [
   { az: 270, label: "W" },
 ];
 
+/** Phones: control rows stay one line each and scroll sideways instead of wrapping to three rows. */
+const SCROLL_ROW_CSS =
+  `@media (max-width: ${PHONE_BREAKPOINT_REM}rem){` +
+  `[data-terrain-scroll="true"]{flex-wrap:nowrap !important;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}` +
+  `[data-terrain-scroll="true"]>*{flex:0 0 auto}}`;
+
 interface ViewState {
   mode: "orbit" | "pov";
   az: number;
@@ -105,8 +111,8 @@ function canUseWebGl(): boolean {
 }
 
 function parseRgb(color: string): [number, number, number] {
-  const m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(color.trim());
-  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [128, 128, 128];
+  const c = parseColor(color);
+  return [c.r, c.g, c.b];
 }
 
 function mixRgb(
@@ -865,7 +871,9 @@ export function LunarTerrain3D({
       const v = L.view;
       if (v.mode === "orbit") {
         const aspect = L.width / Math.max(L.height, 1);
-        const d = v.dist * Math.max(1, Math.min(1.7, 1.4 / Math.max(aspect, 0.3)));
+        // Portrait canvases fit the tile to the horizontal field of view: scale the distance by 1 / aspect.
+        const fit = aspect < 1 ? 1.6 / Math.max(aspect, 0.3) : Math.min(1.7, 1.4 / aspect);
+        const d = v.dist * Math.max(1, Math.min(2.8, fit));
         const az = (v.az * Math.PI) / 180;
         const pt = (v.pitch * Math.PI) / 180;
         goalLook.set(0, 0.35, 0);
@@ -933,6 +941,7 @@ export function LunarTerrain3D({
         surface: L.surface,
         psrMask: L.psrMask,
       });
+      sc.setLanderVisible(L.view.mode === "orbit");
       sc.setView(curPos, curLook);
       sc.render();
       const ctx = hudCanvas!.getContext("2d");
@@ -1091,6 +1100,7 @@ export function LunarTerrain3D({
 
   return (
     <VStack gap={2}>
+      <style>{SCROLL_ROW_CSS}</style>
       <Stack
         ref={wrapRef}
         data-testid="lunar-terrain-3d"
@@ -1116,7 +1126,7 @@ export function LunarTerrain3D({
           style={{ position: "absolute", inset: 0, width: "100%", height, cursor: "grab" }}
         />
       </Stack>
-      <HStack gap={1.5} vAlign="center" wrap="wrap" data-testid="terrain-controls">
+      <HStack gap={1.5} vAlign="center" wrap="wrap" data-testid="terrain-controls" data-terrain-scroll="true">
         <Button
           label={camMode === "orbit" ? "Lander POV" : "3D Orbit"}
           size="lg"
@@ -1129,7 +1139,7 @@ export function LunarTerrain3D({
         <Button label="Reset view" size="lg" variant="ghost" onClick={resetView} />
       </HStack>
       {useGl ? (
-        <HStack gap={1.5} vAlign="center" wrap="wrap">
+        <HStack gap={1.5} vAlign="center" wrap="wrap" data-terrain-scroll="true">
           <SegmentedControl
             label="Surface mode"
             size="lg"
@@ -1160,7 +1170,7 @@ export function LunarTerrain3D({
       ) : null}
       <VStack gap={0.5} data-testid="terrain-notes">
         {notes.map((line) => (
-          <Text key={line} type="supporting" size="xsm">
+          <Text key={line} type="supporting" size="sm">
             {line}
           </Text>
         ))}

@@ -1,6 +1,8 @@
 "use client";
 
 import { Check, Info, X } from "lucide-react";
+import { useMediaQuery } from "@astryxdesign/core/hooks";
+import { Divider } from "@astryxdesign/core/Divider";
 import { HStack } from "@astryxdesign/core/HStack";
 import { Icon } from "@astryxdesign/core/Icon";
 import { Link } from "@astryxdesign/core/Link";
@@ -77,7 +79,60 @@ interface Row extends Record<string, unknown> {
   entry: ValidationEntry;
 }
 
+const PHONE_QUERY = "(max-width: 47.99rem)";
+
+function tolText(e: ValidationEntry): string {
+  return typeof e.tolerance === "number" ? `± ${formatValue(e.tolerance, e.unit)}` : formatValue(e.tolerance, null);
+}
+
+/** Phone layout: one stacked block per check, so no value column hides off-screen. */
+function StackedRows({ entries, caption }: { entries: ValidationEntry[]; caption: string }) {
+  return (
+    <VStack gap={0} role="list" aria-label={caption} data-testid="validation-stacked">
+      {entries.map((e, i) => (
+        <VStack key={`${i}-${e.name}`} gap={3} role="listitem">
+          {i > 0 ? <Divider /> : null}
+          <VStack gap={2}>
+            <HStack gap={2} vAlign="center" hAlign="between" wrap="wrap">
+              <Text type="label" weight="medium">
+                {e.name}
+              </Text>
+              <Status pass={e.pass} />
+            </HStack>
+            {(
+              [
+                ["Ridgeline value", formatValue(e.value, e.unit)],
+                ["Reference", formatValue(e.reference, e.unit)],
+                ["Tolerance", tolText(e)],
+              ] as const
+            ).map(([label, text]) => (
+              <HStack key={label} gap={2} hAlign="between" vAlign="start">
+                <Text type="supporting" size="xsm">
+                  {label}
+                </Text>
+                <Text type="code" hasTabularNumbers style={{ overflowWrap: "anywhere", textAlign: "end" }}>
+                  {text}
+                </Text>
+              </HStack>
+            ))}
+            <Text type="supporting" size="xsm">
+              {e.note}
+            </Text>
+            {e.source_url ? (
+              <Link href={e.source_url} target="_blank" rel="noopener noreferrer" isExternalLink>
+                Reference source
+              </Link>
+            ) : null}
+          </VStack>
+        </VStack>
+      ))}
+    </VStack>
+  );
+}
+
 export function ValidationTable({ entries, caption }: { entries: ValidationEntry[]; caption: string }) {
+  const isPhone = useMediaQuery(PHONE_QUERY);
+  if (isPhone) return <StackedRows entries={entries} caption={caption} />;
   const data: Row[] = entries.map((entry, i) => ({ id: `${i}-${entry.name}`, entry }));
   return (
     <ScrollRegion>
@@ -91,7 +146,7 @@ export function ValidationTable({ entries, caption }: { entries: ValidationEntry
         {
           key: "entry",
           header: "Check",
-          width: proportional(3, { minWidth: 280 }),
+          width: proportional(3, { minWidth: 220 }),
           renderCell: (row) => (
             <VStack gap={2}>
               <Text type="label" weight="medium">
@@ -111,25 +166,25 @@ export function ValidationTable({ entries, caption }: { entries: ValidationEntry
         {
           key: "result",
           header: "Result",
-          width: proportional(1, { minWidth: 96 }),
+          width: proportional(1, { minWidth: 88 }),
           renderCell: (row) => <Status pass={row.entry.pass} />,
         },
         {
           key: "value",
           header: "Ridgeline value",
-          width: proportional(1.5, { minWidth: 140 }),
+          width: proportional(1.5, { minWidth: 112 }),
           renderCell: (row) => <Text type="code" hasTabularNumbers>{formatValue(row.entry.value, row.entry.unit)}</Text>,
         },
         {
           key: "reference",
           header: "Reference",
-          width: proportional(1.5, { minWidth: 140 }),
+          width: proportional(1.5, { minWidth: 112 }),
           renderCell: (row) => <Text type="code" hasTabularNumbers>{formatValue(row.entry.reference, row.entry.unit)}</Text>,
         },
         {
           key: "tolerance",
           header: "Tolerance",
-          width: proportional(1.5, { minWidth: 140 }),
+          width: proportional(1.5, { minWidth: 112 }),
           renderCell: (row) => (
             <Text type="code" hasTabularNumbers>
               {typeof row.entry.tolerance === "number"

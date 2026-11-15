@@ -3,7 +3,7 @@ export const VIEWPORT_HEIGHT_PX = { single: 520, compare: 400, phone: 340 } as c
 /** The same heights in rem (16 px root) for the server-rendered placeholder, so hydration causes no jump. */
 export const VIEWPORT_HEIGHT_REM = { single: 32.5, compare: 25, phone: 21.25 } as const;
 /** Space reserved below the canvas for the control bar and the legend notes, rem. */
-export const CONTROLS_RESERVE_REM = { desktop: 12, phone: 21 } as const;
+export const CONTROLS_RESERVE_REM = { desktop: 13.25, phone: 14.75 } as const;
 /** Phones are this wide or narrower (matches the max-width media query), rem. */
 export const PHONE_BREAKPOINT_REM = 48;
 /** Status and "2D skyline | 3D terrain" row above the canvas (44 px control plus gap), rem. Wraps taller on phones. */
