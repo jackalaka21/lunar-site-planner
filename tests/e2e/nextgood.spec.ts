@@ -18,7 +18,7 @@ test("next good adds scenario with Good verdict", async ({ page }) => {
   await expect(b).toContainText("Good", { timeout: 30_000 });
 });
 
-test("landing calendar computes in 1.5 s, has 365 cells and sets the landing day", async ({ page }) => {
+test("landing calendar computes in 1.5 s, has 365 cells and sets the landing day", { tag: "@perf" }, async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("scenario-card-a")).toBeVisible({ timeout: 30_000 });
   await page.getByRole("button", { name: "Landing calendar" }).click();

@@ -67,7 +67,7 @@ test("bad link shows notice", async ({ page }) => {
   await expect(page.locator('[data-testid^="scenario-card-"]')).toHaveCount(1);
 });
 
-test("recompute under 150ms", async ({ page }) => {
+test("recompute under 150ms", { tag: "@perf" }, async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/");
   await expect(page.getByTestId("scenario-card-a")).toBeVisible({ timeout: 30_000 });

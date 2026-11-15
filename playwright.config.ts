@@ -13,6 +13,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      grepInvert: /@perf/,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${DEV_PORT}` },
     },
     {
@@ -20,6 +21,15 @@ export default defineConfig({
       name: "production",
       testMatch: /mobile\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${PROD_PORT}` },
+    },
+    {
+      // Time budgets (150 ms recompute, 1.5 s calendar) run on their own after every other project,
+      // so parallel browsers rendering WebGL in software don't steal the CPU they are timing.
+      name: "perf",
+      grep: /@perf/,
+      dependencies: ["chromium", "production"],
+      fullyParallel: false,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${DEV_PORT}` },
     },
   ],
   webServer: [

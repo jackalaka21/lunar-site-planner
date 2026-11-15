@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getEngine, type EvaluateResult } from "./engineClient";
 import type { RobustnessResult } from "./engine/robustness";
 import type { Settings } from "./engine/settings";
@@ -48,13 +48,17 @@ export function useScenarioResults(scenarios: Scenario[], settings: Settings): {
       requestIds.current[sc.key] = id;
       const current = () => requestIds.current[sc.key] === id;
 
-      setSlots((prev) => {
-        const old = prev[sc.key];
-        return {
-          ...prev,
-          [sc.key]:
-            old && old.status === "ready" ? { ...old, stale: true } : { status: "loading", result: null },
-        };
+      // The loading/stale mark is cosmetic, so render it as a transition: React can then yield to the
+      // event loop mid-render and the worker's reply is handled as soon as it arrives.
+      startTransition(() => {
+        setSlots((prev) => {
+          const old = prev[sc.key];
+          return {
+            ...prev,
+            [sc.key]:
+              old && old.status === "ready" ? { ...old, stale: true } : { status: "loading", result: null },
+          };
+        });
       });
 
       const engine = getEngine();
