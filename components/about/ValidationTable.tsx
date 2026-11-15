@@ -80,7 +80,7 @@ interface Row extends Record<string, unknown> {
 export function ValidationTable({ entries, caption }: { entries: ValidationEntry[]; caption: string }) {
   const data: Row[] = entries.map((entry, i) => ({ id: `${i}-${entry.name}`, entry }));
   return (
-    <ScrollRegion label={`${caption} (scrollable table)`}>
+    <ScrollRegion>
     <Table<Row>
       aria-label={caption}
       data={data}

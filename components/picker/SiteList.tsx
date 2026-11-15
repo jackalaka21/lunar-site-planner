@@ -101,7 +101,7 @@ export function SiteList({ catalog, currentId, onChoose }: SiteListProps) {
                     width="100%"
                     variant={isCurrent ? "secondary" : "ghost"}
                     aria-pressed={isCurrent}
-                    icon={<Icon icon={s.actual_landing_utc ? MapPin : Crosshair} />}
+                    icon={<Icon icon={g === "artemis3" || g === "polar" ? Crosshair : MapPin} />}
                     onClick={() => onChoose(s.id)}
                   >
                     <Stack as="span" gap={0} align="start" style={{ minWidth: 0 }}>

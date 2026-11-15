@@ -78,7 +78,7 @@ export function ScenarioMapPanel() {
       {near ? (
         <MapPicker key={mode} scenarioKey={active} mode={mode} height={height} />
       ) : (
-        <Stack style={{ height }} />
+        <Stack style={{ minHeight: `calc(${height} + 7rem)` }} />
       )}
     </Stack>
   );

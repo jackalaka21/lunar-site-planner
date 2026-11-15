@@ -91,14 +91,17 @@ test("buttons inside the scenario sheet are at least 44 by 44 at 375 wide", asyn
   await expectAllButtons44(dialog);
 });
 
-for (const width of [1440, 1024, 768]) {
+for (const width of [1440, 1024, 768, 375]) {
   test(`header buttons keep 0.5rem clear of the header edges at ${width} wide`, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
+    await expect(page.locator("canvas[role='img']").first()).toBeVisible({ timeout: 30_000 }); // hydrated
     const bar = page.getByTestId("top-bar");
     await expect(bar).toBeVisible();
-    const barBox = await bar.boundingBox();
-    expect(barBox?.height ?? 0).toBeGreaterThanOrEqual(72);
+    // Measure against the header (the bar's parent), which owns the divider, not the bar itself.
+    const header = bar.locator("xpath=..");
+    const headerBox = await header.boundingBox();
+    expect(headerBox?.height ?? 0).toBeGreaterThanOrEqual(72);
     const buttons = bar.getByRole("button");
     const count = await buttons.count();
     for (let i = 0; i < count; i++) {
@@ -107,9 +110,9 @@ for (const width of [1440, 1024, 768]) {
       await b.hover();
       const box = await b.boundingBox();
       const name = (await b.getAttribute("aria-label")) ?? (await b.innerText());
-      expect((box?.y ?? 0) - (barBox?.y ?? 0), `${name} clear above`).toBeGreaterThanOrEqual(8);
+      expect((box?.y ?? 0) - (headerBox?.y ?? 0), `${name} clear above`).toBeGreaterThanOrEqual(8);
       expect(
-        (barBox?.y ?? 0) + (barBox?.height ?? 0) - ((box?.y ?? 0) + (box?.height ?? 0)),
+        (headerBox?.y ?? 0) + (headerBox?.height ?? 0) - ((box?.y ?? 0) + (box?.height ?? 0)),
         `${name} clear below`,
       ).toBeGreaterThanOrEqual(8);
     }

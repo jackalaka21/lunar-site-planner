@@ -53,8 +53,9 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
       gap={2}
       vAlign="center"
       hAlign="between"
-      height={TOPBAR_HEIGHT}
+      height="100%"
       paddingInline={4}
+      style={{ minHeight: TOPBAR_HEIGHT }}
       data-testid="top-bar"
       data-tour-id="tour-topbar"
     >
@@ -62,6 +63,8 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
         {onOpenNav ? (
           <IconButton
             label="Open scenarios"
+            tooltip="Scenarios"
+            data-tour-id="tour-open-nav"
             size="lg"
             variant="ghost"
             icon={<Icon icon={Menu} />}
@@ -81,6 +84,7 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
         ) : null}
         <Button
           label="Copy link"
+          tooltip={isTabletUp ? undefined : "Copy link"}
           size="lg"
           variant="ghost"
           isIconOnly={!isTabletUp}
@@ -99,6 +103,7 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
         {onOpenTour ? (
           <Button
             label="Tutorial"
+            tooltip={isTabletUp ? undefined : "Tutorial"}
             size="lg"
             variant="ghost"
             isIconOnly={!isTabletUp}

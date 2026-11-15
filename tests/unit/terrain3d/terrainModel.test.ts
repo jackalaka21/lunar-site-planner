@@ -96,7 +96,41 @@ describe("terrainModel", () => {
   });
 });
 
+describe("PSR polygon with a hole", () => {
+  it("leaves vertices inside the hole unmarked (even-odd across rings)", () => {
+    const lat = -88;
+    const lon = 30;
+    const lam = (lon * Math.PI) / 180;
+    const p = patchOf(() => 0);
+    const rho = 2 * 1737400 * Math.tan(Math.PI / 4 + (lat * Math.PI) / 360);
+    const cx = rho * Math.sin(lam);
+    const cy = rho * Math.cos(lam);
+    const square = (h: number) => {
+      const es = [-h, h, h, -h, -h];
+      const ns = [-h, -h, h, h, -h];
+      return es.map((e, i) => {
+        const em = e * 1000;
+        const nm = ns[i] * 1000;
+        const ll = psToLatLon(
+          cx + em * Math.cos(lam) + nm * Math.sin(lam),
+          cy - em * Math.sin(lam) + nm * Math.cos(lam),
+        );
+        return [ll.lon, ll.lat] as [number, number];
+      });
+    };
+    const polys = localPsrRings([{ coordinates: [square(6), square(2)] }], lat, lon, 10);
+    const mask = psrVertexMask(p, polys);
+    expect(mask[20 * 41 + 20]).toBe(0); // centre, inside the hole
+    expect(mask[20 * 41 + 29]).toBe(1); // 4.4 km east: inside the outer ring, outside the hole
+    expect(mask[20 * 41 + 38]).toBe(0); // 8.8 km east: outside everything
+  });
+});
+
 describe("viewportHeightPx", () => {
+  it("treats exactly 48 rem as a phone, matching the max-width media query", () => {
+    expect(viewportHeightPx({ columns: 1, viewportWidthPx: 768, remPx: 16 })).toBe(340);
+    expect(viewportHeightPx({ columns: 1, viewportWidthPx: 769, remPx: 16 })).toBe(520);
+  });
   it("is 520 on a single desktop card, 400 in two columns, 340 on phones", () => {
     expect(viewportHeightPx({ columns: 1, viewportWidthPx: 1440, remPx: 16 })).toBe(520);
     expect(viewportHeightPx({ columns: 2, viewportWidthPx: 1440, remPx: 16 })).toBe(400);

@@ -33,14 +33,18 @@ const toItem = (s: Site): SiteItem => ({
 export function matchSites(sites: Site[], query: string): Site[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
-  return sites.filter((s) => {
+  const hits = sites.filter((s) => {
     const hay = `${s.name} ${s.id.replace(/-/g, " ")} ${GROUP_HEADING[s.group]}`.toLowerCase();
     return words.every((w) => hay.includes(w));
   });
+  // Group in category order, so the headings Typeahead draws never repeat. Array.sort is stable.
+  return hits.sort((x, y) => GROUP_ORDER.indexOf(x.group) - GROUP_ORDER.indexOf(y.group));
 }
 
-/** Time for the drawer close transition, before the page scrolls to the map. */
-const DRAWER_CLOSE_MS = 350;
+/** Longest wait for the drawer to leave the DOM before scrolling to the map anyway. */
+const DRAWER_CLOSE_CAP_MS = 1000;
+// Drawer and BottomSheet are native <dialog> elements (implicit dialog role) labelled "Scenarios".
+const DRAWER_SELECTOR = 'dialog[open][aria-label="Scenarios"], [role="dialog"][aria-label="Scenarios"]';
 
 const round3 = (v: number) => String(Math.round(v * 1000) / 1000 + 0);
 
@@ -94,7 +98,13 @@ export function SitePicker({ scenarioKey }: SitePickerProps) {
     if (closeDrawer) {
       // Let the drawer finish closing (it locks page scroll and traps focus) before scrolling.
       closeDrawer();
-      window.setTimeout(go, DRAWER_CLOSE_MS);
+      const started = performance.now();
+      const poll = () => {
+        const open = document.querySelector(DRAWER_SELECTOR) !== null;
+        if (open && performance.now() - started < DRAWER_CLOSE_CAP_MS) requestAnimationFrame(poll);
+        else requestAnimationFrame(go);
+      };
+      requestAnimationFrame(poll);
     } else go();
   };
 

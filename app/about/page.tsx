@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { useMediaQuery } from "@astryxdesign/core/hooks";
 import { Divider } from "@astryxdesign/core/Divider";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Layout, LayoutContent, LayoutPanel } from "@astryxdesign/core/Layout";
@@ -65,7 +66,7 @@ function replayHref(siteId: string, actualUtc: string): string {
   return `/?${encodeState(state)}`;
 }
 
-const BODY_STYLE = { lineHeight: 1.65 } as const;
+const LEADING_STYLE = { "--text-body-leading": "1.65", "--text-supporting-leading": "1.65" } as CSSProperties;
 const WRAP_STYLE = { overflowWrap: "anywhere", wordBreak: "break-word" } as const;
 // Sticky needs every ancestor to be free of overflow auto/hidden/scroll; LayoutPanel is clipped, not scrollable, so this holds.
 const STICKY_STYLE = { position: "sticky", top: "1.5rem", alignSelf: "flex-start", maxHeight: "calc(100vh - 3rem)", overflowY: "auto" } as const;
@@ -106,6 +107,7 @@ export default function AboutPage() {
   const [sites, setSites] = useState<SiteRecord[] | null>(null);
   const [kernels, setKernels] = useState<KernelRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isNarrow = useMediaQuery("(max-width: 63.99rem)");
 
   useEffect(() => {
     let live = true;
@@ -138,32 +140,39 @@ export default function AboutPage() {
       height="auto"
       contentWidth={960}
       end={
-        <LayoutPanel isScrollable={false} label="On this page" role="complementary">
-          <VStack data-testid="about-outline" style={STICKY_STYLE}>
-            <Outline items={OUTLINE_ITEMS} />
-          </VStack>
-        </LayoutPanel>
+        isNarrow ? undefined : (
+          <LayoutPanel isScrollable={false} label="On this page" role="complementary">
+            <VStack data-testid="about-outline" style={STICKY_STYLE}>
+              <Outline items={OUTLINE_ITEMS} />
+            </VStack>
+          </LayoutPanel>
+        )
       }
       content={
         <LayoutContent isScrollable={false} padding={8}>
-          <VStack gap={10}>
+          <VStack gap={10} style={LEADING_STYLE}>
             <VStack gap={2}>
               <Text type="display-1">About Ridgeline</Text>
               <Link href="/" isStandalone>
                 Back to the planner
               </Link>
+              {isNarrow ? (
+                <VStack data-testid="about-outline">
+                  <Outline items={OUTLINE_ITEMS} />
+                </VStack>
+              ) : null}
             </VStack>
 
             <VStack gap={5}>
               <Heading id="what-this-is" level={2}>
                 What this is
               </Heading>
-              <Text type="body" style={BODY_STYLE}>
+              <Text type="body">
                 Ridgeline compares lunar landing sites and dates. For each scenario it shows when the Sun and Earth are above the real
                 terrain horizon, so you can see when a lander has both power and a direct line to Earth, and how long it sits in the
                 dark. It answers the NASA Space Apps challenge Lunar Landing Site Navigator.
               </Text>
-              <Text type="body" color="secondary" style={BODY_STYLE}>
+              <Text type="body" color="secondary">
                 Everything runs in your browser from files served with the site. There is no account and no call to a third-party
                 service while you use it.
               </Text>
@@ -175,7 +184,7 @@ export default function AboutPage() {
               <Heading id="method" level={2}>
                 Method
               </Heading>
-              <Text type="body" style={BODY_STYLE}>
+              <Text type="body">
                 Sun and Earth directions come from the DE440 ephemeris, rotated into the Moon&apos;s mean-Earth frame with the NAIF lunar
                 orientation kernels, with light-time and stellar aberration applied, sampled hourly and interpolated. Each direction is
                 compared with the terrain horizon at the site, built from LOLA elevation data. The Sun and Earth are treated as discs,
@@ -183,7 +192,7 @@ export default function AboutPage() {
                 from the Moon. Results are merged into lit and dark spells and scored against the thresholds below. These are the defaults
                 a new scenario starts with; each can be changed in the settings panel.
               </Text>
-              <ScrollRegion label="Default settings (scrollable table)">
+              <ScrollRegion>
               <Table<SettingRow>
                 aria-label="Default settings"
                 density="compact"
@@ -204,11 +213,11 @@ export default function AboutPage() {
               <Heading id="nasa-data" level={2}>
                 NASA data used
               </Heading>
-              <Text type="body" style={BODY_STYLE}>
+              <Text type="body">
                 Every dataset Ridgeline uses is listed here with its source and its job. Versions, file sizes and SHA-256 checksums are in
                 DATA_SOURCES.md in the repository.
               </Text>
-              <ScrollRegion label="NASA datasets (scrollable table)">
+              <ScrollRegion>
               <Table<DatasetRow>
                 aria-label="NASA datasets"
                 density="compact"
@@ -265,7 +274,7 @@ export default function AboutPage() {
               <Heading id="partners" level={2}>
                 Partner credits
               </Heading>
-              <Text type="body" style={BODY_STYLE}>Landing sites and events come from the missions of these agencies, as listed in the challenge resources.</Text>
+              <Text type="body">Landing sites and events come from the missions of these agencies, as listed in the challenge resources.</Text>
               <List density="compact" listStyle="none">
                 {PARTNERS.map((p) => (
                   <ListItem
@@ -287,11 +296,11 @@ export default function AboutPage() {
               <Heading id="validation" level={2}>
                 Validation
               </Heading>
-              <Text type="body" style={BODY_STYLE}>
+              <Text type="body">
                 Each check compares Ridgeline against an independent reference. Passing, failing and informational results are all shown,
                 with the method in each note. A failure stays on this page.
               </Text>
-              {error ? <Text type="body" style={BODY_STYLE}>Validation results could not be loaded ({error}).</Text> : null}
+              {error ? <Text type="body">Validation results could not be loaded ({error}).</Text> : null}
               {report ? (
                 <VStack gap={8}>
                   <Text type="supporting" size="xsm">
@@ -319,7 +328,7 @@ export default function AboutPage() {
               <Heading id="replays" level={2}>
                 Mission replays
               </Heading>
-              <Text type="body" style={BODY_STYLE}>
+              <Text type="body">
                 Open the planner at a real landing site and the time of touchdown. Chandrayaan-3 has a landing date only, so its replay
                 starts at 00:00 UTC on that date.
               </Text>
@@ -356,7 +365,7 @@ export default function AboutPage() {
               <Heading id="ai-use" level={2}>
                 AI use
               </Heading>
-              <Text type="body" style={BODY_STYLE}>{AI_DISCLOSURE}</Text>
+              <Text type="body">{AI_DISCLOSURE}</Text>
             </VStack>
 
             <Divider />

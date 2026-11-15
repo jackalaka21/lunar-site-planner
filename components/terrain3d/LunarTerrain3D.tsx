@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import * as THREE from "three";
 import { Button } from "@astryxdesign/core/Button";
@@ -8,6 +8,7 @@ import { EmptyState } from "@astryxdesign/core/EmptyState";
 import { HStack } from "@astryxdesign/core/HStack";
 import { Stack } from "@astryxdesign/core/Stack";
 import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
+import { Text } from "@astryxdesign/core/Text";
 import { ToggleButton } from "@astryxdesign/core/ToggleButton";
 import { VStack } from "@astryxdesign/core/VStack";
 import { useTheme } from "@astryxdesign/core/theme";
@@ -24,10 +25,11 @@ import type { HorizonProfile, Topo } from "../../lib/engine/types";
 import { withAlpha } from "../panorama/layout";
 import { panoramaPalette } from "../panorama/palette";
 import { TerrainGlScene, LANDER_TOP, type SurfaceMode } from "./glScene";
-import { drawHud, type PsrStatus } from "./hud";
+import { drawHud, terrainNotes, type PsrStatus } from "./hud";
 import { terrainPalette } from "./palette";
 import { loadPsr } from "./psr";
 import {
+  ellipseRingKm,
   findBlocker,
   sampleHeightM,
   localPsrRings,
@@ -124,6 +126,16 @@ function rgbStr(c: [number, number, number], alpha = 1): string {
   return alpha >= 1 ? `rgb(${c[0]}, ${c[1]}, ${c[2]})` : `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha})`;
 }
 
+function tracksOf(series: TimeSeries) {
+  return {
+    sunAz: series.sunAz,
+    sunEl: series.sunEl,
+    earthAz: series.earthAz,
+    earthEl: series.earthEl,
+    n: series.n,
+  };
+}
+
 function topoAt(az: number, el: number, r: number): Topo {
   return { az, el, r, distKm: 0 };
 }
@@ -170,12 +182,28 @@ export function LunarTerrain3D({
 }: LunarTerrain3DProps) {
   const wrapRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [{ width, height }, setSize] = useState({ width: 0, height: heightProp ?? VIEWPORT_DEFAULT });
+  // ssr:false, so window exists here: start at the right height for this layout instead of flashing 520 on phones.
+  const [{ width, height }, setSize] = useState(() => ({
+    width: 0,
+    height:
+      heightProp ??
+      (typeof window === "undefined"
+        ? VIEWPORT_DEFAULT
+        : viewportHeightPx({
+            columns: layout === "compare" ? 2 : 1,
+            viewportWidthPx: window.innerWidth,
+            remPx: parseFloat(getComputedStyle(document.documentElement).fontSize) || 16,
+          })),
+  }));
   const [useGl, setUseGl] = useState<boolean>(() => typeof document !== "undefined" && canUseWebGl());
   const [relief, setRelief] = useState<number>(DEFAULT_RELIEF);
-  const [surface, setSurface] = useState<SurfaceMode>("regolith");
+  const [surface, setSurface] = useState<SurfaceMode>("shaded");
   const [psrOn, setPsrOn] = useState(false);
-  const [psrRings, setPsrRings] = useState<ReturnType<typeof localPsrRings> | null>(null);
+  const [psrRingsState, setPsrRingsState] = useState<{ key: string; rings: ReturnType<typeof localPsrRings> } | null>(null);
+  const [glEpoch, setGlEpoch] = useState(0);
+  const glLostRef = useRef(0);
+  const sceneRef = useRef<TerrainGlScene | null>(null);
+  const focusedRef = useRef(false);
   const [patchState, setPatchState] = useState<{ key: string; patch: LocalTerrainPatch | null } | null>(null);
   const [view, setView] = useState<ViewState>(DEFAULT_VIEW);
   const camMode = view.mode;
@@ -204,7 +232,10 @@ export function LunarTerrain3D({
     };
   }, [patchKey, siteId, lat, lon]);
 
-  useEffect(() => {
+  const patch = patchState && patchState.key === patchKey ? patchState.patch : null;
+  const unavailable = patchState !== null && patchState.key === patchKey && patchState.patch === null;
+
+  useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
     const measure = () => {
@@ -231,10 +262,7 @@ export function LunarTerrain3D({
       ro.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [heightProp, layout]);
-
-  const patch = patchState && patchState.key === patchKey ? patchState.patch : null;
-  const unavailable = patchState !== null && patchState.key === patchKey && patchState.patch === null;
+  }, [heightProp, layout, unavailable]);
 
   const idx = Math.min(Math.max(cursorIndex, 0), Math.max(series.n - 1, 0));
   const sunAz = series.sunAz[idx] ?? 0;
@@ -460,7 +488,7 @@ export function LunarTerrain3D({
     ctx.restore();
 
     // Draw landing uncertainty ellipse ring around (0, 0, 0)
-    const ringRadiusKm = Math.max(0.75, Math.min(4.5, ellipseKm));
+    const ringRadiusKm = ellipseRingKm(ellipseKm, patch.radiusKm);
     ctx.save();
     ctx.strokeStyle = withAlpha(pal.sun, 0.8);
     ctx.lineWidth = 1.4;
@@ -665,21 +693,14 @@ export function LunarTerrain3D({
       ctx.fillText(label, earthPt.x, Math.max(14, earthPt.y - 14));
     }
 
-    // Bottom-left plain-English status legend
+    // Bottom-left plain-English status line; legends and caption are page text under the controls.
     ctx.textAlign = "left";
     ctx.textBaseline = "bottom";
-    ctx.fillStyle = withAlpha(pal.rim, 0.7);
-    ctx.fillText(
-      "Local terrain only; ridge values come from terrain up to 200 km away",
-      10,
-      height - 40,
-    );
     ctx.fillStyle = pal.rim;
-    ctx.fillText(terrainCaption(patch, relief), 10, height - 24);
 
     const statusLine =
       `Sun ${isSunLit ? "clear of" : "behind"} ${sunRidgeEl.toFixed(1)}° ridge · ` +
-      `Earth ${isEarthUp ? "clear of" : "behind"} ${earthRidgeEl.toFixed(1)}° ridge · Drag to orbit 3D view`;
+      `Earth ${isEarthUp ? "clear of" : "behind"} ${earthRidgeEl.toFixed(1)}° ridge`;
     ctx.fillText(statusLine, 10, height - 8);
     ctx.restore();
   }, [
@@ -724,7 +745,7 @@ export function LunarTerrain3D({
       .then((data) => {
         if (!active) return;
         const polys = data.features.map((f) => ({ coordinates: f.geometry.coordinates }));
-        setPsrRings(localPsrRings(polys, lat, lon, patch.radiusKm));
+        setPsrRingsState({ key: `${lat}:${lon}:${patch.radiusKm}`, rings: localPsrRings(polys, lat, lon, patch.radiusKm) });
       })
       .catch(() => {
         if (active) setPsrFailed(true);
@@ -733,6 +754,7 @@ export function LunarTerrain3D({
       active = false;
     };
   }, [psrOn, patch, psrEligible, lat, lon]);
+  const psrRings = psrRingsState && patch && psrRingsState.key === `${lat}:${lon}:${patch.radiusKm}` ? psrRingsState.rings : null;
   const psrMask = useMemo(
     () => (psrOn && patch && psrEligible && psrRings ? psrVertexMask(patch, psrRings) : null),
     [psrOn, patch, psrEligible, psrRings],
@@ -782,6 +804,12 @@ export function LunarTerrain3D({
     liveRef.current = live;
   });
   const kickRef = useRef<() => void>(() => {});
+  const horizonRef = useRef(horizon);
+  const seriesRef = useRef(series);
+  useEffect(() => {
+    horizonRef.current = horizon;
+    seriesRef.current = series;
+  });
 
   useEffect(() => {
     if (!useGl || !patch) return;
@@ -799,20 +827,26 @@ export function LunarTerrain3D({
       sc = new TerrainGlScene(glCanvas, patch, terrainPalette(mode), {
         obsHeightM,
         ellipseKm,
-        horizon,
-        skyTracks: {
-          sunAz: series.sunAz,
-          sunEl: series.sunEl,
-          earthAz: series.earthAz,
-          earthEl: series.earthEl,
-          n: series.n,
-        },
+        horizon: horizonRef.current,
+        skyTracks: tracksOf(seriesRef.current),
       });
     } catch {
       glCanvas.remove();
       void Promise.resolve().then(() => setUseGl(false));
       return;
     }
+    sceneRef.current = sc;
+    const onLost = (ev: Event) => {
+      ev.preventDefault();
+      dead = true;
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      glLostRef.current += 1;
+      if (glLostRef.current >= 2) setUseGl(false);
+    };
+    const onRestored = () => setGlEpoch((e) => e + 1);
+    glCanvas.addEventListener("webglcontextlost", onLost);
+    glCanvas.addEventListener("webglcontextrestored", onRestored);
     const pal = terrainPalette(mode);
     const reduced =
       typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -910,9 +944,6 @@ export function LunarTerrain3D({
           height: L.height,
           pal,
           patch: patch!,
-          caption: terrainCaption(patch!, L.relief),
-          surface: L.surface,
-          psr: L.psrStatus,
           sc,
           sunAz: L.sunAz,
           sunEl: L.sunEl,
@@ -945,10 +976,19 @@ export function LunarTerrain3D({
       kickRef.current = () => {};
       if (raf) cancelAnimationFrame(raf);
       io?.disconnect();
+      glCanvas.removeEventListener("webglcontextlost", onLost);
+      glCanvas.removeEventListener("webglcontextrestored", onRestored);
+      if (sceneRef.current === sc) sceneRef.current = null;
       sc.dispose();
       glCanvas.remove();
     };
-  }, [useGl, patch, mode, obsHeightM, ellipseKm, horizon, series]);
+  }, [useGl, patch, mode, obsHeightM, ellipseKm, glEpoch]);
+
+  // Horizon and series changes (including every frame of a pin drag) update the sky in place, never the WebGL context.
+  useEffect(() => {
+    sceneRef.current?.setSky(horizon, tracksOf(series));
+    kickRef.current();
+  }, [horizon, series, glEpoch, patch, useGl]);
 
   // Any render (props, toggles, drag) asks for one frame; the loop keeps itself alive only while the camera moves.
   useEffect(() => {
@@ -965,6 +1005,7 @@ export function LunarTerrain3D({
       pitch: v.mode === "orbit" ? v.pitch : v.lookPitch,
     };
     ev.currentTarget.setPointerCapture?.(ev.pointerId);
+    ev.currentTarget.focus({ preventScroll: true });
   };
 
   const onPointerMove = (ev: ReactPointerEvent<HTMLCanvasElement>) => {
@@ -996,6 +1037,8 @@ export function LunarTerrain3D({
     if (!el) return;
     const onWheel = (ev: WheelEvent) => {
       if (viewRef.current.mode !== "orbit") return;
+      // Page scroll wins unless the user asked to zoom: Ctrl/Cmd+scroll, or the canvas has focus.
+      if (!(ev.ctrlKey || ev.metaKey || focusedRef.current)) return;
       ev.preventDefault();
       setView((v) => ({
         ...v,
@@ -1023,6 +1066,19 @@ export function LunarTerrain3D({
     `(ridge ${sunRidgeEl.toFixed(1)}°); Earth is at azimuth ${earthAz.toFixed(1)}°, elevation ${earthEl.toFixed(1)}° ` +
     `(ridge ${earthRidgeEl.toFixed(1)}°).${pole ? " At the pole, north points toward 0° longitude." : ""}`;
 
+  const ringKm = ellipseRingKm(ellipseKm, patch?.radiusKm ?? PATCH_RADIUS_KM);
+  const notes = patch
+    ? terrainNotes({
+        patch,
+        caption: terrainCaption(patch, relief),
+        surface,
+        psr: psrStatus,
+        ellipseKm,
+        ringKm,
+        ringClipped: ellipseKm > ringKm + 1e-9,
+      })
+    : [];
+
   if (unavailable) {
     return (
       <EmptyState
@@ -1040,7 +1096,7 @@ export function LunarTerrain3D({
         data-testid="lunar-terrain-3d"
         width="100%"
         height={height}
-        style={{ position: "relative", touchAction: "none", userSelect: "none", overflow: "hidden" }}
+        style={{ position: "relative", touchAction: "pan-y", userSelect: "none", overflow: "hidden" }}
       >
         <canvas
           ref={canvasRef}
@@ -1050,6 +1106,13 @@ export function LunarTerrain3D({
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
+          tabIndex={0}
+          onFocus={() => {
+            focusedRef.current = true;
+          }}
+          onBlur={() => {
+            focusedRef.current = false;
+          }}
           style={{ position: "absolute", inset: 0, width: "100%", height, cursor: "grab" }}
         />
       </Stack>
@@ -1071,9 +1134,9 @@ export function LunarTerrain3D({
             label="Surface mode"
             size="lg"
             value={surface}
-            onChange={(v) => setSurface(v === "slope" ? "slope" : "regolith")}
+            onChange={(v) => setSurface(v === "slope" ? "slope" : "shaded")}
           >
-            <SegmentedControlItem value="regolith" label="Regolith" />
+            <SegmentedControlItem value="shaded" label="Shaded relief" />
             <SegmentedControlItem value="slope" label="Elevation & slope" />
           </SegmentedControl>
           <SegmentedControl
@@ -1095,6 +1158,13 @@ export function LunarTerrain3D({
           ) : null}
         </HStack>
       ) : null}
+      <VStack gap={0.5} data-testid="terrain-notes">
+        {notes.map((line) => (
+          <Text key={line} type="supporting" size="xsm">
+            {line}
+          </Text>
+        ))}
+      </VStack>
     </VStack>
   );
 }

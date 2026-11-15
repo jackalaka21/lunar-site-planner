@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SitePicker } from "../../../components/picker/SitePicker";
+import { SitePicker, matchSites } from "../../../components/picker/SitePicker";
 import { formatLatLon, siteMeta, siteSearchMeta } from "../../../components/picker/SiteList";
 import type { Site } from "../../../lib/data/sites";
 import { DEFAULT_SCENARIOS } from "../../../lib/state/defaults";
@@ -89,5 +89,22 @@ describe("search results", () => {
     expect(opts[0].textContent).toContain("Apollo 11 Eagle");
     expect(opts[0].textContent).toContain("Apollo · 1969 · 0.67° N, 23.47° E");
     expect(screen.queryByRole("option", { name: /^Apollo$/ })).toBeNull();
+  });
+});
+
+describe("matchSites ordering", () => {
+  it("lists matches by category order, keeping catalogue order within a category", () => {
+    const out = matchSites([mouton, a12, eagle], "o");
+    expect(out.map((s) => s.id)).toEqual(["apollo-12", "apollo-11", "artemis3-mons-mouton"]);
+  });
+});
+
+describe("row icons", () => {
+  it("use a crosshair for candidate and polar groups and a pin for the rest, regardless of date", () => {
+    mount();
+    const list = screen.getByTestId("site-list");
+    const iconOf = (re: RegExp) => within(list).getByRole("button", { name: re }).querySelector("svg")?.getAttribute("class") ?? "";
+    expect(iconOf(/Apollo 11 Eagle/)).toContain("lucide-map-pin");
+    expect(iconOf(/Mons Mouton/)).toContain("lucide-crosshair");
   });
 });

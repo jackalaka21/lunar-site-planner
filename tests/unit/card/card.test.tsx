@@ -88,7 +88,7 @@ describe("ScenarioCard", () => {
       expect(container.querySelectorAll(`[data-tour-id="${id}"]`).length).toBe(1);
     }
   });
-  it("puts tour-validation on the delta badge when there is a delta", () => {
+  it("keeps exactly one tour-validation target when there is a delta", () => {
     const { container } = render(<ScenarioCard {...base} deltaVsA={{ bothH: 12, sunlitH: 0, longestDarkH: 0 }} />);
     expect(container.querySelectorAll('[data-tour-id="tour-validation"]').length).toBe(1);
   });

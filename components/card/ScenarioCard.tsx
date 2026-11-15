@@ -11,6 +11,7 @@ import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/Segme
 import { StatusDot } from "@astryxdesign/core/StatusDot";
 import { Text } from "@astryxdesign/core/Text";
 import { Token } from "@astryxdesign/core/Token";
+import { Stack } from "@astryxdesign/core/Stack";
 import { VStack } from "@astryxdesign/core/VStack";
 import type { EventKind } from "../../lib/engine/events";
 import { fmtHours } from "../../lib/engine/format";
@@ -19,6 +20,11 @@ import type { Metrics } from "../../lib/engine/metrics";
 import type { RobustnessResult } from "../../lib/engine/robustness";
 import { mergeFlickers, type TimeSeries } from "../../lib/engine/sample";
 import type { SiteContext } from "../../lib/engine/types";
+import {
+  CONTROLS_RESERVE_REM,
+  PHONE_BREAKPOINT_REM,
+  VIEWPORT_HEIGHT_REM,
+} from "../terrain3d/viewport";
 import { HorizonPanorama } from "../panorama/HorizonPanorama";
 import { Timeline } from "../timeline/Timeline";
 import { MissionClock } from "../ui/MissionClock";
@@ -30,9 +36,22 @@ import { SecondaryMetrics } from "./SecondaryMetrics";
 import { VerdictChip } from "./VerdictChip";
 import { formatDelta, formatSpan } from "./delta";
 
+/** Same reserve as StaticDefaultCard's placeholder, so the three.js chunk loading causes no layout jump. */
+const loadingCss =
+  `[data-testid="terrain-loading"]{height:${VIEWPORT_HEIGHT_REM.single + CONTROLS_RESERVE_REM.desktop}rem}` +
+  `@media (max-width: ${PHONE_BREAKPOINT_REM}rem){[data-testid="terrain-loading"]{height:${VIEWPORT_HEIGHT_REM.phone + CONTROLS_RESERVE_REM.phone}rem}}`;
+function TerrainLoading() {
+  return (
+    <>
+      <style>{loadingCss}</style>
+      <Stack aria-hidden="true" data-testid="terrain-loading" width="100%" />
+    </>
+  );
+}
+
 const LunarTerrain3D = dynamic(
   () => import("../terrain3d/LunarTerrain3D").then((m) => m.LunarTerrain3D),
-  { ssr: false },
+  { ssr: false, loading: () => <TerrainLoading /> },
 );
 
 export interface ScenarioCardProps {
@@ -280,7 +299,7 @@ export function ScenarioCard(p: ScenarioCardProps) {
           />
         </VStack>
 
-        <VStack data-tour-id={deltaVsA ? undefined : "tour-validation"}>
+        <VStack data-tour-id="tour-validation">
           <Provenance ctx={ctx} />
         </VStack>
 

@@ -85,7 +85,7 @@ export function limitations(ellipseKm: number): string[] {
     "No thermal model: power is a sunlight proxy. Battery, heat and dust effects are not simulated.",
     "Eclipses: Earth's atmosphere refraction is ignored during a lunar eclipse, so the umbral dimming is a geometric estimate.",
     "Time: all times are UTC, not lunar local time.",
-    `Surface only: no regolith, slope or traverse model. The ${ellipseKm} km landing ellipse samples the DEM, not a descent simulation.`,
+    `Surface only: no regolith or traverse model, and slope does not affect the verdict. The 3D view flags slopes over 10° measured over 400 m baselines on catalogue-site patches (200 m grid spacing), so steeper metre-scale slopes are not shown. The ${ellipseKm} km landing ellipse samples the DEM, not a descent simulation.`,
   ];
 }
 

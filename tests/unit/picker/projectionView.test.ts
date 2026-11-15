@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { homeView, MAX_ZOOM, viewBoxOf, zoomAbout, zoomForSpan } from "../../../components/picker/projectionView";
+import { clampView, homeView, MAX_ZOOM, viewBoxOf, zoomAbout, zoomForSpan } from "../../../components/picker/projectionView";
 
 describe("map view maths", () => {
   it("fits the whole image at zoom 1 and matches the container aspect", () => {
@@ -19,5 +19,12 @@ describe("map view maths", () => {
   });
   it("zooms to a span", () => {
     expect(zoomForSpan(100, 400, 400, 1)).toBeCloseTo(4, 6);
+  });
+  it("cannot pan at zoom 1, and keeps the box on the image when zoomed", () => {
+    expect(clampView({ zoom: 1, cx: 10, cy: 390 }, 400, 400, 1)).toEqual({ zoom: 1, cx: 200, cy: 200 });
+    expect(clampView({ zoom: 1, cx: 10, cy: 390 }, 400, 400, 2).cx).toBe(200);
+    const z = clampView({ zoom: 4, cx: 0, cy: 400 }, 400, 400, 1);
+    expect(z.cx).toBeCloseTo(50, 6);
+    expect(z.cy).toBeCloseTo(350, 6);
   });
 });

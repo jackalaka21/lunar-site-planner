@@ -1,8 +1,8 @@
 import { psToXY } from "../../lib/data/ps";
-import { rampLegend, rampStep, RAMP_EDGES_PCT, RAMP_STEPS } from "../calendar/calendarModel";
+import { rampStep, RAMP_EDGES_PCT, RAMP_STEPS } from "../calendar/calendarModel";
 import { southToPixel } from "./projection";
 
-export { rampLegend, rampStep, RAMP_EDGES_PCT, RAMP_STEPS };
+export { rampStep, RAMP_EDGES_PCT, RAMP_STEPS };
 
 /** Spacing of the LOLA horizon grid the heatmap samples, in metres (horizons/grid/index.json spacingM). */
 export const HEATMAP_GRID_SPACING_M = 2000;
@@ -74,13 +74,22 @@ export function heatmapStepFill(step: number): string {
   return `var(--color-heat-${clamped})`;
 }
 
-/** Legend for the ramp: end captions and one hour range per step, from the same thresholds as rampStep. */
+/** Lowest whole-hour value that lands in each step above 0, from the same percentages rampStep uses. */
+function stepEdgesH(windowH: number): number[] {
+  return RAMP_EDGES_PCT.map((pct) => Math.ceil((windowH * pct) / 100));
+}
+
+/** Legend for the ramp: end captions and one hour range per step. Edges are whole hours, matching the rounded cell values. */
 export function heatmapLegend(windowH: number): { low: string; high: string; steps: { fill: string; label: string }[] } {
-  const labels = rampLegend(windowH);
-  const topEdgeH = Math.round((windowH * RAMP_EDGES_PCT[RAMP_EDGES_PCT.length - 1]) / 100);
+  const e = stepEdgesH(windowH);
+  const labels = Array.from({ length: RAMP_STEPS }, (_, i) => {
+    if (i === 0) return `under ${e[0]}`;
+    if (i === RAMP_STEPS - 1) return `${e[i - 1]}+`;
+    return `${e[i - 1]} to ${e[i] - 1}`;
+  });
   return {
     low: "0 h, no overlap",
-    high: `${topEdgeH}+ h Sun + Earth`,
+    high: `${e[e.length - 1]}+ h Sun + Earth`,
     steps: labels.map((label, i) => ({ fill: heatmapStepFill(i), label: `${label} h` })),
   };
 }
@@ -99,7 +108,7 @@ export function projectHeatmapCells(
   for (const p of within) {
     const px = southToPixel(p.lat, p.lon, size);
     if (!px) continue;
-    const step = rampStep(p.bothH, windowH);
+    const step = rampStep(Math.round(p.bothH), windowH);
     out.push({
       lat: p.lat,
       lon: p.lon,

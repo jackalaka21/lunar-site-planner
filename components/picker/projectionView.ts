@@ -34,13 +34,15 @@ export function viewBoxOf(view: MapView, baseW: number, baseH: number, aspect: n
   return { x: view.cx - w / 2, y: view.cy - h / 2, w, h };
 }
 
-/** Keep the centre on the image. */
-export function clampView(view: MapView, baseW: number, baseH: number): MapView {
-  return {
-    zoom: clampZoom(view.zoom),
-    cx: Math.max(0, Math.min(baseW, view.cx)),
-    cy: Math.max(0, Math.min(baseH, view.cy)),
-  };
+/** Keep the visible box on the image. An axis that is wider than the image stays centred, so zoom 1 cannot pan. */
+export function clampView(view: MapView, baseW: number, baseH: number, aspect: number): MapView {
+  const zoom = clampZoom(view.zoom);
+  const fit = fitSize(baseW, baseH, aspect);
+  const w = fit.w / zoom;
+  const h = fit.h / zoom;
+  const axis = (c: number, size: number, base: number) =>
+    size >= base ? base / 2 : Math.max(size / 2, Math.min(base - size / 2, c));
+  return { zoom, cx: axis(view.cx, w, baseW), cy: axis(view.cy, h, baseH) };
 }
 
 export function homeView(baseW: number, baseH: number): MapView {
@@ -64,7 +66,7 @@ export function zoomAbout(
   const fit = fitSize(baseW, baseH, aspect);
   const w = fit.w / zoom;
   const h = fit.h / zoom;
-  return clampView({ zoom, cx: ux - fx * w + w / 2, cy: uy - fy * h + h / 2 }, baseW, baseH);
+  return clampView({ zoom, cx: ux - fx * w + w / 2, cy: uy - fy * h + h / 2 }, baseW, baseH, aspect);
 }
 
 /** Zoom at which the shorter side of the visible box spans `spanUnits` map units. */

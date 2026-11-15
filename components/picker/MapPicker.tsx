@@ -59,7 +59,7 @@ const GLOBAL_SRC = `${DATA_BASE}basemaps/global-2048.webp`;
 const GLOBAL_KM_PER_DEG = 30.3;
 /** Screen-size constants. A group scaled by user-units-per-screen-pixel draws them at one size at every zoom. */
 const PIN_R = 14;
-const PIN_HIT = 18;
+const PIN_HIT = 22;
 const DOT_R = 3.5;
 const DOT_HIT = 12;
 const BAR_MAX = 140;
@@ -72,7 +72,11 @@ const BUTTON_FACTOR = 1.6;
 const KEY_PAN = 0.12;
 /** The Nearby heatmap auto-zooms to a box of this width: 20 km radius plus a 6 km margin each side. */
 const AUTO_ZOOM_SPAN_KM = 52;
+/** Wait this long after the site stops changing before asking the engine for a heatmap. */
+const HEATMAP_DEBOUNCE_MS = 250;
 
+const KEYBOARD_HELP =
+  "With the map focused, arrow keys pan, + and − zoom, 0 resets. Type coordinates in the Latitude and Longitude fields to place a point by keyboard.";
 const INK = "var(--color-text-primary)";
 const CARD = "var(--color-background-card)";
 const DEEPEST = "var(--surface-deepest)";
@@ -138,6 +142,8 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
   const animRef = useRef<number | null>(null);
   const userMovedRef = useRef(false);
   const autoZoomedRef = useRef(false);
+  const preAutoViewRef = useRef<MapView | null>(null);
+  const lastPointerTypeRef = useRef("mouse");
 
   const south = mode === "south";
   const h = south ? VIEW_W : GLOBAL_H;
@@ -173,7 +179,7 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
   };
   const animateTo = (target: MapView) => {
     stopAnim();
-    const goal = clampView(target, VIEW_W, h);
+    const goal = clampView(target, VIEW_W, h, aspectRef.current);
     if (prefersReducedMotion()) {
       applyView(goal);
       return;
@@ -200,7 +206,7 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
     south ? southToPixel(lat, lon, VIEW_W) : globalToPixel(lat, lon, VIEW_W, GLOBAL_H);
 
   const siteOf = (siteRef: SiteRef): { lat: number; lon: number } | null => {
-    if (siteRef.kind === "custom") return siteRef;
+    if (siteRef.kind === "custom") return { lat: siteRef.lat, lon: siteRef.lon };
     const s = catalog?.byId.get(siteRef.id);
     return s ? { lat: s.lat, lon: s.lon } : null;
   };
@@ -243,6 +249,8 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
     const el = ref.current;
     if (!el) return;
     const onWheel = (e: WheelEvent) => {
+      // Only capture the wheel once the map is focused (click it) or on Ctrl/pinch, so the page still scrolls.
+      if (!(e.ctrlKey || e.metaKey || document.activeElement === el)) return;
       const v = viewRef.current;
       const zoomingIn = e.deltaY < 0;
       if (e.deltaY === 0 || (zoomingIn && v.zoom >= MAX_ZOOM) || (!zoomingIn && v.zoom <= MIN_ZOOM))
@@ -286,41 +294,57 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
     };
   }, [south, showPsr, psrData]);
 
+  const siteSig = activeScenario ? JSON.stringify(activeScenario.site) : null;
+  const t0 = activeScenario?.t0Ms;
   useEffect(() => {
-    if (!south || !showHeatmap || !activeScenario) return;
+    if (!south || !showHeatmap || siteSig === null || t0 === undefined) return;
     let cancelled = false;
-    getEngine()
-      .heatmap({
-        ref: activeScenario.site,
-        t0Ms: activeScenario.t0Ms,
-        radiusKm: DEFAULT_HEATMAP_RADIUS_KM,
-        settings,
-      })
-      .then((pts) => {
-        if (!cancelled) setHeatmapPoints(pts);
-      })
-      .catch(() => {
-        if (!cancelled) setHeatmapPoints([]);
-      });
+    const timer = setTimeout(() => {
+      getEngine()
+        .heatmap({
+          ref: JSON.parse(siteSig) as SiteRef,
+          t0Ms: t0,
+          radiusKm: DEFAULT_HEATMAP_RADIUS_KM,
+          settings,
+        })
+        .then((pts) => {
+          if (!cancelled) setHeatmapPoints(pts);
+        })
+        .catch(() => {
+          if (!cancelled) setHeatmapPoints([]);
+        });
+    }, HEATMAP_DEBOUNCE_MS);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
-  }, [south, showHeatmap, activeScenario, settings]);
+  }, [south, showHeatmap, siteSig, t0, settings]);
 
   const windowH = settings.durationDays * 24;
-  const activeLat = activeCoords?.lat ?? null;
-  const activeLon = activeCoords?.lon ?? null;
-  const heatmapCells =
-    south && showHeatmap && activeLat !== null && activeLon !== null
-      ? projectHeatmapCells(
-          heatmapPoints,
-          activeLat,
-          activeLon,
-          windowH,
-          VIEW_W,
-          DEFAULT_HEATMAP_RADIUS_KM,
-        )
-      : [];
+  // Looked up from the serialised site, so the memo below depends on plain numbers only.
+  const activeLL = useMemo(() => {
+    if (siteSig === null) return null;
+    const r = JSON.parse(siteSig) as SiteRef;
+    if (r.kind === "custom") return { lat: r.lat, lon: r.lon };
+    const found = catalog?.byId.get(r.id);
+    return found ? { lat: found.lat, lon: found.lon } : null;
+  }, [siteSig, catalog]);
+  const activeLat = activeLL ? activeLL.lat : null;
+  const activeLon = activeLL ? activeLL.lon : null;
+  const heatmapCells = useMemo(
+    () =>
+      south && showHeatmap && activeLat !== null && activeLon !== null
+        ? projectHeatmapCells(
+            heatmapPoints,
+            activeLat,
+            activeLon,
+            windowH,
+            VIEW_W,
+            DEFAULT_HEATMAP_RADIUS_KM,
+          )
+        : [],
+    [south, showHeatmap, activeLat, activeLon, heatmapPoints, windowH],
+  );
   const legend = useMemo(() => heatmapLegend(windowH), [windowH]);
   /** One grid step in map units, so neighbouring cells tile with no gaps. */
   const cellSize = HEATMAP_GRID_SPACING_M / metresPerUnit;
@@ -329,6 +353,53 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
     () => (south && showPsr && psrData ? projectPsrPolygons(psrData.features, VIEW_W) : []),
     [south, showPsr, psrData],
   );
+
+  const psrPaths = useMemo(
+    () =>
+      psrPolygons.map((poly) => (
+        <path
+          key={poly.id}
+          d={poly.d}
+          fillRule="evenodd"
+          data-testid={`psr-polygon-${poly.id}`}
+        >
+          <title>{poly.name}</title>
+        </path>
+      )),
+    [psrPolygons],
+  );
+  const heatRects = useMemo(
+    () =>
+      heatmapCells.map((cell, idx) => (
+        <rect
+          key={`${cell.lat}:${cell.lon}`}
+          x={cell.x - cellSize / 2}
+          y={cell.y - cellSize / 2}
+          width={cellSize}
+          height={cellSize}
+          data-heat
+          data-index={idx}
+          data-testid={`heatmap-point-${idx}`}
+          data-step={cell.step}
+          data-both-h={Math.round(cell.bothH)}
+          data-lat={cell.lat}
+          data-lon={cell.lon}
+          style={{
+            fill: cell.fill,
+            fillOpacity: HEATMAP_FILL_OPACITY,
+            shapeRendering: "crispEdges",
+            cursor: "pointer",
+          }}
+        >
+          <title>{`${cell.lat.toFixed(2)}°, ${cell.lon.toFixed(2)}°: ${Math.round(cell.bothH)} h Sun and Earth together`}</title>
+        </rect>
+      )),
+    [heatmapCells, cellSize],
+  );
+  const cellOf = (target: EventTarget | null): ProjectedHeatmapCell | null => {
+    const idx = (target as Element | null)?.closest?.("[data-index]")?.getAttribute("data-index");
+    return idx == null ? null : (heatmapCells[Number(idx)] ?? null);
+  };
 
   const sitePins: { site: Site; p: Point }[] = (catalog?.sites ?? []).flatMap((site) => {
     const p = toPixel(site.lat, site.lon);
@@ -387,6 +458,8 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
   };
 
   const onPointerDown = (e: PointerEvent<SVGSVGElement>) => {
+    lastPointerTypeRef.current = e.pointerType || "mouse";
+    ref.current?.focus({ preventScroll: true });
     pointersRef.current.set(e.pointerId ?? 0, { x: e.clientX, y: e.clientY });
     if (pointersRef.current.size === 2) {
       // Second finger: pinch zoom. Abandon any pin drag or pan in progress.
@@ -473,6 +546,7 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
             },
             VIEW_W,
             h,
+            aspectRef.current,
           ),
         );
       }
@@ -505,6 +579,10 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
 
     const pan = panRef.current;
     if (!pan) return;
+    if (e.pointerType === "mouse" && e.buttons === 0) {
+      panRef.current = null;
+      return;
+    }
     const dx = e.clientX - pan.sx;
     const dy = e.clientY - pan.sy;
     if (!pan.moved) {
@@ -525,6 +603,7 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
         },
         VIEW_W,
         h,
+        aspectRef.current,
       ),
     );
   };
@@ -564,8 +643,20 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
   };
 
   const onPointerCancel = (e: PointerEvent<SVGSVGElement>) => {
-    // A cancelled gesture must not place a point.
+    // A cancelled gesture must not place a point, and a pin drag commits only its last move.
     panRef.current = null;
+    pointersRef.current.delete(e.pointerId ?? 0);
+    const drag = dragRef.current;
+    if (drag) {
+      cancelPinDrag();
+      releaseCapture(e);
+      if (drag.pending) {
+        updateScenario(drag.key, {
+          site: { kind: "custom", lat: drag.pending.lat, lon: drag.pending.lon },
+        });
+      }
+      return;
+    }
     onPointerUp(e);
   };
 
@@ -589,6 +680,7 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
           { ...v, cx: v.cx + dx * b.w * KEY_PAN, cy: v.cy + dy * b.h * KEY_PAN },
           VIEW_W,
           h,
+          aspectRef.current,
         ),
       );
     };
@@ -609,6 +701,7 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
     setHover(null);
     if (next) {
       if (south && activePixel) {
+        preAutoViewRef.current = viewRef.current;
         autoZoomedRef.current = true;
         userMovedRef.current = false;
         const spanUnits = (AUTO_ZOOM_SPAN_KM * 1000) / metresPerUnit;
@@ -620,7 +713,8 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
       }
     } else {
       // Zoom back out only if the user has not taken over the view since the auto-zoom.
-      if (autoZoomedRef.current && !userMovedRef.current) animateTo(homeView(VIEW_W, h));
+      if (autoZoomedRef.current && !userMovedRef.current)
+        animateTo(preAutoViewRef.current ?? homeView(VIEW_W, h));
       autoZoomedRef.current = false;
     }
   };
@@ -635,12 +729,15 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
     }
   };
 
-  const bar = scaleBar(metresPerUnit * pxu, BAR_MAX);
+  // Polar stereographic stretches distances away from the pole, so the bar shortens by the local scale factor.
+  const centre = south ? southFromPixel(view.cx, view.cy, VIEW_W) : null;
+  const k = centre ? 2 / (1 + Math.sin((Math.abs(centre.lat) * Math.PI) / 180)) : 1;
+  const bar = scaleBar((metresPerUnit * pxu) / (Number.isFinite(k) && k > 0 ? k : 1), BAR_MAX);
   const heatOutOfMap = south && showHeatmap && !activePixel;
   const zoomLabel = `${clampZoom(view.zoom).toFixed(1)}x`;
   const hoverText = hover
     ? `${hover.lat.toFixed(2)}°, ${hover.lon.toFixed(2)}°: ${Math.round(hover.bothH)} h of Sun and Earth together`
-    : "Hover a cell to read its latitude, longitude and hours of Sun and Earth together.";
+    : "Hover or tap a cell to read it; click (or tap again) to add it as a new scenario.";
 
   return (
     <Stack gap={2}>
@@ -684,7 +781,7 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
           icon={<Icon icon={RotateCcw} />}
           onClick={resetZoom}
         />
-        <Stack data-testid="zoom-badge" aria-live="polite">
+        <Stack data-testid="zoom-badge">
           <Token label={zoomLabel} size="lg" description="Current map zoom" />
         </Stack>
       </HStack>
@@ -702,7 +799,8 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
         ref={ref}
         viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`}
         width="100%"
-        role="img"
+        role="application"
+        aria-roledescription="map"
         tabIndex={0}
         aria-label={south ? "South polar map" : "Map of the whole Moon"}
         aria-describedby="map-help"
@@ -733,57 +831,46 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
           preserveAspectRatio="none"
         />
         {south && showPsr ? (
-          <g data-testid="psr-layer" style={{ pointerEvents: "none" }}>
-            {psrPolygons.map((poly) => (
-              <path
-                key={poly.id}
-                d={poly.d}
-                fillRule="evenodd"
-                data-testid={`psr-polygon-${poly.id}`}
-                style={{
-                  fill: DEEPEST,
-                  fillOpacity: 0.65,
-                  stroke: INK,
-                  strokeWidth: pxu,
-                  strokeDasharray: `${3 * pxu} ${3 * pxu}`,
-                }}
-              >
-                <title>{poly.name}</title>
-              </path>
-            ))}
+          <g
+            data-testid="psr-layer"
+            style={{
+              pointerEvents: "none",
+              fill: DEEPEST,
+              fillOpacity: 0.65,
+              stroke: INK,
+              strokeWidth: pxu,
+              strokeDasharray: `${3 * pxu} ${3 * pxu}`,
+            }}
+          >
+            {psrPaths}
           </g>
         ) : null}
         {south && showHeatmap ? (
-          <g data-testid="heatmap-layer">
-            {heatmapCells.map((cell, idx) => (
-              <rect
-                key={`${cell.lat}:${cell.lon}`}
-                x={cell.x - cellSize / 2}
-                y={cell.y - cellSize / 2}
-                width={cellSize}
-                height={cellSize}
-                data-heat
-                data-testid={`heatmap-point-${idx}`}
-                data-step={cell.step}
-                data-both-h={Math.round(cell.bothH)}
-                data-lat={cell.lat}
-                data-lon={cell.lon}
-                onPointerEnter={() => setHover(cell)}
-                onPointerLeave={() => setHover((cur) => (cur === cell ? null : cur))}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  pickHeatmapPoint(cell.lat, cell.lon);
-                }}
-                style={{
-                  fill: cell.fill,
-                  fillOpacity: HEATMAP_FILL_OPACITY,
-                  shapeRendering: "crispEdges",
-                  cursor: "pointer",
-                }}
-              >
-                <title>{`${cell.lat.toFixed(2)}°, ${cell.lon.toFixed(2)}°: ${Math.round(cell.bothH)} h Sun and Earth together`}</title>
-              </rect>
-            ))}
+          <g
+            data-testid="heatmap-layer"
+            onPointerOver={(e) => {
+              if (e.pointerType === "touch") return;
+              const cell = cellOf(e.target);
+              if (cell) setHover(cell);
+            }}
+            onPointerOut={(e) => {
+              if (e.pointerType === "touch") return;
+              const cell = cellOf(e.target);
+              if (cell) setHover((cur) => (cur === cell ? null : cur));
+            }}
+            onClick={(e) => {
+              const cell = cellOf(e.target);
+              if (!cell) return;
+              e.stopPropagation();
+              // Touch has no hover: the first tap reads the cell, a second tap on it adds the scenario.
+              if (lastPointerTypeRef.current === "touch" && hover !== cell) {
+                setHover(cell);
+                return;
+              }
+              pickHeatmapPoint(cell.lat, cell.lon);
+            }}
+          >
+            {heatRects}
             {hover ? (
               <rect
                 data-testid="heatmap-hover"
@@ -890,12 +977,12 @@ export function MapPicker({ scenarioKey, mode, height }: MapPickerProps) {
       ) : null}
       <Text type="supporting" size="xsm" id="map-help">
         {south
-          ? `North is up and 0° E at the top. Click for a custom point, drag the pin to move it, drag empty map to pan, scroll or pinch to zoom, or click a dot for a catalogue site.${
+          ? `North is up and 0° E at the top. Click for a custom point, drag the pin to move it, drag empty map to pan, click a dot for a catalogue site. Click the map, then scroll to zoom (or Ctrl+scroll), or pinch. ${KEYBOARD_HELP}${
               showPsr
                 ? " Zero average sunlight over the 18.6-yr illumination model, NASA PGDA 120 m (Mazarico et al. 2011). Regions under 1 km² omitted."
                 : ""
-            }${showHeatmap ? " Heatmap cells show hours with the Sun and Earth both above the horizon over the mission window, on the 2 km LOLA grid." : ""}`
-          : "Click for a custom point, drag the pin to move it, drag empty map to pan, scroll or pinch to zoom, or click a dot for a catalogue site."}
+            }${showHeatmap ? " Heatmap cells show hours with the Sun and Earth both above the horizon over the mission window, on the 2 km LOLA grid. Click (or tap again) a cell to add it as a new scenario." : ""}`
+          : `Click for a custom point, drag the pin to move it, drag empty map to pan, click a dot for a catalogue site. Click the map, then scroll to zoom (or Ctrl+scroll), or pinch. ${KEYBOARD_HELP}`}
       </Text>
     </Stack>
   );

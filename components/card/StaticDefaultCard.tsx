@@ -11,6 +11,7 @@ import prerender from "../../public/data/v1/prerender/default.json";
 import {
   CONTROLS_RESERVE_REM,
   PHONE_BREAKPOINT_REM,
+  STATUS_ROW_RESERVE_REM,
   VIEWPORT_HEIGHT_REM,
 } from "../terrain3d/viewport";
 import { MissionClock } from "../ui/MissionClock";
@@ -27,8 +28,8 @@ import { formatSpan } from "./delta";
  */
 const PHONE_QUERY = `(max-width: ${PHONE_BREAKPOINT_REM}rem)`;
 const placeholderCss =
-  `[data-testid="static-panorama"]{height:${VIEWPORT_HEIGHT_REM.single + CONTROLS_RESERVE_REM.desktop}rem}` +
-  `@media ${PHONE_QUERY}{[data-testid="static-panorama"]{height:${VIEWPORT_HEIGHT_REM.phone + CONTROLS_RESERVE_REM.phone}rem}}`;
+  `[data-testid="static-panorama"]{height:${VIEWPORT_HEIGHT_REM.single + CONTROLS_RESERVE_REM.desktop + STATUS_ROW_RESERVE_REM.desktop}rem}` +
+  `@media ${PHONE_QUERY}{[data-testid="static-panorama"]{height:${VIEWPORT_HEIGHT_REM.phone + CONTROLS_RESERVE_REM.phone + STATUS_ROW_RESERVE_REM.phone}rem}}`;
 /** Timeline viewBox, so the placeholder keeps the live timeline's aspect ratio. */
 const TIMELINE_VIEWBOX = "0 0 1000 124";
 const NONE_WITHIN = "> 60 d";

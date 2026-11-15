@@ -211,7 +211,7 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
 
   // Offer the tour once, on the first planner visit. Never on the landing page and never under automation.
   useEffect(() => {
-    if (!landingChecked || showLanding || !ready || navigator.webdriver) return;
+    if (!landingChecked || showLanding || !ready || navOpen || settingsOpen || navigator.webdriver) return;
     let seen = true;
     try {
       seen = window.localStorage.getItem(TOUR_SEEN_KEY) === "1";
@@ -228,7 +228,7 @@ export function AppFrame({ firstCard }: { firstCard?: ReactNode }) {
       setTourOpen(true);
     }, 800);
     return () => window.clearTimeout(t);
-  }, [landingChecked, showLanding, ready]);
+  }, [landingChecked, showLanding, ready, navOpen, settingsOpen]);
 
   const editScenario = (key: string) => {
     if (!isWide) {

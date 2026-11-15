@@ -50,6 +50,10 @@ test("standalone landing page transitions into the planner, opens the 3D terrain
   await expect(cardA).toBeVisible({ timeout: 30_000 });
   await expect(cardB).toBeVisible({ timeout: 30_000 });
   await expect(cardB).toContainText("Shackleton");
+  // 3D is the default view; 2D skyline and back.
+  await expect(cardA.getByRole("radio", { name: "3D terrain" })).toHaveAttribute("aria-checked", "true");
+  await expect(cardA.getByTestId("lunar-terrain-3d")).toBeVisible({ timeout: 30_000 });
+  await cardA.getByRole("radio", { name: "2D skyline" }).click();
   await expect(cardA.getByTestId("lunar-terrain-3d")).toHaveCount(0);
   await cardA.getByRole("radio", { name: "3D terrain" }).click();
   await expect(cardA.getByTestId("lunar-terrain-3d")).toBeVisible({ timeout: 30_000 });
@@ -57,3 +61,34 @@ test("standalone landing page transitions into the planner, opens the 3D terrain
   await page.getByRole("button", { name: "Landing page" }).click();
   await expect(page.getByTestId("landing-page")).toBeVisible({ timeout: 30_000 });
 });
+
+for (const width of [1440, 390]) {
+  test(`static placeholder reserves the live 3D block height within 8px at ${width}px`, async ({ browser }) => {
+    const size = { width, height: 900 };
+    // Server HTML only: the prerendered card with its blank panorama box.
+    const bare = await browser.newContext({ viewport: size, javaScriptEnabled: false });
+    const barePage = await bare.newPage();
+    await barePage.goto("/");
+    const placeholder = (await barePage.getByTestId("static-panorama").boundingBox())!;
+    await bare.close();
+
+    const ctx = await browser.newContext({ viewport: size });
+    const page = await ctx.newPage();
+    await page.goto("/");
+    const card = page.getByTestId("scenario-card-a");
+    await expect(card.getByTestId("lunar-terrain-3d")).toBeVisible({ timeout: 30_000 });
+    // The surface-mode row mounts once WebGL is ready, so wait for it before measuring the block.
+    await expect(card.getByText("Shaded relief")).toBeVisible({ timeout: 30_000 });
+    // The legend notes fill in once the terrain patch has loaded; the last line is the data citation.
+    await expect(card.getByTestId("terrain-notes")).toContainText("LOLA", { timeout: 30_000 });
+    // The robustness range arrives from the worker and grows the metrics bar above the block; measure once it has settled.
+    await expect(card.getByTestId("metrics-bar")).toContainText("Range across", { timeout: 30_000 });
+    // Live block: from the status row (holds the view toggle) to the end of the legend notes.
+    const toggle = (await card.getByRole("radio", { name: "2D skyline" }).boundingBox())!;
+    const notes = (await card.getByTestId("terrain-notes").boundingBox())!;
+    const liveBlock = notes.y + notes.height - toggle.y;
+    await ctx.close();
+    expect(placeholder).toBeTruthy();
+    expect(Math.abs(liveBlock - placeholder.height), `live ${liveBlock} (toggle ${toggle.y}, notes ${notes.y}+${notes.height}) vs placeholder ${placeholder.height}`).toBeLessThan(8);
+  });
+}

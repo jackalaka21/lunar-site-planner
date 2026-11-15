@@ -61,6 +61,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
   const titleId = useId();
   const [index, setIndex] = useState(0);
   const [target, setTarget] = useState<Box | null>(null);
+  const [usedFallback, setUsedFallback] = useState(false);
   const [vp, setVp] = useState<Size>(() => ({ width: window.innerWidth, height: window.innerHeight }));
   const [cardSize, setCardSize] = useState<Size>({ width: 400, height: 360 });
   const cardRef = useRef<HTMLDivElement>(null);
@@ -85,13 +86,20 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
+        e.stopPropagation();
         onClose();
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
+        e.stopPropagation();
         next();
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
+        e.stopPropagation();
         prev();
+      } else if (e.key === " " && e.target === cardRef.current) {
+        // Space on the card must not reach the time-bar shortcut and toggle playback behind the modal.
+        e.preventDefault();
+        e.stopPropagation();
       } else if (e.key === "Tab" && cardRef.current) {
         const items = Array.from(
           cardRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), [href], [tabindex]:not([tabindex='-1'])"),
@@ -119,6 +127,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
   // Scroll the target into view on each step, then keep measuring it.
   useEffect(() => {
     const id = step.targetId;
+    const fallbackId = step.fallbackTargetId ?? null;
     let raf = 0;
     let stopAt = performance.now() + SETTLE_MS;
     let disposed = false;
@@ -128,8 +137,10 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
           ? v
           : { width: window.innerWidth, height: window.innerHeight },
       );
-      const m = measure(id);
+      const primary = measure(id);
+      const m = primary ?? measure(fallbackId);
       setTarget((t) => (sameBox(t, m) ? t : m));
+      setUsedFallback(primary === null && m !== null);
     };
     const loop = () => {
       if (disposed) return;
@@ -143,7 +154,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
       raf = requestAnimationFrame(loop);
     };
 
-    findTarget(id)?.scrollIntoView({
+    (findTarget(id) ?? findTarget(fallbackId))?.scrollIntoView({
       behavior: reducedMotion() ? "auto" : "smooth",
       // On phones the card is a bottom sheet, so keep the target in the upper part of the screen.
       block: window.innerWidth < PHONE_WIDTH ? "start" : "center",
@@ -157,7 +168,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
     if (typeof ResizeObserver !== "undefined") {
       ro = new ResizeObserver(schedule);
       ro.observe(document.body);
-      const el = findTarget(id);
+      const el = findTarget(id) ?? findTarget(fallbackId);
       if (el) ro.observe(el);
     }
     return () => {
@@ -167,7 +178,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
       window.removeEventListener("scroll", schedule, true);
       ro?.disconnect();
     };
-  }, [step.targetId]);
+  }, [step.targetId, step.fallbackTargetId]);
 
   // The card's real size decides where it can go.
   useLayoutEffect(() => {
@@ -207,6 +218,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
         maxHeight: "60dvh",
         overflowY: "auto",
         borderRadius: "var(--radius-lg) var(--radius-lg) 0 0",
+        paddingBottom: "max(var(--spacing-4), env(safe-area-inset-bottom))",
       }
     : {
         position: "fixed",
@@ -262,10 +274,6 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
           outline: "none",
         }}
       >
-        <HStack gap={2} vAlign="center" hAlign="between">
-          <Text type="supporting">{`Step ${index + 1} of ${TOUR_STEPS.length}`}</Text>
-          <Token label={step.category} size="sm" color="blue" />
-        </HStack>
         <HStack gap={1} role="presentation" aria-hidden="true">
           {TOUR_STEPS.map((s, i) => (
             <Stack
@@ -279,9 +287,15 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
             />
           ))}
         </HStack>
-        <Heading level={3} id={titleId}>
-          {step.title}
-        </Heading>
+        <HStack gap={2} vAlign="start" hAlign="between">
+          <VStack gap={2} aria-live="polite" aria-atomic="true">
+            <Text type="supporting">{`Step ${index + 1} of ${TOUR_STEPS.length}`}</Text>
+            <Heading level={3} id={titleId}>
+              {step.title}
+            </Heading>
+          </VStack>
+          <Token label={step.category} size="sm" color="blue" />
+        </HStack>
         <VStack gap={3}>
           <VStack gap={0.5}>
             <Text type="label">What this is</Text>
@@ -295,6 +309,7 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
             <Text type="label">Try it</Text>
             <Text type="body">{step.tryIt}</Text>
           </VStack>
+          {usedFallback && step.fallbackNote ? <Text type="supporting">{step.fallbackNote}</Text> : null}
         </VStack>
         <HStack gap={2} vAlign="center" hAlign="between" wrap="wrap">
           <Button label="Skip tour" size="lg" variant="ghost" onClick={onClose} />

@@ -41,7 +41,7 @@ export function MetricsBar({ both, bothDelta, robust, sun, earth, sunEl }: Metri
           )}
         </Text>
         {bothDelta && (
-          <Text type="code" size="xsm" color="secondary" hasTabularNumbers data-tour-id="tour-validation">
+          <Text type="code" size="xsm" color="secondary" hasTabularNumbers>
             {bothDelta}
           </Text>
         )}

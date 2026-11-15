@@ -6,13 +6,14 @@ import type { Rgba, TerrainPalette } from "./palette";
 import {
   contourSegments,
   HAZARD_SLOPE_DEG,
+  ellipseRingKm,
   ringPointsKm,
   sampleHeightM,
   slopeGridDeg,
   type Blocker,
 } from "./terrainModel";
 
-export type SurfaceMode = "regolith" | "slope";
+export type SurfaceMode = "shaded" | "slope";
 
 export interface SceneParams {
   sunAz: number;
@@ -33,7 +34,15 @@ export interface SceneOptions {
   obsHeightM: number;
   ellipseKm: number;
   horizon: HorizonProfile;
-  skyTracks: { sunAz: Float32Array; sunEl: Float32Array; earthAz: Float32Array; earthEl: Float32Array; n: number };
+  skyTracks: SkyTracks;
+}
+
+export interface SkyTracks {
+  sunAz: Float32Array;
+  sunEl: Float32Array;
+  earthAz: Float32Array;
+  earthEl: Float32Array;
+  n: number;
 }
 
 /** Distance from the lander to the Sun and Earth direction discs, scene units (km). */
@@ -109,6 +118,8 @@ export class TerrainGlScene {
   private readonly patch: LocalTerrainPatch;
   private readonly pal: TerrainPalette;
   private readonly opts: SceneOptions;
+  private skyHorizon: HorizonProfile;
+  private skyTracks: SkyTracks;
   private readonly terrainGroup = new THREE.Group();
   private readonly terrain: THREE.Mesh;
   private readonly contours: THREE.LineSegments;
@@ -136,6 +147,8 @@ export class TerrainGlScene {
     this.patch = patch;
     this.pal = pal;
     this.opts = opts;
+    this.skyHorizon = opts.horizon;
+    this.skyTracks = opts.skyTracks;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
     this.renderer.setPixelRatio(Math.min(typeof window === "undefined" ? 1 : window.devicePixelRatio || 1, 2));
     this.renderer.shadowMap.enabled = true;
@@ -201,9 +214,11 @@ export class TerrainGlScene {
     this.terrainGroup.add(this.contours);
 
     // Landing ellipse draped on the DEM: every ring point samples the terrain height.
-    const ringR = Math.min(opts.ellipseKm, rKm * 0.95);
+    const ringR = ellipseRingKm(opts.ellipseKm, rKm);
     if (ringR > 0.01) {
-      const pts = ringPointsKm(ringR).map((p) => {
+      // One sample per half grid cell so the ring follows the terrain at large radii.
+      const count = Math.max(72, Math.ceil((2 * Math.PI * ringR * 1000) / (patch.spacingM / 2)));
+      const pts = ringPointsKm(ringR, count).map((p) => {
         const h = sampleHeightM(patch, p.east, p.north) ?? patch.centerHM;
         return new THREE.Vector3(p.east, (h - patch.centerHM) / 1000 + 0.035, -p.north);
       });
@@ -359,7 +374,7 @@ export class TerrainGlScene {
     const o = this.tmp.set(0, 0, 0);
     const sky: THREE.Vector3[] = [];
     for (let az = 0; az <= 360; az += 2) {
-      const el = horizonAt(this.opts.horizon, az);
+      const el = horizonAt(this.skyHorizon, az);
       const r = SKYLINE_RADIUS;
       sky.push(
         new THREE.Vector3(
@@ -371,7 +386,7 @@ export class TerrainGlScene {
     }
     this.skyline.geometry.dispose();
     this.skyline.geometry = new THREE.BufferGeometry().setFromPoints(sky);
-    const t = this.opts.skyTracks;
+    const t = this.skyTracks;
     const mk = (azA: Float32Array, elA: Float32Array): THREE.Vector3[] => {
       const out: THREE.Vector3[] = [];
       for (let i = 0; i < t.n; i++) {
@@ -383,6 +398,13 @@ export class TerrainGlScene {
     this.sunTrack.geometry = new THREE.BufferGeometry().setFromPoints(mk(t.sunAz, t.sunEl));
     this.earthTrack.geometry.dispose();
     this.earthTrack.geometry = new THREE.BufferGeometry().setFromPoints(mk(t.earthAz, t.earthEl));
+  }
+
+  /** Replace the horizon profile and sky tracks (cursor and series changes) without rebuilding the scene. */
+  setSky(horizon: HorizonProfile, tracks: SkyTracks): void {
+    this.skyHorizon = horizon;
+    this.skyTracks = tracks;
+    if (this.relief > 0) this.buildSky(this.relief);
   }
 
   private updateRay(
@@ -426,12 +448,13 @@ export class TerrainGlScene {
     this.paint(p.surface, p.psrMask);
 
     const sunUp = p.sunEl > 0;
-    this.sunLight.intensity = sunUp ? 4 : 0;
+    this.sunLight.intensity = sunUp ? 6 : 0;
     this.sunLight.castShadow = sunUp;
     sceneDir(p.sunAz, Math.max(p.sunEl, 0.05), k, this.sunLight.position).multiplyScalar(60);
     this.earthLight.intensity = p.earthEl > 0 ? 0.35 : 0;
     sceneDir(p.earthAz, Math.max(p.earthEl, 0.05), k, this.earthLight.position).multiplyScalar(60);
-    this.ambient.intensity = sunUp ? 0.9 : 0.18;
+    // Low ambient so shadows read at a 1.5 degree Sun; still faintly readable when the Sun is down.
+    this.ambient.intensity = sunUp ? 0.3 : 0.18;
 
     const eyeY = (this.opts.obsHeightM / 1000) * k;
     this.updateRay(this.sunRay, p.sunAz, p.sunEl, p.sunBlocked, p.sunBlocker, k, eyeY, this.sunPos);

@@ -254,3 +254,10 @@ export function ringPointsKm(radiusKm: number, count = 72): Array<{ east: number
   }
   return pts;
 }
+
+/** Fraction of the patch radius at which the landing ellipse ring is clipped. */
+export const RING_CLIP_FRACTION = 0.95;
+/** Landing ellipse ring radius actually drawn (km): the requested radius, clipped to the tile. */
+export function ellipseRingKm(ellipseKm: number, patchRadiusKm: number): number {
+  return Math.min(ellipseKm, patchRadiusKm * RING_CLIP_FRACTION);
+}

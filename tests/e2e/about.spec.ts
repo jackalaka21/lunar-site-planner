@@ -32,5 +32,25 @@ test.describe("about page layout", () => {
       return { scrollWidth: el.scrollWidth, innerWidth: window.innerWidth };
     });
     expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.innerWidth);
+    // The end panel is dropped on narrow screens once the media query resolves; the outline moves under the back link.
+    await expect(page.getByRole("complementary")).toHaveCount(0);
+    await expect(page.getByTestId("about-outline")).toBeVisible();
+    const contentWidth = await page.locator(".astryx-layout-content").first().evaluate((el) => el.getBoundingClientRect().width);
+    expect(contentWidth).toBeGreaterThanOrEqual(300);
+    const hash = page.getByText(/^[0-9a-f]{64}$/i).first();
+    await hash.scrollIntoViewIfNeeded();
+    const box = await hash.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+  });
+
+  test("tables do not double-scroll at 1440 wide", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/about/");
+    const group = page.getByRole("group", { name: "NASA datasets" });
+    await expect(group).toBeVisible();
+    const fits = await group.evaluate((el) => el.scrollWidth <= el.clientWidth);
+    expect(fits).toBe(true);
+    await expect(page.locator("[role=region]")).toHaveCount(0);
   });
 });

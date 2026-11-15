@@ -168,7 +168,7 @@ const BTN_BASE = `inline-flex min-h-[44px] cursor-pointer items-center justify-c
 const BTN_PRIMARY = `${BTN_BASE} h-[52px] bg-(color:--ln-ffb454) text-(color:--ln-0a0a0c) hover:bg-(color:--ln-ffc47a)`;
 const BTN_HAIR = `${BTN_BASE} h-[52px] border border-white/30 bg-(color:--ln-05050a)/70 text-(color:--ln-f1efe9) hover:border-white/60 hover:bg-(color:--ln-15151a)`;
 const SOLID_FOCUS = "focus-visible:border-(color:--ln-ffb454) focus-visible:shadow-[0_0_0_2px_rgb(0_0_0)]";
-const BTN_SOLID = `${BTN_BASE} h-[52px] rounded-[2px] border border-white bg-black text-white hover:border-(color:--ln-ffb454) hover:bg-(color:--ln-15151a) ${SOLID_FOCUS}`;
+const BTN_SOLID = `${BTN_BASE} h-[52px] rounded-[2px] border border-white bg-black text-white hover:shadow-[inset_0_0_0_1px_rgb(255_255_255)] hover:bg-(color:--ln-15151a) ${SOLID_FOCUS}`;
 const MONO = "font-[family-name:var(--font-family-code)] tracking-[0.04em]";
 
 function setLayer(el: HTMLElement | null, opacity: number, inertBelow = 0.3) {
@@ -724,10 +724,10 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
                     key={r.id}
                     type="button"
                     onClick={() => loadMissionReplay(r.id, r.iso)}
-                    className={`flex min-h-[56px] min-w-0 cursor-pointer flex-col items-center justify-center rounded-[2px] border border-white bg-black px-2 py-2 transition-colors hover:border-(color:--ln-ffb454) hover:bg-(color:--ln-15151a) sm:px-6 ${FOCUS} ${SOLID_FOCUS}`}
+                    className={`flex min-h-[56px] min-w-0 cursor-pointer flex-col items-center justify-center rounded-[2px] border border-white bg-black px-2 py-2 transition-colors hover:shadow-[inset_0_0_0_1px_rgb(255_255_255)] hover:bg-(color:--ln-15151a) sm:px-6 ${FOCUS} ${SOLID_FOCUS}`}
                   >
                     <span className="text-[13px] font-medium text-white">{r.label}</span>
-                    <span className={`${MONO} text-[10.5px] text-(color:--ln-d4d1c8)`}>{r.iso.slice(0, 10)}</span>
+                    <span className={`${MONO} text-[10.5px] text-white`}>{r.iso.slice(0, 10)}</span>
                   </button>
                 ))}
               </div>

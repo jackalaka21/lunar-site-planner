@@ -90,5 +90,16 @@ describe("nearby heatmap (S4)", () => {
     expect(lg.steps[0].fill).toBe("var(--color-heat-0)");
     expect(lg.steps[4].fill).toBe("var(--color-heat-4)");
     expect(lg.steps[4].label).toBe("252+ h");
+    expect(lg.steps.map((st) => st.label)).toEqual(["under 68 h", "68 to 117 h", "118 to 167 h", "168 to 251 h", "252+ h"]);
+  });
+
+  it("puts legend edges at 68/118/168/252 for 336 h and 34/59/84/126 for 168 h", () => {
+    const edges = (w: number) => heatmapLegend(w).steps.slice(1).map((st) => Number.parseInt(st.label, 10));
+    expect(edges(336)).toEqual([68, 118, 168, 252]);
+    expect(edges(168)).toEqual([34, 59, 84, 126]);
+    const pole = psToLatLon(0, 0);
+    const step = (h: number) => projectHeatmapCells([{ lat: pole.lat, lon: pole.lon, bothH: h }], pole.lat, pole.lon, 336, 400)[0].step;
+    expect(step(67.6)).toBe(1);
+    expect(step(67.4)).toBe(0);
   });
 });

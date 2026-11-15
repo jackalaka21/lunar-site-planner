@@ -15,9 +15,6 @@ export interface HudArgs {
   height: number;
   pal: TerrainPalette;
   patch: LocalTerrainPatch;
-  caption: string;
-  surface: "regolith" | "slope";
-  psr: PsrStatus;
   sc: TerrainGlScene;
   sunAz: number;
   sunEl: number;
@@ -38,7 +35,6 @@ const DEFAULT_SUN_R = 0.2666;
 const DEFAULT_EARTH_R = 0.95;
 
 const topo = (az: number, el: number, r: number): Topo => ({ az, el, r, distKm: 0 });
-const rgb = (c: { r: number; g: number; b: number }) => `rgb(${Math.round(c.r)}, ${Math.round(c.g)}, ${Math.round(c.b)})`;
 
 function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
   const words = text.split(" ");
@@ -62,11 +58,12 @@ export function blockStatus(
   ridgeEl: number,
   clear: boolean,
   blocker: Blocker | null,
+  spacingM = 0,
 ): string {
-  if (el < 0) return `${name} is below the local horizon`;
+  if (el < 0) return `${name} is below the 0° horizon plane`;
   if (clear) return `${name} clear of the ${ridgeEl.toFixed(1)}° ridge`;
   if (blocker) return `${name} blocked by terrain ${blocker.distKm.toFixed(1)} km away`;
-  return `${name} blocked by terrain beyond the 20 km tile`;
+  return `${name} blocked by terrain outside this 20 × 20 km tile or finer than its ${spacingM} m grid; that shadow is not drawn`;
 }
 
 /** Transparent 2D HUD drawn over the WebGL canvas: compass, Sun and Earth discs and labels, status text. */
@@ -157,7 +154,7 @@ export function drawHud(a: HudArgs): void {
     ctx.fillText(`Sun ${a.sunEl >= 0 ? "+" : ""}${a.sunEl.toFixed(1)}°`, sunPt.x, Math.max(14, sunPt.y - 16));
   }
 
-  // Status text, bottom-left, wrapped to the canvas width.
+  // Status text, bottom-left, wrapped to the canvas width. Legends and citations live in the page text below.
   const lines: Array<{ text: string; color: string }> = [];
   ctx.font = FONT;
   const maxW = Math.max(120, width - 20);
@@ -165,22 +162,9 @@ export function drawHud(a: HudArgs): void {
     for (const l of wrap(ctx, text, maxW)) lines.push({ text: l, color });
   };
   push(
-    `${blockStatus("Sun", a.sunEl, a.sunRidgeEl, a.isSunLit, a.sunBlocker)} · ${blockStatus("Earth", a.earthEl, a.earthRidgeEl, a.isEarthUp, a.earthBlocker)}`,
+    `${blockStatus("Sun", a.sunEl, a.sunRidgeEl, a.isSunLit, a.sunBlocker, patch.spacingM)} · ${blockStatus("Earth", a.earthEl, a.earthRidgeEl, a.isEarthUp, a.earthBlocker, patch.spacingM)}`,
     pal.rim,
   );
-  if (a.surface === "slope") {
-    push(
-      `Tint is elevation, contours every ${CONTOUR_INTERVAL_M} m; amber marks slopes over ${HAZARD_SLOPE_DEG}° at the ${patch.spacingM} m DEM baseline, so metre-scale slopes can be steeper`,
-      rgb(pal.hazard),
-    );
-  }
-  if (a.psr === "loading") push("Loading permanent-shadow polygons", pal.rim);
-  else if (a.psr === "error") push("Permanent-shadow data could not be loaded", pal.rim);
-  else if (a.psr === "none") push("No permanent shadow (PSR) inside this tile", pal.rim);
-  else if (a.psr === "ready")
-    push("PSR: zero average sunlight over 18.6 yr, NASA PGDA 120 m (Mazarico et al. 2011)", rgb(pal.psr));
-  push("Lander symbol enlarged, not to scale. Local terrain only; ridge values come from terrain up to 200 km away", withAlpha(pal.rim, 0.75));
-  push(a.caption, pal.rim);
 
   const lh = 14;
   const top = height - 8 - lines.length * lh;
@@ -191,4 +175,43 @@ export function drawHud(a: HudArgs): void {
     ctx.fillStyle = l.color;
     ctx.fillText(l.text, 10, top + i * lh + lh / 2);
   });
+}
+
+export interface TerrainNotesArgs {
+  patch: LocalTerrainPatch;
+  caption: string;
+  surface: "shaded" | "slope";
+  psr: PsrStatus;
+  /** Landing ellipse radius drawn on the terrain, km (before clipping). */
+  ellipseKm: number;
+  ringKm: number;
+  ringClipped: boolean;
+}
+
+/** Slope baseline in metres: the central difference spans two samples, and coarse patches resample 2 km data. */
+export function slopeBaselineM(patch: LocalTerrainPatch): number {
+  return Math.max(2 * patch.spacingM, patch.resM);
+}
+
+/** Legend, citation and caveat lines shown as page text under the 3D controls (readable by screen readers). */
+export function terrainNotes(a: TerrainNotesArgs): string[] {
+  const out: string[] = [];
+  out.push("Drag to orbit. Ctrl+scroll or click then scroll to zoom.");
+  if (a.surface === "slope") {
+    out.push(
+      `Tint is elevation, contours every ${CONTOUR_INTERVAL_M} m; amber marks slopes over ${HAZARD_SLOPE_DEG}° over a ${slopeBaselineM(a.patch)} m baseline, so metre-scale slopes can be steeper`,
+    );
+  }
+  if (a.psr === "loading") out.push("Loading permanent-shadow polygons");
+  else if (a.psr === "error") out.push("Permanent-shadow data could not be loaded");
+  else if (a.psr === "none") out.push("No mapped PSR (≥ 1 km²) inside this tile");
+  else if (a.psr === "ready")
+    out.push("PSR: zero average sunlight over 18.6 yr, NASA PGDA 120 m (Mazarico et al. 2011); PSRs under 1 km² are not mapped");
+  out.push(
+    `Dashed ring: ${a.ringKm.toFixed(2)} km landing ellipse radius${a.ringClipped ? `, clipped to the tile (requested ${a.ellipseKm} km)` : ""}`,
+  );
+  out.push("Lander symbol enlarged, not to scale. Sky elevations are exaggerated by the relief factor.");
+  out.push("Local terrain only; ridge values come from terrain 100 to 200 km away");
+  out.push(a.caption);
+  return out;
 }

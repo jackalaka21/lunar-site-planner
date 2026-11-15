@@ -84,7 +84,7 @@ test.describe("layout at 375 wide", () => {
     await expect(bar).toBeInViewport();
   });
 
-  test("card order is metrics, panorama, timeline", async ({ page }) => {
+  test("card order is metrics, terrain view, timeline", async ({ page }) => {
     await page.goto("/");
     const card = page.getByTestId("scenario-card-a");
     await expect(card.locator("canvas[role='img']")).toBeVisible({ timeout: 30_000 }); // the live card, not the prerendered one
