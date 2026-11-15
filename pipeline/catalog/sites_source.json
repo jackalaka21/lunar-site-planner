@@ -108,6 +108,24 @@
     "outcome": "Landed in Mare Crisium"
   },
   {
+    "id": "im-3",
+    "name": "IM-3 Reiner Gamma (planned)",
+    "group": "clps",
+    "lat": 7.585,
+    "lon": -58.725,
+    "source_url": "https://meetingorganizer.copernicus.org/EGU24/EGU24-21717.html",
+    "notes": "Planned target region, not a landing: the Lunar Vertex science team's EGU 2024 abstract (Vines, Ho, Blewett et al.) gives the Reiner Gamma landing region as 7.585 N, 58.725 W, quoted to 3 decimals with no stated ellipse or uncertainty. Intuitive Machines flies this CLPS task order (CP-11) on a Nova-C lander. NASA's IM-3 page (https://www.nasa.gov/gallery/intuitive-machines-im-3/, updated 22 May 2026) names Reiner Gamma without coordinates and describes the mission in the future tense; not launched at the time of this check (15 Nov 2026), launch date not confirmed by NASA."
+  },
+  {
+    "id": "blue-ghost-2",
+    "name": "Blue Ghost Mission 2 (planned, far side)",
+    "group": "clps",
+    "lat": -23.82,
+    "lon": -177.7,
+    "source_url": "https://meetingorganizer.copernicus.org/EPSC2026/EPSC2026-593.html",
+    "notes": "Planned target region, not a landing. Point is the Rashid-2 rover landing region on the north-eastern rim of Nassau F crater (23.82 S, 177.7 W; EPSC 2026 abstract EPSC2026-593, Flahaut et al.), which that abstract places on the Firefly Blue Ghost 2 mission. Firefly's own page (https://fireflyspace.com/missions/blue-ghost-mission-2/) lists the Mission 2 site as the far side near Nassau Crater with no coordinates, and the abstract does not state that this point is the lander's own target centre, so treat it as a region, quoted to 2 decimals with no stated ellipse. Not launched at the time of this check (15 Nov 2026); Firefly lists launch as no earlier than 2027."
+  },
+  {
     "id": "slim",
     "name": "SLIM Moon Sniper",
     "group": "international",
@@ -118,6 +136,30 @@
     "actual_landing_utc": "2024-01-19T15:20Z",
     "actual_landing_source_url": "https://www.nasa.gov/missions/lro/nasas-lro-spots-japans-moon-lander",
     "outcome": "Landed"
+  },
+  {
+    "id": "hakuto-r-m1",
+    "name": "HAKUTO-R Mission 1 (ispace)",
+    "group": "international",
+    "lat": 47.581,
+    "lon": 44.094,
+    "source_url": "https://lroc.im-ldi.com/images/1302",
+    "notes": "Commercial (ispace, Japan) lander that was aiming for Atlas crater. Point is the LROC-identified surface change near the nominal landing site, taken as the impact site, from the LROC page (47.581 N, 44.094 E; NAC imaging on 26 Apr 2023); the page states no uncertainty. Contact was lost at 12:40 p.m. EDT (16:40 UTC) on 25 Apr 2023 per the same page.",
+    "actual_landing_utc": "2023-04-25T16:40Z",
+    "actual_landing_source_url": "https://lroc.im-ldi.com/images/1302",
+    "outcome": "Crashed during the landing attempt; no soft landing"
+  },
+  {
+    "id": "hakuto-r-m2",
+    "name": "HAKUTO-R Mission 2 Resilience (ispace)",
+    "group": "international",
+    "lat": 60.4445,
+    "lon": -4.588,
+    "source_url": "https://lroc.im-ldi.com/images/1456",
+    "notes": "Commercial (ispace, Japan) lander that was targeting Mare Frigoris. Point is the LROC-measured impact site, listed as 60.4445 N, 355.4120 E (converted here to -4.588 east); the page states no uncertainty. Hard landing 5 June 2025 18:13 UTC per the same LROC page; NASA's LRO imaged the site on 11 June 2025 (https://www.nasa.gov/missions/lro/nasas-lro-views-ispace-hakuto-r-mission-2-moon-lander-impact-site).",
+    "actual_landing_utc": "2025-06-05T18:13Z",
+    "actual_landing_source_url": "https://lroc.im-ldi.com/images/1456",
+    "outcome": "Crashed; hard landing, no soft touchdown"
   },
   {
     "id": "chandrayaan-3",

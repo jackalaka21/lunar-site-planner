@@ -4,7 +4,7 @@ import type { Site } from "./data/sites";
 export const GROUP_LABEL: Record<Site["group"], string> = {
   apollo: "Apollo",
   clps: "CLPS",
-  international: "International",
+  international: "Other agencies and companies",
   artemis3: "Artemis III",
   polar: "Polar",
 };

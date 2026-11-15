@@ -12,7 +12,7 @@ export const GROUP_ORDER: Site["group"][] = ["apollo", "clps", "international", 
 export const GROUP_HEADING: Record<Site["group"], string> = {
   apollo: "Apollo",
   clps: "Commercial (CLPS)",
-  international: "Other agencies",
+  international: "Other agencies and companies",
   artemis3: "Artemis crewed landing candidates",
   polar: "Polar features",
 };

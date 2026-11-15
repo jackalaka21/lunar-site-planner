@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SitePicker, matchSites } from "../../../components/picker/SitePicker";
-import { formatLatLon, siteMeta, siteSearchMeta } from "../../../components/picker/SiteList";
+import { GROUP_HEADING, formatLatLon, siteMeta, siteSearchMeta } from "../../../components/picker/SiteList";
 import type { Site } from "../../../lib/data/sites";
 import { DEFAULT_SCENARIOS } from "../../../lib/state/defaults";
 import { useAppStore } from "../../../lib/state/store";
@@ -106,5 +106,12 @@ describe("row icons", () => {
     const iconOf = (re: RegExp) => within(list).getByRole("button", { name: re }).querySelector("svg")?.getAttribute("class") ?? "";
     expect(iconOf(/Apollo 11 Eagle/)).toContain("lucide-map-pin");
     expect(iconOf(/Mons Mouton/)).toContain("lucide-crosshair");
+  });
+});
+
+describe("group headings", () => {
+  it("names the commercial and company groups", () => {
+    expect(GROUP_HEADING.clps).toBe("Commercial (CLPS)");
+    expect(GROUP_HEADING.international).toBe("Other agencies and companies");
   });
 });

@@ -42,6 +42,7 @@ interface SiteRecord {
   id: string;
   name: string;
   actual_landing_utc?: string;
+  outcome?: string;
 }
 interface KernelRecord {
   name: string;
@@ -284,7 +285,7 @@ export default function AboutPage() {
                         {p.name}
                       </Link>
                     }
-                    description={p.detail}
+                    description={<Text type="supporting" style={WRAP_STYLE}>{p.detail}</Text>}
                   />
                 ))}
               </List>
@@ -339,7 +340,11 @@ export default function AboutPage() {
                     <ListItem
                       key={s.id}
                       label={<Link href={replayHref(s.id, utc)}>{s.name}</Link>}
-                      description={`Landed ${utc}${utc.endsWith("T00:00Z") ? " (date only, time not published)" : ""}`}
+                      description={
+                        <Text type="supporting" style={WRAP_STYLE}>
+                          {`${s.outcome?.startsWith("Crashed") ? "Impact" : "Landed"} ${utc}${utc.endsWith("T00:00Z") ? " (date only, time not published)" : ""}`}
+                        </Text>
+                      }
                     />
                   );
                 })}
@@ -354,7 +359,7 @@ export default function AboutPage() {
               </Heading>
               <List density="compact" listStyle="disc">
                 {limitations(DEFAULT_SETTINGS.ellipseKm).map((l) => (
-                  <ListItem key={l} label={l} />
+                  <ListItem key={l} label={<Text type="body" style={WRAP_STYLE}>{l}</Text>} />
                 ))}
               </List>
             </VStack>
@@ -375,8 +380,8 @@ export default function AboutPage() {
                 Credits
               </Heading>
               <List density="compact" listStyle="disc">
-                <ListItem label="Interface design direction: unslop by Damir Sokolovsky (@heydamir), CC BY 4.0" />
-                <ListItem label="Design system: Astryx by Meta" />
+                <ListItem label={<Text type="body" style={WRAP_STYLE}>Interface design direction: unslop by Damir Sokolovsky (@heydamir), CC BY 4.0</Text>} />
+                <ListItem label={<Text type="body" style={WRAP_STYLE}>Design system: Astryx by Meta</Text>} />
               </List>
             </VStack>
           </VStack>

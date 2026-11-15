@@ -17,7 +17,7 @@ At the lunar south pole the Sun never rises more than a few degrees above the ho
 Built and deployed:
 
 - A sleek Moon landing experience with interactive 3D illuminated lunar globe, 3-step onboarding, and 1-click mission showcase presets.
-- A catalogue of 29 sites (Apollo, recent landers, Chandrayaan-3, SLIM, Chang'e, Luna, and south-pole candidates) plus custom coordinates, with maps and a coordinate picker.
+- A catalogue of 33 sites (Apollo, recent landers, upcoming CLPS and commercial targets, Chandrayaan-3, SLIM, Chang'e, Luna, and south-pole candidates) plus custom coordinates, with maps and a coordinate picker.
 - A 2D horizon panorama and an interactive 3D terrain view of LOLA elevation patches around each site (orbit and lander POV camera modes), with the Sun and Earth drawn against terrain ridges and plain-language status readouts computed from the engine.
 - A timeline of Sun, Earth and both, with a verdict (Good, Marginal, Poor) and plain-language reasons, plus countdowns to sunset and Earthset.
 - Eclipse, Sun-near-Earth interference, and Deep Space Network (Goldstone, Madrid, Canberra) ground-station visibility tracks.

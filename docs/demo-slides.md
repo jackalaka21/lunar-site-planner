@@ -47,10 +47,10 @@
 ## Slide 5 — NASA & Partner Datasets Used
 - **Headline:** Grounded in Official NASA Planetary & Ephemeris Data
 - **Dataset Table:**
-  - **NASA GSFC LOLA South-Pole 40 m DEM (`LDEM_80S_40MPP_ADJ`) & Global DEM (`LDEM_64`):** Ray-cast with exact lunar spherical curvature (`R = 1737.4 km`) into 29 site profiles (`0.1°` step) and 36,481 south-polar grid profiles (`2 km` spacing).
+  - **NASA GSFC LOLA South-Pole 40 m DEM (`LDEM_80S_40MPP_ADJ`) & Global DEM (`LDEM_64`):** Ray-cast with exact lunar spherical curvature (`R = 1737.4 km`) into 33 site profiles (`0.1°` step) and 36,481 south-polar grid profiles (`2 km` spacing).
   - **NASA JPL NAIF SPICE Kernels (`de440s.bsp`, `moon_pa_de440_200625.bpc`, `moon_de440_250416.tf`):** Hourly apparent (`LT+S`) Sun and Earth vectors in the `MOON_ME` frame from 1969 to 2035.
   - **NASA/GSFC PGDA Lunar Polar Illumination Maps & permanently shadowed craters (Mazarico et al.):** Used for validation cross-checks and PSR map overlays.
-  - **LROC Quickmap, NASA Moon Trek & JPL Horizons:** Cited coordinates for 29 curated sites (Apollo, CLPS, ISRO Chandrayaan-3, JAXA SLIM, CNSA Chang'e, Artemis candidates) and linked directly from every scenario card.
+  - **LROC Quickmap, NASA Moon Trek & JPL Horizons:** Cited coordinates for 33 curated sites (Apollo, CLPS and ispace commercial, ISRO Chandrayaan-3, JAXA SLIM, CNSA Chang'e, Artemis candidates) and linked directly from every scenario card.
 
 ---
 

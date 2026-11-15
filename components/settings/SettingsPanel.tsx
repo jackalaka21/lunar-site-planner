@@ -59,6 +59,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
       <NumberInput
         label={GLOSSARY[glossaryId].term}
         isLabelHidden
+        width="100%"
         value={settings[key]}
         min={SETTINGS_RANGES[key].min}
         max={SETTINGS_RANGES[key].max}
@@ -110,12 +111,17 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
         }
         content={
           <LayoutContent>
+            <Stack
+              data-testid="settings-column"
+              style={{ width: "100%", maxWidth: "22rem", marginInline: "auto", boxSizing: "border-box" }}
+            >
             <FormLayout>
               {group(
                 "litThreshold",
                 <SegmentedControl
                   label={GLOSSARY.litThreshold.term}
                   size="lg"
+                  layout="fill"
                   value={settings.litThreshold}
                   onChange={(v) => setSettings({ litThreshold: v as Settings["litThreshold"] })}
                 >
@@ -154,6 +160,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 <SegmentedControl
                   label={GLOSSARY.mastHeight.term}
                   size="lg"
+                  layout="fill"
                   value={String(settings.mastM)}
                   isDisabled={!hasCatalogSite}
                   disabledMessage={MAST_DISABLED_MESSAGE}
@@ -170,6 +177,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 <SegmentedControl
                   label={GLOSSARY.panelMode.term}
                   size="lg"
+                  layout="fill"
                   value={settings.panel.mode}
                   onChange={(v) =>
                     setSettings({
@@ -187,6 +195,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                   <NumberInput
                     label={GLOSSARY.azimuth.term}
                     isLabelHidden
+                    width="100%"
                     value={settings.panel.azDeg}
                     min={PANEL_AZ_RANGE.min}
                     max={PANEL_AZ_RANGE.max}
@@ -210,6 +219,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 <SegmentedControl
                   label={GLOSSARY.timeAxis.term}
                   size="lg"
+                  layout="fill"
                   value={settings.axis}
                   onChange={(v) => setSettings({ axis: v as Settings["axis"] })}
                 >
@@ -222,6 +232,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 <SegmentedControl
                   label={GLOSSARY.displayTz.term}
                   size="lg"
+                  layout="fill"
                   value={settings.displayTz}
                   onChange={(v) => setSettings({ displayTz: v })}
                 >
@@ -231,6 +242,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
                 </SegmentedControl>,
               )}
             </FormLayout>
+            </Stack>
           </LayoutContent>
         }
       />

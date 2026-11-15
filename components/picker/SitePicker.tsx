@@ -176,7 +176,7 @@ function SiteDetail({
       {site.actual_landing_utc ? (
         <>
           <Text type="supporting" size="xsm">
-            {`Landed ${site.actual_landing_utc.replace("T", " ")} UTC`}
+            {`${site.outcome?.startsWith("Crashed") ? "Impact" : "Landed"} ${site.actual_landing_utc.replace("T", " ")} UTC`}
             {site.outcome ? `, ${site.outcome}` : ""}
             {site.actual_landing_source_url ? (
               <>

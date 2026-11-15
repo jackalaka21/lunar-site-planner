@@ -73,7 +73,7 @@ describe("HorizonStore", () => {
   it("site horizon has 3600 values", async () => {
     const s = await HorizonStore.open(f);
     const cat = await loadSites(f);
-    expect(cat.sites.length).toBe(29);
+    expect(cat.sites.length).toBe(33);
     const id = cat.sites[0].id;
     const r = await s.forSite(id, 10);
     expect(r.profile.elevDeg.length).toBe(3600);
@@ -120,5 +120,29 @@ describe("Dsn", () => {
     const raw = new Int8Array(bytes("public/data/v1/dsn/2026.bin"));
     const i = (t - Date.UTC(2026, 0, 1)) / 3600000;
     expect(d.moonElDeg(t)).toEqual([raw[3 * i], raw[3 * i + 1], raw[3 * i + 2]]);
+  });
+});
+
+describe("catalogue coverage", () => {
+  const NEW_IDS = ["im-3", "blue-ghost-2", "hakuto-r-m1", "hakuto-r-m2"];
+  it("every site has a source, a horizon file and a terrain patch", async () => {
+    const cat = await loadSites(f);
+    const terrain = JSON.parse(readFileSync("public/data/v1/terrain/sites/index.json", "utf8")) as { sites: Record<string, unknown> };
+    for (const s of cat.sites) {
+      expect(s.source_url, s.id).toMatch(/^https:\/\//);
+      expect(s.notes.trim(), s.id).not.toBe("");
+      expect(readFileSync(`public/data/v1/horizons/sites/${s.id}.bin`).length, s.id).toBe(3 * 3600 * 2);
+      expect(terrain.sites[s.id], s.id).toBeDefined();
+    }
+  });
+  it("includes planned CLPS and commercial targets in the right groups", async () => {
+    const cat = await loadSites(f);
+    for (const id of NEW_IDS) expect(cat.byId.has(id), id).toBe(true);
+    expect(cat.byId.get("im-3")?.group).toBe("clps");
+    expect(cat.byId.get("blue-ghost-2")?.group).toBe("clps");
+    expect(cat.byId.get("hakuto-r-m1")?.group).toBe("international");
+    expect(cat.byId.get("hakuto-r-m2")?.group).toBe("international");
+    expect(cat.byId.get("im-3")?.actual_landing_utc).toBeUndefined();
+    expect(cat.byId.get("hakuto-r-m2")?.actual_landing_utc).toBe("2025-06-05T18:13Z");
   });
 });

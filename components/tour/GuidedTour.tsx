@@ -324,8 +324,13 @@ export function GuidedTour({ onClose }: GuidedTourProps) {
           wrap="wrap"
           style={{
             flex: "0 0 auto",
-            padding: "var(--spacing-3) var(--spacing-4)",
-            paddingBottom: isPhone ? "max(var(--spacing-4), env(safe-area-inset-bottom))" : undefined,
+            boxSizing: "border-box",
+            alignItems: "center",
+            paddingInline: "var(--spacing-4)",
+            paddingTop: "var(--spacing-4)",
+            paddingBottom: isPhone
+              ? "calc(var(--spacing-4) + env(safe-area-inset-bottom))"
+              : "var(--spacing-4)",
             borderTop: "0.0625rem solid var(--color-border)",
           }}
         >
