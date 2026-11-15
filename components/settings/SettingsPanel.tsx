@@ -102,6 +102,7 @@ export function SettingsPanel({ isOpen, onOpenChange }: SettingsPanelProps) {
               <IconButton
                 label="Close"
                 size="lg"
+                style={{ minWidth: "2.75rem", minHeight: "2.75rem", flexShrink: 0 }}
                 variant="ghost"
                 icon={<Icon icon={X} />}
                 onClick={() => onOpenChange(false)}

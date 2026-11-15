@@ -118,3 +118,19 @@ for (const width of [1440, 1024, 768, 375]) {
     }
   });
 }
+
+test("About & validation sits between Landing page and Copy link and opens /about/", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const bar = page.getByTestId("top-bar");
+  await expect(bar).toBeVisible();
+  const landing = bar.getByRole("button", { name: "Landing page" });
+  const about = bar.getByRole("link", { name: "About & validation" });
+  const copy = bar.getByRole("button", { name: "Copy link" });
+  await expect(about).toBeVisible();
+  const [l, a, c] = await Promise.all([landing.boundingBox(), about.boundingBox(), copy.boundingBox()]);
+  expect(l!.x).toBeLessThan(a!.x);
+  expect(a!.x).toBeLessThan(c!.x);
+  await about.click();
+  await expect(page).toHaveURL(/\/about\/?$/);
+});

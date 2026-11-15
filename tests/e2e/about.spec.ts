@@ -53,4 +53,15 @@ test.describe("about page layout", () => {
     expect(fits).toBe(true);
     await expect(page.locator("[role=region]")).toHaveCount(0);
   });
+
+  test("tables keep clear space from the outline at 1440 wide", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/about/");
+    const outline = page.getByTestId("about-outline");
+    await expect(outline).toBeVisible();
+    const outlineLeft = (await outline.boundingBox())!.x;
+    const rights = await page.locator(".astryx-table-scroll-wrapper").evaluateAll((els) => els.map((el) => el.getBoundingClientRect().right));
+    expect(rights.length).toBeGreaterThan(0);
+    for (const right of rights) expect(outlineLeft - right).toBeGreaterThanOrEqual(16);
+  });
 });

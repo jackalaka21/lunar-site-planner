@@ -1,5 +1,5 @@
 {
-  "checkedUtc": "2026-11-15T05:08:11Z",
+  "checkedUtc": "2026-11-15T05:38:28Z",
   "sites": [
     {
       "id": "apollo-11",
@@ -269,7 +269,10 @@
       "lon": 56.3638,
       "hDemM": -2448.4,
       "source_url": "https://lroc.im-ldi.com/images/938",
-      "notes": "LROC-measured lander position, uncertainty 3.7 m. Landing date not recorded in this catalogue.",
+      "notes": "LROC-measured lander position, uncertainty 3.7 m. Landing 05:18:00 UT on 20 Sep 1970 per NASA NSSDCA (https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html), truncated to the minute.",
+      "actual_landing_utc": "1970-09-20T05:18Z",
+      "actual_landing_source_url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html",
+      "outcome": "Landed; sample returned to Earth",
       "horizon": "site"
     },
     {
@@ -280,7 +283,10 @@
       "lon": -35.00163,
       "hDemM": -2472.3,
       "source_url": "https://lroc.im-ldi.com/images/938",
-      "notes": "LROC-measured lander position, uncertainty 0.5 m (table longitude 324.99837 east, converted). Landing date not recorded in this catalogue.",
+      "notes": "LROC-measured lander position, uncertainty 0.5 m (table longitude 324.99837 east, converted). Landing 03:47:00 UT on 17 Nov 1970 per NASA NSSDCA (https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html), truncated to the minute.",
+      "actual_landing_utc": "1970-11-17T03:47Z",
+      "actual_landing_source_url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html",
+      "outcome": "Landed; Lunokhod 1 rover deployed",
       "horizon": "site"
     },
     {
@@ -291,7 +297,10 @@
       "lon": 30.4076,
       "hDemM": -2687.5,
       "source_url": "https://lroc.im-ldi.com/images/938",
-      "notes": "LROC-measured lander position, uncertainty 13.4 m. Landing date not recorded in this catalogue.",
+      "notes": "LROC-measured lander position, uncertainty 13.4 m. Landing 23:35:00 UT on 15 Jan 1973 per NASA NSSDCA (https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html), truncated to the minute.",
+      "actual_landing_utc": "1973-01-15T23:35Z",
+      "actual_landing_source_url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html",
+      "outcome": "Landed; Lunokhod 2 rover deployed",
       "horizon": "site"
     },
     {
@@ -302,7 +311,10 @@
       "lon": 62.2129,
       "hDemM": -3673.5,
       "source_url": "https://lroc.im-ldi.com/images/938",
-      "notes": "LROC-measured lander position, uncertainty 3.7 m. Landing date not recorded in this catalogue.",
+      "notes": "LROC-measured lander position, uncertainty 3.7 m. Landing 02:00:00 UT on 18 Aug 1976 per NASA NSSDCA (https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html), truncated to the minute. Landing time: NSSDCA lists 02:00:00 UT, but other references give about 06:36 UT, so treat the time of day as uncertain.",
+      "actual_landing_utc": "1976-08-18T02:00Z",
+      "actual_landing_source_url": "https://nssdc.gsfc.nasa.gov/planetary/lunar/lunarussr.html",
+      "outcome": "Landed; sample returned to Earth",
       "horizon": "site"
     },
     {

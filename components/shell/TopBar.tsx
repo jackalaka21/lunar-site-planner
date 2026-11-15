@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, HelpCircle, Link as LinkIcon, Menu, Settings } from "lucide-react";
+import { CircleHelp, Download, GraduationCap, Link as LinkIcon, Menu, Settings } from "lucide-react";
 import { Button } from "@astryxdesign/core/Button";
 import { Heading } from "@astryxdesign/core/Heading";
 import { Icon } from "@astryxdesign/core/Icon";
@@ -25,10 +25,13 @@ export const TOPBAR_HEIGHT = "4.5rem";
 // Mobile first: before hydration the query reads false, so the prerendered header is the compact one
 // and never overflows a phone; labels appear once the query is known to match.
 const TABLET_UP_QUERY = "(min-width: 48rem)";
+// Text labels only where they fit beside the menu button and title; icon-only (with tooltips) below this.
+const WIDE_QUERY = "(min-width: 64rem)";
 
 export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }: TopBarProps) {
   const showToast = useToast();
   const isTabletUp = useMediaQuery(TABLET_UP_QUERY);
+  const isWide = useMediaQuery(WIDE_QUERY);
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -54,12 +57,12 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
       vAlign="center"
       hAlign="between"
       height="100%"
-      paddingInline={4}
+      paddingInline={isTabletUp ? 4 : 2}
       style={{ minHeight: TOPBAR_HEIGHT }}
       data-testid="top-bar"
       data-tour-id="tour-topbar"
     >
-      <HStack gap={2} vAlign="center">
+      <HStack gap={isTabletUp ? 2 : 1} vAlign="center" style={{ minWidth: 0 }}>
         {onOpenNav ? (
           <IconButton
             label="Open scenarios"
@@ -71,9 +74,11 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
             onClick={onOpenNav}
           />
         ) : null}
-        <Heading level={1}>Ridgeline</Heading>
+        <Heading level={1} maxLines={1}>
+          Ridgeline
+        </Heading>
       </HStack>
-      <HStack gap={1} vAlign="center">
+      <HStack gap={isTabletUp ? 1 : 0} vAlign="center" style={{ flexShrink: 0 }}>
         {isTabletUp && onOpenLanding ? (
           <Button
             label="Landing page"
@@ -83,19 +88,31 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
           />
         ) : null}
         <Button
-          label="Copy link"
-          tooltip={isTabletUp ? undefined : "Copy link"}
+          label="About & validation"
+          tooltip={isWide ? undefined : "About & validation"}
+          data-testid="topbar-about"
           size="lg"
           variant="ghost"
-          isIconOnly={!isTabletUp}
+          isIconOnly={!isWide}
+          icon={<Icon icon={CircleHelp} />}
+          href="/about/"
+        />
+        <Button
+          label="Copy link"
+          tooltip={isWide ? undefined : "Copy link"}
+          size="lg"
+          variant="ghost"
+          isIconOnly={!isWide}
           icon={<Icon icon={LinkIcon} />}
           onClick={copyLink}
         />
         {isTabletUp ? (
           <Button
             label="Export PNG"
+            tooltip={isWide ? undefined : "Export PNG"}
             size="lg"
             variant="ghost"
+            isIconOnly={!isWide}
             icon={<Icon icon={Download} />}
             onClick={exportPng}
           />
@@ -103,11 +120,11 @@ export function TopBar({ onOpenNav, onOpenSettings, onOpenLanding, onOpenTour }:
         {onOpenTour ? (
           <Button
             label="Tutorial"
-            tooltip={isTabletUp ? undefined : "Tutorial"}
+            tooltip={isWide ? undefined : "Tutorial"}
             size="lg"
             variant="ghost"
-            isIconOnly={!isTabletUp}
-            icon={<Icon icon={HelpCircle} />}
+            isIconOnly={!isWide}
+            icon={<Icon icon={GraduationCap} />}
             onClick={onOpenTour}
           />
         ) : null}

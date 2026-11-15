@@ -146,7 +146,7 @@ export function ValidationTable({ entries, caption }: { entries: ValidationEntry
         {
           key: "entry",
           header: "Check",
-          width: proportional(3, { minWidth: 220 }),
+          width: proportional(3, { minWidth: 160 }),
           renderCell: (row) => (
             <VStack gap={2}>
               <Text type="label" weight="medium">
@@ -172,19 +172,19 @@ export function ValidationTable({ entries, caption }: { entries: ValidationEntry
         {
           key: "value",
           header: "Ridgeline value",
-          width: proportional(1.5, { minWidth: 112 }),
+          width: proportional(1.5, { minWidth: 88 }),
           renderCell: (row) => <Text type="code" hasTabularNumbers>{formatValue(row.entry.value, row.entry.unit)}</Text>,
         },
         {
           key: "reference",
           header: "Reference",
-          width: proportional(1.5, { minWidth: 112 }),
+          width: proportional(1.5, { minWidth: 88 }),
           renderCell: (row) => <Text type="code" hasTabularNumbers>{formatValue(row.entry.reference, row.entry.unit)}</Text>,
         },
         {
           key: "tolerance",
           header: "Tolerance",
-          width: proportional(1.5, { minWidth: 112 }),
+          width: proportional(1.5, { minWidth: 88 }),
           renderCell: (row) => (
             <Text type="code" hasTabularNumbers>
               {typeof row.entry.tolerance === "number"

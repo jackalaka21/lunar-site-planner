@@ -98,6 +98,49 @@ const TOP_DOWN_DIST = 25.5;
 const MAX_DIST = 45;
 const MIN_DIST = 6;
 
+/** Longest wait for an idle slot before heavy GL work runs anyway. */
+const DEFER_TIMEOUT_MS = 300;
+
+/**
+ * Run `fn` in a later task, after the next paint and (usually) after queued worker messages: two rAFs, then an idle
+ * callback (timeout 300 ms) or a setTimeout fallback. Returns a cancel function.
+ */
+function deferHeavyWork(fn: () => void): () => void {
+  let raf1 = 0;
+  let raf2 = 0;
+  let idle = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    fn();
+  };
+  const afterPaint = () => {
+    if (typeof window.requestIdleCallback === "function") {
+      idle = window.requestIdleCallback(run, { timeout: DEFER_TIMEOUT_MS });
+    } else {
+      timer = setTimeout(run, 0);
+    }
+  };
+  if (typeof window.requestAnimationFrame === "function") {
+    raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(afterPaint);
+    });
+    // Hidden tabs never fire rAF: fall back to a timer so the scene still builds.
+    timer = setTimeout(run, DEFER_TIMEOUT_MS * 3);
+  } else {
+    afterPaint();
+  }
+  return () => {
+    done = true;
+    if (raf1) window.cancelAnimationFrame(raf1);
+    if (raf2) window.cancelAnimationFrame(raf2);
+    if (idle && typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idle);
+    if (timer !== undefined) clearTimeout(timer);
+  };
+}
+
 function canUseWebGl(): boolean {
   try {
     const c = document.createElement("canvas");
@@ -819,9 +862,23 @@ export function LunarTerrain3D({
 
   useEffect(() => {
     if (!useGl || !patch) return;
+    // The scene build (mesh, normals, shadow map, contours) is heavy and synchronous. Defer it past the first paint and
+    // any pending engine result so it never delays the worker round trip; unmount or a dep change cancels it cleanly.
+    let cancelled = false;
+    let teardown: (() => void) | undefined;
+    const cancelDefer = deferHeavyWork(() => {
+      if (!cancelled) teardown = build();
+    });
+    return () => {
+      cancelled = true;
+      cancelDefer();
+      teardown?.();
+    };
+
+    function build(): (() => void) | undefined {
     const wrap = wrapRef.current;
     const hudCanvas = canvasRef.current;
-    if (!wrap || !hudCanvas) return;
+    if (!wrap || !hudCanvas || !patch) return undefined;
     // A fresh WebGL canvas per scene: disposing a scene force-loses its context, and a lost context can never be
     // reused, so a scene rebuilt on the same element (new site, new series, StrictMode) would fail and drop to 2D.
     const glCanvas = document.createElement("canvas");
@@ -839,7 +896,7 @@ export function LunarTerrain3D({
     } catch {
       glCanvas.remove();
       void Promise.resolve().then(() => setUseGl(false));
-      return;
+      return undefined;
     }
     sceneRef.current = sc;
     const onLost = (ev: Event) => {
@@ -991,6 +1048,7 @@ export function LunarTerrain3D({
       sc.dispose();
       glCanvas.remove();
     };
+    }
   }, [useGl, patch, mode, obsHeightM, ellipseKm, glEpoch]);
 
   // Horizon and series changes (including every frame of a pin drag) update the sky in place, never the WebGL context.

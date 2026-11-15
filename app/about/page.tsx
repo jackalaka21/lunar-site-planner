@@ -229,7 +229,7 @@ export default function AboutPage() {
                   {
                     key: "name",
                     header: "Dataset",
-                    width: proportional(3, { minWidth: 240 }),
+                    width: proportional(3, { minWidth: 200 }),
                     renderCell: (r) => (
                       <Text type="label" weight="medium">
                         {r.d.name}
@@ -239,7 +239,7 @@ export default function AboutPage() {
                   {
                     key: "source",
                     header: "Source link",
-                    width: proportional(2, { minWidth: 180 }),
+                    width: proportional(2, { minWidth: 160 }),
                     renderCell: (r) => (
                       <Link href={r.d.href} target="_blank" rel="noopener noreferrer" isExternalLink>
                         {r.d.source}
@@ -249,7 +249,7 @@ export default function AboutPage() {
                   {
                     key: "role",
                     header: "What it does in Ridgeline",
-                    width: proportional(4, { minWidth: 280 }),
+                    width: proportional(4, { minWidth: 240 }),
                     renderCell: (r) => <Text>{r.d.role}</Text>,
                   },
                 ]}

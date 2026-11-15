@@ -82,6 +82,33 @@ describe("LandingCalendar", () => {
     expect(screen.getByText("Lunar winter")).toBeTruthy();
   });
 
+  it("splits the year into two half-year rows of month labels", () => {
+    setup();
+    const grid = screen.getByTestId("landing-calendar");
+    const labels = Array.from(grid.querySelectorAll("text")).map((t) => t.textContent);
+    for (const m of ["Jan 2027", "Feb", "Jun", "Jul", "Dec"]) expect(labels).toContain(m);
+    const at = (k: number, attr: string) => Number(screen.getByTestId(`cal-cell-${k}`).getAttribute(attr));
+    expect(at(181, "y") - at(0, "y")).toBeGreaterThan(150); // 1 Jul starts the lower half
+    expect(at(181, "x")).toBeLessThan(at(60, "x")); // and restarts at the left edge
+    expect(labels).toContain("Mon");
+  });
+
+  it("draws the sub-solar graph with data driven degree ticks, month ticks and the landing line", () => {
+    setup();
+    const g = screen.getByTestId("subsolar-graph");
+    const text = Array.from(g.querySelectorAll("text")).map((t) => t.textContent);
+    expect(text).toEqual(expect.arrayContaining(["+1.5°", "0°", "−1.5°", "Jan", "Dec", "Landing"]));
+    expect(screen.getByText(/how far north \(\+\) or south/)).toBeTruthy();
+  });
+
+  it("states which half is summer for the site hemisphere", () => {
+    setup({ siteLat: -89.5 });
+    expect(screen.getByText(/summer is when the line is below 0/)).toBeTruthy();
+    cleanup();
+    setup({ siteLat: 70 });
+    expect(screen.getByText(/summer is when the line is above 0/)).toBeTruthy();
+  });
+
   it("shows the empty state when nothing is Good", () => {
     setup({ days: days(365, () => 10) });
     expect(screen.getByText("No Good landing in the next 365 days at this site")).toBeTruthy();

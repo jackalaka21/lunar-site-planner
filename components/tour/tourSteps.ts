@@ -33,7 +33,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     targetId: "tour-topbar",
     category: "Top bar",
     title: "The top bar",
-    what: "On wide screens it holds Landing page, Copy link, Export PNG, Tutorial, Settings and the theme switch. Narrow screens hide Landing page and Export PNG, and a menu button at the left opens the scenario list.",
+    what: "On wide screens it holds Landing page, About & validation, Copy link, Export PNG, Tutorial, Settings and the theme switch. Narrow screens hide Landing page and Export PNG, show the rest as icons, and add a scenario menu.",
     means:
       "Copy link saves your scenarios in the web address, so a colleague opens the same comparison. Export PNG saves the cards as an image.",
     tryIt: "Open Settings to adjust the calculation, or press Tutorial to replay this tour.",
@@ -116,6 +116,6 @@ export const TOUR_STEPS: readonly TourStep[] = [
     title: "Comparing and trusting results",
     what: "This line names the data behind the card: the LOLA terrain used for the horizon and the DE440 ephemeris. From scenario B on, a line such as −96 h vs A shows the change from scenario A.",
     means: "Ridgeline's Sun direction matches JPL Horizons to about 0.00001° and its Earth direction to about 0.0001°.",
-    tryIt: "Open About & validation from the Landing page to see every check. Press Finish when you are ready.",
+    tryIt: "Open About & validation from the top bar to see every check. Press Finish when you are ready.",
   },
 ];

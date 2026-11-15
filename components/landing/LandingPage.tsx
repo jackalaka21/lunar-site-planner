@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, RefObject } from "react";
-import Link from "next/link";
 import { useAppStore } from "../../lib/state/store";
 import type { Scenario } from "../../lib/state/url";
 import {
@@ -170,7 +169,6 @@ const BTN_PRIMARY = `${BTN_BASE} h-[52px] bg-(color:--ln-ffb454) text-(color:--l
 const BTN_HAIR = `${BTN_BASE} h-[52px] border border-white/30 bg-(color:--ln-05050a)/70 text-(color:--ln-ffffff) hover:border-white/60 hover:bg-(color:--ln-15151a)`;
 const SOLID_FOCUS = "focus-visible:border-(color:--ln-ffb454) focus-visible:shadow-[0_0_0_2px_rgb(0_0_0)]";
 const BTN_SOLID = `${BTN_BASE} h-[52px] rounded-[2px] border border-white bg-black text-(color:--ln-ffffff) hover:shadow-[inset_0_0_0_1px_rgb(255_255_255)] hover:bg-(color:--ln-15151a) ${SOLID_FOCUS}`;
-const BTN_SOLID_COMPACT = `${BTN_BASE} h-[44px] rounded-[2px] border border-white bg-black px-4 text-[14px] text-(color:--ln-ffffff) hover:shadow-[inset_0_0_0_1px_rgb(255_255_255)] hover:bg-(color:--ln-15151a) ${SOLID_FOCUS}`;
 const MONO = "font-[family-name:var(--font-family-code)] tracking-[0.04em]";
 
 function setLayer(el: HTMLElement | null, opacity: number, inertBelow = 0.3) {
@@ -549,14 +547,6 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
           <header className="absolute inset-x-0 top-0 z-30 flex h-16 items-center justify-between px-4 lg:px-14">
             <span className="text-[15px] font-semibold tracking-[0.02em]">Ridgeline</span>
             <nav aria-label="Site" className="flex items-center gap-1">
-              <Link
-                href="/about"
-                prefetch={false}
-                data-testid="landing-about-link"
-                className={`${BTN_SOLID_COMPACT} mr-1`}
-              >
-                About &amp; validation
-              </Link>
               <ThemeToggle />
             </nav>
           </header>
@@ -721,9 +711,6 @@ export function LandingPage({ onEnterPlanner }: LandingPageProps) {
                 <button type="button" className={BTN_SOLID} onClick={() => enterPlanner(SHOWCASE_STAGES[1].scenarios)}>
                   Mons Mouton vs Shackleton rim
                 </button>
-                <Link href="/about" prefetch={false} data-testid="landing-about-quick" className={BTN_SOLID}>
-                  About &amp; validation
-                </Link>
               </div>
               <div className="grid w-full grid-cols-3 gap-2 sm:w-auto">
                 {REPLAYS.map((r) => (
